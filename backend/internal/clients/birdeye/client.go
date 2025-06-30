@@ -16,12 +16,12 @@ import (
 )
 
 const (
-	priceHistoryEndpoint             = "defi/history_price"
-	trendingTokensEndpoint           = "defi/token_trending"
-	tokenOverviewEndpoint            = "defi/token_overview"
-	tokenMetadataMultipleEndpoint    = "defi/v3/token/meta-data/multiple"
-	tokenMarketDataMultipleEndpoint  = "defi/v3/token/market-data/multiple"
-	tokenTradeDataMultipleEndpoint   = "defi/v3/token/market-data/multiple"
+	priceHistoryEndpoint            = "defi/history_price"
+	trendingTokensEndpoint          = "defi/token_trending"
+	tokenOverviewEndpoint           = "defi/token_overview"
+	tokenMetadataMultipleEndpoint   = "defi/v3/token/meta-data/multiple"
+	tokenMarketDataMultipleEndpoint = "defi/v3/token/market-data/multiple"
+	newListingTokensEndpoint        = "defi/v2/tokens/new_listing"
 )
 
 // Client handles interactions with the BirdEye API
@@ -153,7 +153,7 @@ func (c *Client) GetTokensOverviewBatch(ctx context.Context, addresses []string)
 	go func() {
 		metadataURL := fmt.Sprintf("%s/%s?%s", c.baseURL, tokenMetadataMultipleEndpoint, queryParams.Encode())
 		slog.Debug("Fetching token metadata from BirdEye", "url", metadataURL, "addresses", addresses)
-		
+
 		metadata, err := getRequest[TokenMetadataMultiple](c, ctx, metadataURL)
 		metadataChan <- metadataResult{data: metadata, err: err}
 	}()
@@ -165,10 +165,10 @@ func (c *Client) GetTokensOverviewBatch(ctx context.Context, addresses []string)
 			tradeDataParams.Add("list_address", address)
 		}
 		tradeDataParams.Add("time_from", "24h") // 24 hour window
-		
-		tradeDataURL := fmt.Sprintf("%s/%s?%s", c.baseURL, tokenTradeDataMultipleEndpoint, tradeDataParams.Encode())
+
+		tradeDataURL := fmt.Sprintf("%s/%s?%s", c.baseURL, tokenMarketDataMultipleEndpoint, tradeDataParams.Encode())
 		slog.Debug("Fetching token trade data from BirdEye", "url", tradeDataURL, "addresses", addresses)
-		
+
 		tradeData, err := getRequest[TokenTradeDataMultiple](c, ctx, tradeDataURL)
 		tradeDataChan <- tradeDataResult{data: tradeData, err: err}
 	}()
@@ -250,9 +250,9 @@ func (c *Client) GetTokensTradeDataBatch(ctx context.Context, addresses []string
 	queryParams.Add("time_from", "24h") // 24 hour window
 
 	// Fetch trade data only
-	tradeDataURL := fmt.Sprintf("%s/%s?%s", c.baseURL, tokenTradeDataMultipleEndpoint, queryParams.Encode())
+	tradeDataURL := fmt.Sprintf("%s/%s?%s", c.baseURL, tokenMarketDataMultipleEndpoint, queryParams.Encode())
 	slog.Debug("Fetching token trade data from BirdEye", "url", tradeDataURL, "addresses", addresses)
-	
+
 	tradeDataResponse, err := getRequest[TokenTradeDataMultiple](c, ctx, tradeDataURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token trade data: %w", err)
@@ -270,6 +270,47 @@ func (c *Client) GetTokensTradeDataBatch(ctx context.Context, addresses []string
 
 	slog.Debug("Successfully fetched batch trade data", "requested", len(addresses), "found", len(results))
 	return results, nil
+}
+
+// GetNewListingTokens retrieves newly listed tokens from the BirdEye API
+func (c *Client) GetNewListingTokens(ctx context.Context, params NewListingTokensParams) (*NewListingTokensResponse, error) {
+	queryParams := url.Values{}
+
+	// Add query parameters if provided, with validation
+	if params.Limit > 0 {
+		// Limit the maximum to 20 as per API requirements
+		if params.Limit > 20 {
+			params.Limit = 20
+		}
+		queryParams.Add("limit", strconv.Itoa(params.Limit))
+	} else {
+		// Default to 10 if not specified
+		queryParams.Add("limit", "10")
+	}
+
+	if params.Offset > 0 {
+		queryParams.Add("offset", strconv.Itoa(params.Offset))
+	}
+
+	if params.TimeTo > 0 {
+		queryParams.Add("time_to", strconv.Itoa(params.TimeTo))
+	}
+
+	// Add meme platform enabled parameter - this is key to getting new tokens!
+	if params.MemePlatformEnabled {
+		queryParams.Add("meme_platform_enabled", "true")
+	}
+
+	fullURL := fmt.Sprintf("%s/%s?%s", c.baseURL, newListingTokensEndpoint, queryParams.Encode())
+
+	slog.Debug("Fetching new listing tokens from BirdEye", "url", fullURL)
+
+	newListingResponse, err := getRequest[NewListingTokensResponse](c, ctx, fullURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get new listing tokens: %w", err)
+	}
+
+	return newListingResponse, nil
 }
 
 // getRequest is a helper function to perform an HTTP GET request, check status, and unmarshal response
