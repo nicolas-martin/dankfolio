@@ -11,10 +11,7 @@ export const DEBOUNCE_DELAY = 1000; // ms
 
 export const DEFAULT_FILTERS: SearchFilters = {
 	query: '',
-	tags: [],
-	minVolume24h: 0,
-	sortBy: 'volume24h',
-	sortDesc: true
+	sortBy: 'volume24h'
 };
 
 export const searchTokens = async (filters: SearchFilters): Promise<Coin[]> => {
@@ -36,12 +33,9 @@ export const performSearch = async (
 	try {
 		const response = await grpcApi.search({
 			query,
-			tags: filters.tags,
-			minVolume24h: filters.minVolume24h,
 			limit,
 			offset,
-			sortBy: filters.sortBy,
-			sortDesc: filters.sortDesc
+			sortBy: filters.sortBy
 		});
 		return response.coins;
 	} catch (error) {
@@ -64,7 +58,7 @@ export const handleSearchPress = (
 	searchQuery: string
 ) => {
 	if (!searchQuery.trim()) return;
-	navigation.navigate('Search', { defaultSortBy: 'volume24h', defaultSortDesc: true });
+	navigation.navigate('Search', { defaultSortBy: 'volume24h' });
 };
 
 export const getEnrichedCoinData = async (

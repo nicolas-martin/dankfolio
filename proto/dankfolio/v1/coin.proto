@@ -28,15 +28,7 @@ service CoinService {
   rpc GetTopGainersCoins(GetTopGainersCoinsRequest) returns (GetAvailableCoinsResponse);
 }
 
-enum CoinSortField {
-  COIN_SORT_FIELD_UNSPECIFIED = 0;
-  COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H = 1;
-  COIN_SORT_FIELD_JUPITER_LISTED_AT = 2;
-  COIN_SORT_FIELD_VOLUME_24H = 3;
-  COIN_SORT_FIELD_NAME = 4;
-  COIN_SORT_FIELD_SYMBOL = 5;
-  COIN_SORT_FIELD_MARKET_CAP = 6;
-}
+// Removed CoinSortField enum - using string for sort_by instead
 
 // Coin represents a coin or currency (unified definition)
 // Field names aligned with BirdEye API for consistency
@@ -106,12 +98,9 @@ message GetAllCoinsResponse {
 
 message SearchRequest {
   string query = 1;                // Text to search in name, symbol, or mint address
-  repeated string tags = 2;        // Filter by tags
-  double min_volume_24h = 3;      // Minimum 24h volume
-  int32 limit = 4;                // Maximum number of results (default: 20)
-  int32 offset = 5;               // Offset for pagination
-  CoinSortField sort_by = 6;      // Sort field
-  bool sort_desc = 7;            // Sort direction (default: true)
+  int32 limit = 2;                // Maximum number of results (default: 20)
+  int32 offset = 3;               // Offset for pagination
+  optional string sort_by = 4;    // Sort field: "volume24h" or "jupiter_listed_at" (default: "volume24h")
 }
 
 message SearchResponse {

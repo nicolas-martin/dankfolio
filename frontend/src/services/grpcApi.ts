@@ -404,66 +404,29 @@ export const grpcApi: grpcModel.API = {
 		const serviceName = 'CoinService';
 		const methodName = 'search';
 		try {
-			grpcUtils.logRequest(serviceName, methodName, `Original params: ${JSON.stringify(params)}`);
+			grpcUtils.logRequest(serviceName, methodName, params);
 
-			let sortFieldEnum: CoinSortField = CoinSortField.UNSPECIFIED; // Default value
-			// Assuming params.sortBy is a string from grpcModel.SearchCoinsRequest
-			const sortByString = params.sortBy as string | undefined;
-
-			switch (sortByString) {
-				case 'price_change_percentage_24h':
-					sortFieldEnum = CoinSortField.PRICE_CHANGE_PERCENTAGE_24H;
-					break;
-				case 'jupiter_listed_at':
-					sortFieldEnum = CoinSortField.JUPITER_LISTED_AT;
-					break;
-				case 'volume_24h':
-					sortFieldEnum = CoinSortField.VOLUME_24H;
-					break;
-				case 'name':
-					sortFieldEnum = CoinSortField.NAME;
-					break;
-				case 'symbol':
-					sortFieldEnum = CoinSortField.SYMBOL;
-					break;
-				case 'market_cap':
-					sortFieldEnum = CoinSortField.MARKET_CAP;
-					break;
-				default:
-					if (sortByString) { // Only warn if it was actually set to something unknown
-						logger.warn(`Unsupported sortBy string: ${sortByString}, defaulting to UNSPECIFIED.`);
-					}
-					sortFieldEnum = CoinSortField.UNSPECIFIED;
-			}
-
-			const grpcRequest = { // Explicitly construct the request for coinClient.search
+			const grpcRequest = {
 				query: params.query || "",
-				tags: params.tags || [],
-				minVolume24h: params.minVolume24h || 0, // Corrected casing to match generated coin_pb.ts
-				limit: params.limit || 0,
+				limit: params.limit || 20,
 				offset: params.offset || 0,
-				sortBy: sortFieldEnum,
-				sortDesc: params.sortDesc || false,
+				sortBy: params.sortBy || "volume24h", // Default to volume24h
 			};
-
-			grpcUtils.logRequest(serviceName, methodName, `Mapped gRPC request: ${JSON.stringify(grpcRequest)}`);
 
 			const response = await coinClient.search(grpcRequest);
 
 			grpcUtils.logResponse(serviceName, methodName, response);
 
 			return {
-				// Assuming response structure matches SearchResponse in coin_pb.js
-				// and mapGrpcCoinToFrontendCoin handles individual coin mapping
 				coins: response.coins.map(mapGrpcCoinToFrontendCoin),
-				totalCount: response.totalCount, // Add totalCount if it's part of the response
+				totalCount: response.totalCount,
 			};
 		} catch (error: unknown) {
 			if (error instanceof Error) {
 				return grpcUtils.handleGrpcError(error, serviceName, methodName);
 			} else {
 				console.error("An unknown error occurred:", error);
-				throw new Error("An unknown error occurred in searchCoins");
+				throw new Error("An unknown error occurred in search");
 			}
 		}
 	},

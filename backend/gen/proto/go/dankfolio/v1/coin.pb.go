@@ -22,67 +22,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type CoinSortField int32
-
-const (
-	CoinSortField_COIN_SORT_FIELD_UNSPECIFIED                 CoinSortField = 0
-	CoinSortField_COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H CoinSortField = 1
-	CoinSortField_COIN_SORT_FIELD_JUPITER_LISTED_AT           CoinSortField = 2
-	CoinSortField_COIN_SORT_FIELD_VOLUME_24H                  CoinSortField = 3
-	CoinSortField_COIN_SORT_FIELD_NAME                        CoinSortField = 4
-	CoinSortField_COIN_SORT_FIELD_SYMBOL                      CoinSortField = 5
-	CoinSortField_COIN_SORT_FIELD_MARKET_CAP                  CoinSortField = 6
-)
-
-// Enum value maps for CoinSortField.
-var (
-	CoinSortField_name = map[int32]string{
-		0: "COIN_SORT_FIELD_UNSPECIFIED",
-		1: "COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H",
-		2: "COIN_SORT_FIELD_JUPITER_LISTED_AT",
-		3: "COIN_SORT_FIELD_VOLUME_24H",
-		4: "COIN_SORT_FIELD_NAME",
-		5: "COIN_SORT_FIELD_SYMBOL",
-		6: "COIN_SORT_FIELD_MARKET_CAP",
-	}
-	CoinSortField_value = map[string]int32{
-		"COIN_SORT_FIELD_UNSPECIFIED":                 0,
-		"COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H": 1,
-		"COIN_SORT_FIELD_JUPITER_LISTED_AT":           2,
-		"COIN_SORT_FIELD_VOLUME_24H":                  3,
-		"COIN_SORT_FIELD_NAME":                        4,
-		"COIN_SORT_FIELD_SYMBOL":                      5,
-		"COIN_SORT_FIELD_MARKET_CAP":                  6,
-	}
-)
-
-func (x CoinSortField) Enum() *CoinSortField {
-	p := new(CoinSortField)
-	*p = x
-	return p
-}
-
-func (x CoinSortField) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (CoinSortField) Descriptor() protoreflect.EnumDescriptor {
-	return file_dankfolio_v1_coin_proto_enumTypes[0].Descriptor()
-}
-
-func (CoinSortField) Type() protoreflect.EnumType {
-	return &file_dankfolio_v1_coin_proto_enumTypes[0]
-}
-
-func (x CoinSortField) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use CoinSortField.Descriptor instead.
-func (CoinSortField) EnumDescriptor() ([]byte, []int) {
-	return file_dankfolio_v1_coin_proto_rawDescGZIP(), []int{0}
-}
-
 // Coin represents a coin or currency (unified definition)
 // Field names aligned with BirdEye API for consistency
 type Coin struct {
@@ -711,13 +650,10 @@ func (x *GetAllCoinsResponse) GetCoins() []*Coin {
 
 type SearchRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`                                                  // Text to search in name, symbol, or mint address
-	Tags          []string               `protobuf:"bytes,2,rep,name=tags,proto3" json:"tags,omitempty"`                                                    // Filter by tags
-	MinVolume_24H float64                `protobuf:"fixed64,3,opt,name=min_volume_24h,json=minVolume24h,proto3" json:"min_volume_24h,omitempty"`            // Minimum 24h volume
-	Limit         int32                  `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`                                                 // Maximum number of results (default: 20)
-	Offset        int32                  `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,omitempty"`                                               // Offset for pagination
-	SortBy        CoinSortField          `protobuf:"varint,6,opt,name=sort_by,json=sortBy,proto3,enum=dankfolio.v1.CoinSortField" json:"sort_by,omitempty"` // Sort field
-	SortDesc      bool                   `protobuf:"varint,7,opt,name=sort_desc,json=sortDesc,proto3" json:"sort_desc,omitempty"`                           // Sort direction (default: true)
+	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`                       // Text to search in name, symbol, or mint address
+	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`                      // Maximum number of results (default: 20)
+	Offset        int32                  `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`                    // Offset for pagination
+	SortBy        *string                `protobuf:"bytes,4,opt,name=sort_by,json=sortBy,proto3,oneof" json:"sort_by,omitempty"` // Sort field: "volume24h" or "jupiter_listed_at" (default: "volume24h")
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -759,20 +695,6 @@ func (x *SearchRequest) GetQuery() string {
 	return ""
 }
 
-func (x *SearchRequest) GetTags() []string {
-	if x != nil {
-		return x.Tags
-	}
-	return nil
-}
-
-func (x *SearchRequest) GetMinVolume_24H() float64 {
-	if x != nil {
-		return x.MinVolume_24H
-	}
-	return 0
-}
-
 func (x *SearchRequest) GetLimit() int32 {
 	if x != nil {
 		return x.Limit
@@ -787,18 +709,11 @@ func (x *SearchRequest) GetOffset() int32 {
 	return 0
 }
 
-func (x *SearchRequest) GetSortBy() CoinSortField {
-	if x != nil {
-		return x.SortBy
+func (x *SearchRequest) GetSortBy() string {
+	if x != nil && x.SortBy != nil {
+		return *x.SortBy
 	}
-	return CoinSortField_COIN_SORT_FIELD_UNSPECIFIED
-}
-
-func (x *SearchRequest) GetSortDesc() bool {
-	if x != nil {
-		return x.SortDesc
-	}
-	return false
+	return ""
 }
 
 type SearchResponse struct {
@@ -1079,15 +994,14 @@ const file_dankfolio_v1_coin_proto_rawDesc = "" +
 	"\x04coin\x18\x01 \x01(\v2\x12.dankfolio.v1.CoinR\x04coin\"\x14\n" +
 	"\x12GetAllCoinsRequest\"?\n" +
 	"\x13GetAllCoinsResponse\x12(\n" +
-	"\x05coins\x18\x01 \x03(\v2\x12.dankfolio.v1.CoinR\x05coins\"\xe0\x01\n" +
+	"\x05coins\x18\x01 \x03(\v2\x12.dankfolio.v1.CoinR\x05coins\"}\n" +
 	"\rSearchRequest\x12\x14\n" +
-	"\x05query\x18\x01 \x01(\tR\x05query\x12\x12\n" +
-	"\x04tags\x18\x02 \x03(\tR\x04tags\x12$\n" +
-	"\x0emin_volume_24h\x18\x03 \x01(\x01R\fminVolume24h\x12\x14\n" +
-	"\x05limit\x18\x04 \x01(\x05R\x05limit\x12\x16\n" +
-	"\x06offset\x18\x05 \x01(\x05R\x06offset\x124\n" +
-	"\asort_by\x18\x06 \x01(\x0e2\x1b.dankfolio.v1.CoinSortFieldR\x06sortBy\x12\x1b\n" +
-	"\tsort_desc\x18\a \x01(\bR\bsortDesc\"[\n" +
+	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x03 \x01(\x05R\x06offset\x12\x1c\n" +
+	"\asort_by\x18\x04 \x01(\tH\x00R\x06sortBy\x88\x01\x01B\n" +
+	"\n" +
+	"\b_sort_by\"[\n" +
 	"\x0eSearchResponse\x12(\n" +
 	"\x05coins\x18\x01 \x03(\v2\x12.dankfolio.v1.CoinR\x05coins\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
@@ -1106,15 +1020,7 @@ const file_dankfolio_v1_coin_proto_rawDesc = "" +
 	"\x05limit\x18\x01 \x01(\x05H\x00R\x05limit\x88\x01\x01\x12\x1b\n" +
 	"\x06offset\x18\x02 \x01(\x05H\x01R\x06offset\x88\x01\x01B\b\n" +
 	"\x06_limitB\t\n" +
-	"\a_offset*\xfe\x01\n" +
-	"\rCoinSortField\x12\x1f\n" +
-	"\x1bCOIN_SORT_FIELD_UNSPECIFIED\x10\x00\x12/\n" +
-	"+COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H\x10\x01\x12%\n" +
-	"!COIN_SORT_FIELD_JUPITER_LISTED_AT\x10\x02\x12\x1e\n" +
-	"\x1aCOIN_SORT_FIELD_VOLUME_24H\x10\x03\x12\x18\n" +
-	"\x14COIN_SORT_FIELD_NAME\x10\x04\x12\x1a\n" +
-	"\x16COIN_SORT_FIELD_SYMBOL\x10\x05\x12\x1e\n" +
-	"\x1aCOIN_SORT_FIELD_MARKET_CAP\x10\x062\xbd\x06\n" +
+	"\a_offset2\xbd\x06\n" +
 	"\vCoinService\x12d\n" +
 	"\x11GetAvailableCoins\x12&.dankfolio.v1.GetAvailableCoinsRequest\x1a'.dankfolio.v1.GetAvailableCoinsResponse\x12C\n" +
 	"\vGetCoinByID\x12 .dankfolio.v1.GetCoinByIDRequest\x1a\x12.dankfolio.v1.Coin\x12X\n" +
@@ -1139,60 +1045,57 @@ func file_dankfolio_v1_coin_proto_rawDescGZIP() []byte {
 	return file_dankfolio_v1_coin_proto_rawDescData
 }
 
-var file_dankfolio_v1_coin_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_dankfolio_v1_coin_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_dankfolio_v1_coin_proto_goTypes = []any{
-	(CoinSortField)(0),                  // 0: dankfolio.v1.CoinSortField
-	(*Coin)(nil),                        // 1: dankfolio.v1.Coin
-	(*GetAvailableCoinsRequest)(nil),    // 2: dankfolio.v1.GetAvailableCoinsRequest
-	(*GetAvailableCoinsResponse)(nil),   // 3: dankfolio.v1.GetAvailableCoinsResponse
-	(*GetCoinByIDRequest)(nil),          // 4: dankfolio.v1.GetCoinByIDRequest
-	(*GetCoinsByIDsRequest)(nil),        // 5: dankfolio.v1.GetCoinsByIDsRequest
-	(*GetCoinsByIDsResponse)(nil),       // 6: dankfolio.v1.GetCoinsByIDsResponse
-	(*SearchCoinByAddressRequest)(nil),  // 7: dankfolio.v1.SearchCoinByAddressRequest
-	(*SearchCoinByAddressResponse)(nil), // 8: dankfolio.v1.SearchCoinByAddressResponse
-	(*GetAllCoinsRequest)(nil),          // 9: dankfolio.v1.GetAllCoinsRequest
-	(*GetAllCoinsResponse)(nil),         // 10: dankfolio.v1.GetAllCoinsResponse
-	(*SearchRequest)(nil),               // 11: dankfolio.v1.SearchRequest
-	(*SearchResponse)(nil),              // 12: dankfolio.v1.SearchResponse
-	(*GetNewCoinsRequest)(nil),          // 13: dankfolio.v1.GetNewCoinsRequest
-	(*GetTrendingCoinsRequest)(nil),     // 14: dankfolio.v1.GetTrendingCoinsRequest
-	(*GetTopGainersCoinsRequest)(nil),   // 15: dankfolio.v1.GetTopGainersCoinsRequest
-	(*timestamppb.Timestamp)(nil),       // 16: google.protobuf.Timestamp
+	(*Coin)(nil),                        // 0: dankfolio.v1.Coin
+	(*GetAvailableCoinsRequest)(nil),    // 1: dankfolio.v1.GetAvailableCoinsRequest
+	(*GetAvailableCoinsResponse)(nil),   // 2: dankfolio.v1.GetAvailableCoinsResponse
+	(*GetCoinByIDRequest)(nil),          // 3: dankfolio.v1.GetCoinByIDRequest
+	(*GetCoinsByIDsRequest)(nil),        // 4: dankfolio.v1.GetCoinsByIDsRequest
+	(*GetCoinsByIDsResponse)(nil),       // 5: dankfolio.v1.GetCoinsByIDsResponse
+	(*SearchCoinByAddressRequest)(nil),  // 6: dankfolio.v1.SearchCoinByAddressRequest
+	(*SearchCoinByAddressResponse)(nil), // 7: dankfolio.v1.SearchCoinByAddressResponse
+	(*GetAllCoinsRequest)(nil),          // 8: dankfolio.v1.GetAllCoinsRequest
+	(*GetAllCoinsResponse)(nil),         // 9: dankfolio.v1.GetAllCoinsResponse
+	(*SearchRequest)(nil),               // 10: dankfolio.v1.SearchRequest
+	(*SearchResponse)(nil),              // 11: dankfolio.v1.SearchResponse
+	(*GetNewCoinsRequest)(nil),          // 12: dankfolio.v1.GetNewCoinsRequest
+	(*GetTrendingCoinsRequest)(nil),     // 13: dankfolio.v1.GetTrendingCoinsRequest
+	(*GetTopGainersCoinsRequest)(nil),   // 14: dankfolio.v1.GetTopGainersCoinsRequest
+	(*timestamppb.Timestamp)(nil),       // 15: google.protobuf.Timestamp
 }
 var file_dankfolio_v1_coin_proto_depIdxs = []int32{
-	16, // 0: dankfolio.v1.Coin.created_at:type_name -> google.protobuf.Timestamp
-	16, // 1: dankfolio.v1.Coin.last_updated:type_name -> google.protobuf.Timestamp
-	16, // 2: dankfolio.v1.Coin.jupiter_listed_at:type_name -> google.protobuf.Timestamp
-	1,  // 3: dankfolio.v1.GetAvailableCoinsResponse.coins:type_name -> dankfolio.v1.Coin
-	1,  // 4: dankfolio.v1.GetCoinsByIDsResponse.coins:type_name -> dankfolio.v1.Coin
-	1,  // 5: dankfolio.v1.SearchCoinByAddressResponse.coin:type_name -> dankfolio.v1.Coin
-	1,  // 6: dankfolio.v1.GetAllCoinsResponse.coins:type_name -> dankfolio.v1.Coin
-	0,  // 7: dankfolio.v1.SearchRequest.sort_by:type_name -> dankfolio.v1.CoinSortField
-	1,  // 8: dankfolio.v1.SearchResponse.coins:type_name -> dankfolio.v1.Coin
-	2,  // 9: dankfolio.v1.CoinService.GetAvailableCoins:input_type -> dankfolio.v1.GetAvailableCoinsRequest
-	4,  // 10: dankfolio.v1.CoinService.GetCoinByID:input_type -> dankfolio.v1.GetCoinByIDRequest
-	5,  // 11: dankfolio.v1.CoinService.GetCoinsByIDs:input_type -> dankfolio.v1.GetCoinsByIDsRequest
-	7,  // 12: dankfolio.v1.CoinService.SearchCoinByAddress:input_type -> dankfolio.v1.SearchCoinByAddressRequest
-	9,  // 13: dankfolio.v1.CoinService.GetAllCoins:input_type -> dankfolio.v1.GetAllCoinsRequest
-	11, // 14: dankfolio.v1.CoinService.Search:input_type -> dankfolio.v1.SearchRequest
-	13, // 15: dankfolio.v1.CoinService.GetNewCoins:input_type -> dankfolio.v1.GetNewCoinsRequest
-	14, // 16: dankfolio.v1.CoinService.GetTrendingCoins:input_type -> dankfolio.v1.GetTrendingCoinsRequest
-	15, // 17: dankfolio.v1.CoinService.GetTopGainersCoins:input_type -> dankfolio.v1.GetTopGainersCoinsRequest
-	3,  // 18: dankfolio.v1.CoinService.GetAvailableCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse
-	1,  // 19: dankfolio.v1.CoinService.GetCoinByID:output_type -> dankfolio.v1.Coin
-	6,  // 20: dankfolio.v1.CoinService.GetCoinsByIDs:output_type -> dankfolio.v1.GetCoinsByIDsResponse
-	8,  // 21: dankfolio.v1.CoinService.SearchCoinByAddress:output_type -> dankfolio.v1.SearchCoinByAddressResponse
-	10, // 22: dankfolio.v1.CoinService.GetAllCoins:output_type -> dankfolio.v1.GetAllCoinsResponse
-	12, // 23: dankfolio.v1.CoinService.Search:output_type -> dankfolio.v1.SearchResponse
-	3,  // 24: dankfolio.v1.CoinService.GetNewCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse
-	3,  // 25: dankfolio.v1.CoinService.GetTrendingCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse
-	3,  // 26: dankfolio.v1.CoinService.GetTopGainersCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse
-	18, // [18:27] is the sub-list for method output_type
-	9,  // [9:18] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	15, // 0: dankfolio.v1.Coin.created_at:type_name -> google.protobuf.Timestamp
+	15, // 1: dankfolio.v1.Coin.last_updated:type_name -> google.protobuf.Timestamp
+	15, // 2: dankfolio.v1.Coin.jupiter_listed_at:type_name -> google.protobuf.Timestamp
+	0,  // 3: dankfolio.v1.GetAvailableCoinsResponse.coins:type_name -> dankfolio.v1.Coin
+	0,  // 4: dankfolio.v1.GetCoinsByIDsResponse.coins:type_name -> dankfolio.v1.Coin
+	0,  // 5: dankfolio.v1.SearchCoinByAddressResponse.coin:type_name -> dankfolio.v1.Coin
+	0,  // 6: dankfolio.v1.GetAllCoinsResponse.coins:type_name -> dankfolio.v1.Coin
+	0,  // 7: dankfolio.v1.SearchResponse.coins:type_name -> dankfolio.v1.Coin
+	1,  // 8: dankfolio.v1.CoinService.GetAvailableCoins:input_type -> dankfolio.v1.GetAvailableCoinsRequest
+	3,  // 9: dankfolio.v1.CoinService.GetCoinByID:input_type -> dankfolio.v1.GetCoinByIDRequest
+	4,  // 10: dankfolio.v1.CoinService.GetCoinsByIDs:input_type -> dankfolio.v1.GetCoinsByIDsRequest
+	6,  // 11: dankfolio.v1.CoinService.SearchCoinByAddress:input_type -> dankfolio.v1.SearchCoinByAddressRequest
+	8,  // 12: dankfolio.v1.CoinService.GetAllCoins:input_type -> dankfolio.v1.GetAllCoinsRequest
+	10, // 13: dankfolio.v1.CoinService.Search:input_type -> dankfolio.v1.SearchRequest
+	12, // 14: dankfolio.v1.CoinService.GetNewCoins:input_type -> dankfolio.v1.GetNewCoinsRequest
+	13, // 15: dankfolio.v1.CoinService.GetTrendingCoins:input_type -> dankfolio.v1.GetTrendingCoinsRequest
+	14, // 16: dankfolio.v1.CoinService.GetTopGainersCoins:input_type -> dankfolio.v1.GetTopGainersCoinsRequest
+	2,  // 17: dankfolio.v1.CoinService.GetAvailableCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse
+	0,  // 18: dankfolio.v1.CoinService.GetCoinByID:output_type -> dankfolio.v1.Coin
+	5,  // 19: dankfolio.v1.CoinService.GetCoinsByIDs:output_type -> dankfolio.v1.GetCoinsByIDsResponse
+	7,  // 20: dankfolio.v1.CoinService.SearchCoinByAddress:output_type -> dankfolio.v1.SearchCoinByAddressResponse
+	9,  // 21: dankfolio.v1.CoinService.GetAllCoins:output_type -> dankfolio.v1.GetAllCoinsResponse
+	11, // 22: dankfolio.v1.CoinService.Search:output_type -> dankfolio.v1.SearchResponse
+	2,  // 23: dankfolio.v1.CoinService.GetNewCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse
+	2,  // 24: dankfolio.v1.CoinService.GetTrendingCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse
+	2,  // 25: dankfolio.v1.CoinService.GetTopGainersCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse
+	17, // [17:26] is the sub-list for method output_type
+	8,  // [8:17] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_dankfolio_v1_coin_proto_init() }
@@ -1201,6 +1104,7 @@ func file_dankfolio_v1_coin_proto_init() {
 		return
 	}
 	file_dankfolio_v1_coin_proto_msgTypes[0].OneofWrappers = []any{}
+	file_dankfolio_v1_coin_proto_msgTypes[10].OneofWrappers = []any{}
 	file_dankfolio_v1_coin_proto_msgTypes[12].OneofWrappers = []any{}
 	file_dankfolio_v1_coin_proto_msgTypes[13].OneofWrappers = []any{}
 	file_dankfolio_v1_coin_proto_msgTypes[14].OneofWrappers = []any{}
@@ -1209,14 +1113,13 @@ func file_dankfolio_v1_coin_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dankfolio_v1_coin_proto_rawDesc), len(file_dankfolio_v1_coin_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      0,
 			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_dankfolio_v1_coin_proto_goTypes,
 		DependencyIndexes: file_dankfolio_v1_coin_proto_depIdxs,
-		EnumInfos:         file_dankfolio_v1_coin_proto_enumTypes,
 		MessageInfos:      file_dankfolio_v1_coin_proto_msgTypes,
 	}.Build()
 	File_dankfolio_v1_coin_proto = out.File

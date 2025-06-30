@@ -113,25 +113,11 @@ export interface TradeQuoteResponse {
 	tradingFeeSol: string;            // Trading fees in SOL
 }
 
-export type SearchSortByOption =
-	| "name"
-	| "symbol"
-	| "price"
-	| "volume_24h"
-	| "market_cap"
-	| "created_at"
-	| "last_updated"
-	| "jupiter_listed_at"
-	| "price_change_percentage_24h";
-
 export interface SearchRequest {
 	query: string;
-	tags?: string[];
-	minVolume24h?: number;
 	limit?: number;
 	offset?: number;
-	sortBy?: SearchSortByOption;
-	sortDesc?: boolean;
+	sortBy?: string; // "volume24h" or "jupiter_listed_at"
 }
 
 export interface SearchResponse {
