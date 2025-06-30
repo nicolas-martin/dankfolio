@@ -94,7 +94,7 @@ export const formatPrice = (
 
 	// Use dynamic decimal places based on price magnitude
 	const decimals = getDynamicDecimals(price, 8);
-	
+
 	// For very large numbers, use K/M notation
 	if (price >= 1000000) return `${prefix}${(price / 1000000).toFixed(2)}M`;
 	if (price >= 1000 && decimals === 2) {
@@ -104,7 +104,7 @@ export const formatPrice = (
 			maximumFractionDigits: decimals
 		})}`;
 	}
-	
+
 	return `${prefix}${price.toFixed(decimals)}`;
 };
 
@@ -122,6 +122,39 @@ export const formatPercentage = (
 ): string => {
 	if (value === null || value === undefined) return 'N/A';
 	const sign = includeSign && value > 0 ? '+' : '';
+	return `${sign}${value.toFixed(decimals)}%`;
+};
+
+/**
+ * Formats a percentage with K/M suffix for large values
+ * @param value - The percentage value
+ * @param decimals - Number of decimal places  
+ * @param includeSign - Whether to include +/- sign
+ * @returns Formatted percentage string with suffix for large values
+ */
+export const formatCompactPercentage = (
+	value: number | null | undefined,
+	decimals: number = 1,
+	includeSign: boolean = true
+): string => {
+	if (value === null || value === undefined) return 'N/A';
+
+	const sign = includeSign && value > 0 ? '+' : '';
+	const absValue = Math.abs(value);
+
+	// Handle very large percentages with K/M suffix
+	if (absValue >= 100000) {
+		return `${sign}${(value / 1000).toFixed(0)}K%`;
+	}
+	if (absValue >= 10000) {
+		return `${sign}${(value / 1000).toFixed(1)}K%`;
+	}
+	if (absValue >= 1000) {
+		// For values between 1000-9999, show without decimals
+		return `${sign}${value.toFixed(0)}%`;
+	}
+
+	// For smaller values, use regular formatting
 	return `${sign}${value.toFixed(decimals)}%`;
 };
 

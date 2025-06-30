@@ -29,6 +29,21 @@ export const useStyles = () => {
 			changePositive: {
 				color: theme.trend.positive,
 			},
+			columnHeader: {
+				alignItems: 'center',
+				flexDirection: 'row',
+				justifyContent: 'space-between',
+				paddingBottom: theme.spacing.sm,
+				paddingHorizontal: theme.spacing.lg,
+			},
+			columnHeaderText: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: 12,
+				fontWeight: '500',
+				letterSpacing: 0.5,
+				textAlign: 'center',
+				textTransform: 'uppercase',
+			},
 			container: {
 				backgroundColor: theme.colors.surface,
 				borderRadius: theme.borderRadius.lg,
@@ -82,7 +97,7 @@ export const useStyles = () => {
 				minWidth: 0,
 			},
 			percentChange: {
-				fontSize: 17,
+				// fontSize: 17,
 				fontWeight: '600',
 				letterSpacing: 0,
 				textAlign: 'right',
