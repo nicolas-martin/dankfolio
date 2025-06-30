@@ -1,0 +1,61 @@
+appId: com.nicolasmartin.dankfolio
+env:
+    jupSymbol: "jup"
+    solSymbol: "sol"
+---
+- runFlow: ../../common/app-setup.yaml
+
+# Navigate to trade screen via trending coin - default setup is SOL -> JUP
+- tapOn:
+      id: "trending-coin-item-${jupSymbol}"
+- tapOn:
+      id: "trade-button-${jupSymbol}"
+
+# Test 1: 25% percentage button
+- tapOn:
+      id: "amount-percentage-text-25"
+- waitForAnimationToEnd
+- runFlow:
+      file: ../components/trade-token-selector.yaml
+      env:
+          FROM_SYMBOL: ${solSymbol}
+          FROM_AMOUNT: "0.62"
+          FROM_BALANCE: "2.5"
+          FROM_USD_VALUE: "61.53"
+          TO_SYMBOL: ${jupSymbol}
+          TO_AMOUNT: "70.37"
+          TO_BALANCE: "150.00"
+
+# Verify some amount appeared (flexible assertion)
+- assertVisible:
+      id: "from-token-selector-amount-input"
+
+# Test 2: 50% percentage button
+- tapOn:
+      id: "amount-percentage-text-50"
+- waitForAnimationToEnd
+- runFlow:
+      file: ../components/trade-token-selector.yaml
+      env:
+          FROM_SYMBOL: ${solSymbol}
+          FROM_AMOUNT: "1.25"
+          FROM_BALANCE: "2.5"
+          FROM_USD_VALUE: "123.06"
+          TO_SYMBOL: ${jupSymbol}
+          TO_AMOUNT: "140.74"
+          TO_BALANCE: "150.00"
+
+# Test 3: 100% percentage button
+- tapOn:
+      id: "amount-percentage-text-100"
+- waitForAnimationToEnd
+- runFlow:
+      file: ../components/trade-token-selector.yaml
+      env:
+          FROM_SYMBOL: ${solSymbol}
+          FROM_AMOUNT: "2.5"
+          FROM_BALANCE: "2.5"
+          FROM_USD_VALUE: "246.13"
+          TO_SYMBOL: ${jupSymbol}
+          TO_AMOUNT: "281.48"
+          TO_BALANCE: "150.00"

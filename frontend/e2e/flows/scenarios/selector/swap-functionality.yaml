@@ -1,0 +1,37 @@
+appId: com.nicolasmartin.dankfolio
+env:
+    jupSymbol: "jup"
+    solSymbol: "sol"
+---
+- runFlow: ../../common/app-setup.yaml
+
+# Navigate to trade screen via trending coin - default setup is SOL -> JUP
+- tapOn:
+      id: "trending-coin-item-${jupSymbol}"
+- tapOn:
+      id: "trade-button-${jupSymbol}"
+
+# Set up some amount first
+- tapOn:
+      id: "amount-percentage-text-100"
+- waitForAnimationToEnd
+
+# Verify FROM shows SOL before swap
+- assertVisible:
+      text: ".*sol.*"
+
+# Test: Swap button functionality
+- tapOn:
+      id: "swap-coins-button"
+- waitForAnimationToEnd
+
+- runFlow:
+      file: ../components/trade-token-selector.yaml
+      env:
+          FROM_SYMBOL: ${jupSymbol}
+          FROM_AMOUNT: "281.48"
+          FROM_BALANCE: "150.00"
+          FROM_USD_VALUE: "244.89"
+          TO_SYMBOL: ${solSymbol}
+          TO_AMOUNT: "2.5"
+          TO_BALANCE: "2.50"
