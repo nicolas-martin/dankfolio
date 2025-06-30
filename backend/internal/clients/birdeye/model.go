@@ -1,6 +1,35 @@
 package birdeye
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
+
+// BirdEyeTime is a custom time type that handles BirdEye's timestamp format
+type BirdEyeTime struct {
+	time.Time
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface for BirdEyeTime
+func (bt *BirdEyeTime) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	
+	// Try parsing with the BirdEye format (without timezone)
+	t, err := time.Parse("2006-01-02T15:04:05", s)
+	if err != nil {
+		// Fallback to RFC3339 format if the first one fails
+		t, err = time.Parse(time.RFC3339, s)
+		if err != nil {
+			return err
+		}
+	}
+	
+	bt.Time = t
+	return nil
+}
 
 // PriceHistory represents the response from the price history API
 type PriceHistory struct {
@@ -124,12 +153,12 @@ type TokenMetadataMultiple struct {
 
 // TokenMetadataData contains the metadata information for a token
 type TokenMetadataData struct {
-	Address   string   `json:"address"`
-	Name      string   `json:"name"`
-	Symbol    string   `json:"symbol"`
-	Decimals  int      `json:"decimals"`
-	LogoURI   string   `json:"logoURI"`
-	Tags      []string `json:"tags,omitempty"`
+	Address  string   `json:"address"`
+	Name     string   `json:"name"`
+	Symbol   string   `json:"symbol"`
+	Decimals int      `json:"decimals"`
+	LogoURI  string   `json:"logoURI"`
+	Tags     []string `json:"tags,omitempty"`
 }
 
 // TokenMarketDataMultiple represents the response from the bulk market data API
@@ -168,4 +197,35 @@ type TokenTradeData struct {
 	Liquidity              float64 `json:"liquidity"`
 	FDV                    float64 `json:"fdv"`
 	Rank                   int     `json:"rank"`
+}
+
+// NewListingTokensResponse represents the response from the new listing tokens API
+type NewListingTokensResponse struct {
+	Data    NewListingTokensData `json:"data"`
+	Success bool                 `json:"success"`
+}
+
+// NewListingTokensData contains the new listing tokens information
+type NewListingTokensData struct {
+	Items []NewListingToken `json:"items"`
+}
+
+// NewListingToken represents a newly listed token
+type NewListingToken struct {
+	Address          string      `json:"address"`
+	Name             string      `json:"name"`
+	Symbol           string      `json:"symbol"`
+	Decimals         int         `json:"decimals"`
+	LogoURI          string      `json:"logoURI"`
+	Source           string      `json:"source"`
+	LiquidityAddedAt BirdEyeTime `json:"liquidityAddedAt"`
+	Liquidity        float64     `json:"liquidity"`
+}
+
+// NewListingTokensParams contains parameters for the GetNewListingTokens request
+type NewListingTokensParams struct {
+	Limit               int  // Number of results to return (max 20)
+	Offset              int  // Pagination offset
+	MemePlatformEnabled bool // Enable meme platform tokens (pump.fun, etc.)
+	TimeTo              int
 }

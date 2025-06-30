@@ -38,6 +38,74 @@ func (_m *MockClientAPI) EXPECT() *MockClientAPI_Expecter {
 	return &MockClientAPI_Expecter{mock: &_m.Mock}
 }
 
+// GetNewListingTokens provides a mock function for the type MockClientAPI
+func (_mock *MockClientAPI) GetNewListingTokens(ctx context.Context, params birdeye.NewListingTokensParams) (*birdeye.NewListingTokensResponse, error) {
+	ret := _mock.Called(ctx, params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetNewListingTokens")
+	}
+
+	var r0 *birdeye.NewListingTokensResponse
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, birdeye.NewListingTokensParams) (*birdeye.NewListingTokensResponse, error)); ok {
+		return returnFunc(ctx, params)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, birdeye.NewListingTokensParams) *birdeye.NewListingTokensResponse); ok {
+		r0 = returnFunc(ctx, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*birdeye.NewListingTokensResponse)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, birdeye.NewListingTokensParams) error); ok {
+		r1 = returnFunc(ctx, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockClientAPI_GetNewListingTokens_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetNewListingTokens'
+type MockClientAPI_GetNewListingTokens_Call struct {
+	*mock.Call
+}
+
+// GetNewListingTokens is a helper method to define mock.On call
+//   - ctx context.Context
+//   - params birdeye.NewListingTokensParams
+func (_e *MockClientAPI_Expecter) GetNewListingTokens(ctx interface{}, params interface{}) *MockClientAPI_GetNewListingTokens_Call {
+	return &MockClientAPI_GetNewListingTokens_Call{Call: _e.mock.On("GetNewListingTokens", ctx, params)}
+}
+
+func (_c *MockClientAPI_GetNewListingTokens_Call) Run(run func(ctx context.Context, params birdeye.NewListingTokensParams)) *MockClientAPI_GetNewListingTokens_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 birdeye.NewListingTokensParams
+		if args[1] != nil {
+			arg1 = args[1].(birdeye.NewListingTokensParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockClientAPI_GetNewListingTokens_Call) Return(newListingTokensResponse *birdeye.NewListingTokensResponse, err error) *MockClientAPI_GetNewListingTokens_Call {
+	_c.Call.Return(newListingTokensResponse, err)
+	return _c
+}
+
+func (_c *MockClientAPI_GetNewListingTokens_Call) RunAndReturn(run func(ctx context.Context, params birdeye.NewListingTokensParams) (*birdeye.NewListingTokensResponse, error)) *MockClientAPI_GetNewListingTokens_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetPriceHistory provides a mock function for the type MockClientAPI
 func (_mock *MockClientAPI) GetPriceHistory(ctx context.Context, params birdeye.PriceHistoryParams) (*birdeye.PriceHistory, error) {
 	ret := _mock.Called(ctx, params)

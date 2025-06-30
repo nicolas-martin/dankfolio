@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
@@ -39,6 +40,11 @@ type Service struct {
 	apiTracker     telemetry.TelemetryAPI
 	cache          CoinCache
 	naughtyWordSet map[string]struct{}
+
+	// Mutexes to prevent duplicate API calls
+	trendingMutex   sync.Mutex
+	newCoinsMutex   sync.Mutex
+	topGainersMutex sync.Mutex
 }
 
 // NewService creates a new CoinService instance
@@ -249,7 +255,7 @@ func (s *Service) GetCoinByAddress(ctx context.Context, address string) (*model.
 			slog.DebugContext(ctx, "Coin found with fresh market data", slog.String("address", address), slog.String("lastUpdated", coin.LastUpdated))
 			return coin, nil
 		}
-		
+
 		// Market data is stale, refresh with market data only
 		slog.DebugContext(ctx, "Coin found but market data is stale, refreshing", slog.String("address", address), slog.String("lastUpdated", coin.LastUpdated))
 		return s.updateCoinMarketData(ctx, coin)
@@ -280,13 +286,13 @@ func (s *Service) isCoinMarketDataFresh(coin *model.Coin) bool {
 	if coin.LastUpdated == "" {
 		return false
 	}
-	
+
 	lastUpdated, err := time.Parse(time.RFC3339, coin.LastUpdated)
 	if err != nil {
 		slog.Warn("Failed to parse LastUpdated time", "address", coin.Address, "lastUpdated", coin.LastUpdated, "error", err)
 		return false
 	}
-	
+
 	// Consider fresh if updated within last 24 hours
 	return time.Since(lastUpdated) < 24*time.Hour
 }
@@ -629,7 +635,7 @@ func (s *Service) updateCoin(ctx context.Context, coin *model.Coin) (*model.Coin
 	return coin, nil
 }
 
-func (s *Service) FechAndStoreTrendingTokens(ctx context.Context) error {
+func (s *Service) FetchAndStoreTrendingTokens(ctx context.Context) error {
 	return s.store.WithTransaction(ctx, func(txStore db.Store) error {
 		enrichedCoins, err := s.UpdateTrendingTokensFromBirdeye(ctx)
 		if err != nil {
@@ -844,77 +850,84 @@ func (s *Service) GetAllTokens(ctx context.Context) (*jupiter.CoinListResponse, 
 
 func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 	return s.store.WithTransaction(ctx, func(txStore db.Store) error {
-		slog.InfoContext(ctx, "Starting to fetch and store new tokens from Jupiter")
-		limit := 50
+		slog.InfoContext(ctx, "Starting to fetch and store new tokens from Birdeye")
+		limit := 20 // Reasonable limit for new tokens
 		offset := 0
-		// Create params using a pointer to satisfy jupiter.NewCoinsParams if it's defined as a struct
-		// If NewCoinsParams is an alias to a struct pointer, then this is fine.
-		// Based on previous usage, it seems it might be a struct, so ensure it's passed as a pointer if the client expects that.
-		// Assuming jupiter.NewCoinsParams is a struct type:
-		params := jupiter.NewCoinsParams{Limit: limit, Offset: offset}
 
-		// If jupiterClient.GetNewCoins expects *jupiter.NewCoinsParams, then:
-		// params := &jupiter.NewCoinsParams{Limit: limit, Offset: offset}
-		// For this example, I'll assume the client method handles whether it needs a pointer or value.
-		// Let's stick to what was likely working before:
-		// params := &jupiter.NewCoinsParams{Limit: limit, Offset: offset}
-
-		resp, err := s.jupiterClient.GetNewCoins(ctx, &params) // Pass as pointer if that's what GetNewCoins expects
+		// Fetch new listing tokens from Birdeye with meme platform enabled
+		birdeyeTokens, err := s.birdeyeClient.GetNewListingTokens(ctx, birdeye.NewListingTokensParams{
+			Limit:               limit,
+			Offset:              offset,
+			MemePlatformEnabled: true, // Enable meme platforms to get new tokens
+		})
 		if err != nil {
-			slog.ErrorContext(ctx, "Failed to get new coins from Jupiter", slog.Any("error", err))
-			return fmt.Errorf("failed to get new coins from Jupiter: %w", err)
+			slog.ErrorContext(ctx, "Failed to get new listing tokens from Birdeye", slog.Any("error", err))
+			return fmt.Errorf("failed to get new listing tokens from Birdeye: %w", err)
 		}
-		if len(resp) == 0 {
-			slog.InfoContext(ctx, "No new coins found from Jupiter.")
+		
+		if len(birdeyeTokens.Data.Items) == 0 {
+			slog.InfoContext(ctx, "No new listing tokens found from Birdeye.")
 			return nil
 		}
 
-		// Filtered list of Jupiter NewTokenInfo objects
-		var filteredJupiterTokens []*jupiter.NewTokenInfo
-		for _, newToken := range resp {
-			if newToken == nil { // Safety check for pointer
+		// Convert Birdeye new listing tokens to TokenDetails for enrichment
+		tokenDetails := make([]birdeye.TokenDetails, 0, len(birdeyeTokens.Data.Items))
+		for _, newToken := range birdeyeTokens.Data.Items {
+			// Check for naughty words before processing
+			if s.coinContainsNaughtyWord(newToken.Name, newToken.Symbol) {
+				slog.InfoContext(ctx, "Skipping token with inappropriate name", 
+					"address", newToken.Address, "name", newToken.Name)
 				continue
 			}
-			if s.coinContainsNaughtyWord(newToken.Symbol, newToken.Name) {
-				continue
-			}
-			// Add to filtered list if not naughty
-			filteredJupiterTokens = append(filteredJupiterTokens, newToken)
-		}
 
-		if len(filteredJupiterTokens) == 0 {
-			slog.InfoContext(ctx, "No valid (non-naughty name) tokens to process from Jupiter after filtering.")
-			return nil
-		}
-
-		// Convert Jupiter new coins (filtered) to BirdEye token details for enrichment
-		tokenDetails := make([]birdeye.TokenDetails, 0, len(filteredJupiterTokens))
-		for _, jupiterToken := range filteredJupiterTokens {
-			// newToken is already checked for nil above, and here jupiterToken is from filteredJupiterTokens
+			// Convert NewListingToken to TokenDetails
 			tokenDetail := birdeye.TokenDetails{
-				Address:  jupiterToken.Mint, // Assuming Mint is the field for address
-				Name:     jupiterToken.Name,
-				Symbol:   jupiterToken.Symbol,
-				LogoURI:  jupiterToken.LogoURI,
-				Decimals: jupiterToken.Decimals,
-				// Note: CreatedAt from Jupiter's NewCoin (e.g., jupiterToken.CreatedAt) is not directly part of
-				// birdeye.TokenDetails. It will be handled during model.Coin creation or enrichment if needed.
+				Address:   newToken.Address,
+				Name:      newToken.Name,
+				Symbol:    newToken.Symbol,
+				LogoURI:   newToken.LogoURI,
+				Decimals:  newToken.Decimals,
+				Liquidity: newToken.Liquidity, // Direct field, not pointer
 			}
+
+			// Add market data if available (these are pointers)
+			if newToken.Price != nil {
+				tokenDetail.Price = *newToken.Price
+			}
+			if newToken.MarketCap != nil {
+				tokenDetail.MarketCap = *newToken.MarketCap
+			}
+			if newToken.Volume24hUSD != nil {
+				tokenDetail.Volume24hUSD = *newToken.Volume24hUSD
+			}
+			if newToken.Volume24hChangePercent != nil {
+				tokenDetail.Volume24hChangePercent = *newToken.Volume24hChangePercent
+			}
+			if newToken.Price24hChangePercent != nil {
+				tokenDetail.Price24hChangePercent = *newToken.Price24hChangePercent
+			}
+			if newToken.FDV != nil {
+				tokenDetail.FDV = *newToken.FDV
+			}
+			if newToken.Rank != nil {
+				tokenDetail.Rank = *newToken.Rank
+			}
+			if newToken.Tags != nil {
+				tokenDetail.Tags = newToken.Tags
+			}
+
 			tokenDetails = append(tokenDetails, tokenDetail)
 		}
 
 		if len(tokenDetails) == 0 {
-			// This case should ideally not be hit if filteredJupiterTokens was not empty,
-			// but as a safeguard:
-			slog.InfoContext(ctx, "No Birdeye token details to process after mapping from Jupiter tokens.")
+			slog.InfoContext(ctx, "No valid tokens to process after filtering inappropriate content.")
 			return nil
 		}
 
 		// Enrich the tokens using the existing enrichment process
-		// This process already has naughty word checks for name (redundant here but harmless) and description.
 		enrichedCoins, err := s.processBirdeyeTokens(ctx, tokenDetails)
 		if err != nil {
-			return fmt.Errorf("failed to enrich new tokens from Jupiter source: %w", err)
+			return fmt.Errorf("failed to enrich new tokens from Birdeye source: %w", err)
 		}
 
 		// Get existing coins with "new-coin" tag to clear them
@@ -955,7 +968,7 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 
 		// Store/update enriched new coins
 		if len(enrichedCoins) > 0 {
-			slog.DebugContext(ctx, "Storing/updating enriched new coins from Jupiter source", slog.Int("count", len(enrichedCoins)))
+			slog.DebugContext(ctx, "Storing/updating enriched new coins from Birdeye source", slog.Int("count", len(enrichedCoins)))
 			var storeErrors []string
 			for _, coin := range enrichedCoins { // Iterate over copies
 				currentCoin := coin // Create a new instance or copy
@@ -969,29 +982,27 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 				if getErr == nil && existingCoin != nil {
 					currentCoin.ID = existingCoin.ID // Preserve existing primary key
 					if errUpdate := txStore.Coins().Update(ctx, &currentCoin); errUpdate != nil {
-						slog.WarnContext(ctx, "Failed to update new coin (Jupiter source)", slog.String("address", currentCoin.Address), slog.Any("error", errUpdate))
+						slog.WarnContext(ctx, "Failed to update new coin (Birdeye source)", slog.String("address", currentCoin.Address), slog.Any("error", errUpdate))
 						storeErrors = append(storeErrors, errUpdate.Error())
 					}
 				} else if errors.Is(getErr, db.ErrNotFound) {
 					if errCreate := txStore.Coins().Create(ctx, &currentCoin); errCreate != nil {
-						slog.WarnContext(ctx, "Failed to create new coin (Jupiter source)", slog.String("address", currentCoin.Address), slog.Any("error", errCreate))
+						slog.WarnContext(ctx, "Failed to create new coin (Birdeye source)", slog.String("address", currentCoin.Address), slog.Any("error", errCreate))
 						storeErrors = append(storeErrors, errCreate.Error())
 					}
 				} else if getErr != nil {
-					slog.WarnContext(ctx, "Error checking coin before upsert during new coins refresh (Jupiter source)", slog.String("address", currentCoin.Address), slog.Any("error", getErr))
+					slog.WarnContext(ctx, "Error checking coin before upsert during new coins refresh (Birdeye source)", slog.String("address", currentCoin.Address), slog.Any("error", getErr))
 					storeErrors = append(storeErrors, getErr.Error())
 				}
 			}
 			if len(storeErrors) > 0 {
-				slog.ErrorContext(ctx, "Encountered errors during storing new coins (Jupiter source) in transaction", slog.Int("error_count", len(storeErrors)))
-				// Potentially return an aggregated error or the first one
-				// return fmt.Errorf("encountered %d errors while storing new coins from Jupiter: %s", len(storeErrors), storeErrors[0])
+				slog.ErrorContext(ctx, "Encountered errors during storing new coins (Birdeye source) in transaction", slog.Int("error_count", len(storeErrors)))
 			}
 		} else {
-			slog.InfoContext(ctx, "No new coins (Jupiter source) to store from this refresh after enrichment/filtering.")
+			slog.InfoContext(ctx, "No new coins (Birdeye source) to store from this refresh after enrichment/filtering.")
 		}
 
-		slog.InfoContext(ctx, "New coins store refresh (Jupiter source) transaction complete", slog.Int("enriched_coins_processed_count", len(enrichedCoins)))
+		slog.InfoContext(ctx, "New coins store refresh (Birdeye source) transaction complete", slog.Int("enriched_coins_processed_count", len(enrichedCoins)))
 		return nil
 	})
 }
@@ -1030,25 +1041,34 @@ func (s *Service) SearchCoins(ctx context.Context, query string, tags []string, 
 	return coins, int32(len(coins)), nil
 }
 
-/*
-// Config struct might be defined in a model or config package.
-type Config struct {
-    TrendingFetchInterval time.Duration `env:"COIN_TRENDING_FETCH_INTERVAL" envDefault:"5m"`
-    NewCoinsFetchInterval time.Duration `env:"COIN_NEW_COINS_FETCH_INTERVAL" envDefault:"1h"`
-}
-*/
-
 // --- Added RPC Methods ---
 const (
 	defaultCacheTTL = 5 * time.Minute
+	staleCacheTTL   = 30 * time.Second // Shorter TTL for stale/empty data
 )
 
-// GetNewCoins implements the RPC method with domain types.
-func (s *Service) GetNewCoins(ctx context.Context, limit, offset int32) ([]model.Coin, int32, error) {
-	if cachedCoin, found := s.cache.Get(cacheKey_new); found {
-		return cachedCoin, int32(len(cachedCoin)), nil
+// coinListFunc is a function type for listing coins from the database
+type coinListFunc func(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error)
+
+// coinFetchFunc is a function type for fetching coins from external APIs
+type coinFetchFunc func(ctx context.Context) error
+
+// getCoinsCachedWithFallback is a standardized helper for fetching coins with cache, DB, and API fallback
+func (s *Service) getCoinsCachedWithFallback(
+	ctx context.Context,
+	cacheKey string,
+	listFunc coinListFunc,
+	fetchFunc coinFetchFunc,
+	mutex *sync.Mutex,
+	cacheTTL time.Duration,
+	limit, offset int32,
+) ([]model.Coin, int32, error) {
+	// Step 1: Check cache
+	if cachedCoins, found := s.cache.Get(cacheKey); found {
+		return cachedCoins, int32(len(cachedCoins)), nil
 	}
 
+	// Step 2: Prepare list options
 	listOpts := db.ListOptions{}
 	if limit > 0 {
 		limitInt := int(limit)
@@ -1059,29 +1079,105 @@ func (s *Service) GetNewCoins(ctx context.Context, limit, offset int32) ([]model
 		listOpts.Offset = &offsetInt
 	}
 
-	existingNewCoins, _, err := s.store.ListNewestCoins(ctx, listOpts)
+	// Step 3: Try to get from database
+	coins, totalCount, err := listFunc(ctx, listOpts)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to check for existing new coins", "error", err)
-		// Continue with the normal flow even if check fails
-	} else if len(existingNewCoins) == 0 {
-		// No new coins exist, fetch them immediately
-		slog.InfoContext(ctx, "No new coins found in database, fetching immediately...")
-		if fetchErr := s.FetchAndStoreNewTokens(ctx); fetchErr != nil {
-			slog.ErrorContext(ctx, "Failed to fetch new coins immediately", "error", fetchErr)
-			// Don't return error, continue with empty results
-		} else {
-			slog.InfoContext(ctx, "Successfully fetched new coins immediately")
+		slog.ErrorContext(ctx, "Failed to list coins from database",
+			"cacheKey", cacheKey, "error", err)
+		return nil, 0, fmt.Errorf("failed to list coins: %w", err)
+	}
+
+	// Step 4: Check if we need to fetch fresh data
+	needsFetch := false
+	if len(coins) == 0 {
+		needsFetch = true
+		slog.InfoContext(ctx, "No coins found in database, will fetch from API",
+			"cacheKey", cacheKey)
+	} else if s.isDataStale(coins) {
+		needsFetch = true
+		slog.InfoContext(ctx, "Coins data is stale, will refresh from API",
+			"cacheKey", cacheKey)
+	}
+
+	// Step 5: Fetch from API if needed (with mutex to prevent duplicates)
+	if needsFetch {
+		mutex.Lock()
+		// Double-check after acquiring lock (another request might have fetched already)
+		if cachedCoins, found := s.cache.Get(cacheKey); found {
+			mutex.Unlock()
+			return cachedCoins, int32(len(cachedCoins)), nil
+		}
+
+		slog.InfoContext(ctx, "Fetching fresh data from API", "cacheKey", cacheKey)
+		fetchErr := fetchFunc(ctx)
+		mutex.Unlock()
+
+		if fetchErr != nil {
+			slog.ErrorContext(ctx, "Failed to fetch data from API",
+				"cacheKey", cacheKey, "error", fetchErr)
+			// If we have stale data, return it with a short cache TTL
+			if len(coins) > 0 {
+				s.cache.Set(cacheKey, coins, staleCacheTTL)
+				return coins, totalCount, nil
+			}
+			// No data at all, return error
+			return nil, 0, fmt.Errorf("failed to fetch data and no cached data available: %w", fetchErr)
+		}
+
+		// Re-query database after successful fetch
+		coins, totalCount, err = listFunc(ctx, listOpts)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to list coins after API fetch",
+				"cacheKey", cacheKey, "error", err)
+			return nil, 0, fmt.Errorf("failed to list coins after fetch: %w", err)
 		}
 	}
 
-	modelCoins, totalCount, err := s.store.ListNewestCoins(ctx, listOpts)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to list newest coins from store", "error", err)
-		return nil, 0, fmt.Errorf("failed to list newest coins: %w", err)
+	// Step 6: Cache the results
+	if len(coins) > 0 {
+		s.cache.Set(cacheKey, coins, cacheTTL)
+	} else {
+		// Use shorter TTL for empty results
+		s.cache.Set(cacheKey, coins, staleCacheTTL)
 	}
-	s.cache.Set(cacheKey_new, modelCoins, s.config.NewCoinsFetchInterval)
 
-	return modelCoins, totalCount, nil
+	return coins, totalCount, nil
+}
+
+// isDataStale checks if any coin in the list has stale data (older than 1 hour)
+func (s *Service) isDataStale(coins []model.Coin) bool {
+	if len(coins) == 0 {
+		return true
+	}
+
+	// Check the first coin's last updated time as a proxy for the whole list
+	if coins[0].LastUpdated == "" {
+		return true
+	}
+
+	lastUpdated, err := time.Parse(time.RFC3339, coins[0].LastUpdated)
+	if err != nil {
+		slog.Warn("Failed to parse LastUpdated time for staleness check",
+			"lastUpdated", coins[0].LastUpdated, "error", err)
+		return true
+	}
+
+	// Consider data stale if older than 1 hour
+	return time.Since(lastUpdated) > time.Hour
+}
+
+// GetNewCoins implements the RPC method with domain types.
+func (s *Service) GetNewCoins(ctx context.Context, limit, offset int32) ([]model.Coin, int32, error) {
+	return s.getCoinsCachedWithFallback(
+		ctx,
+		cacheKey_new,
+		s.store.ListNewestCoins,
+		s.FetchAndStoreNewTokens,
+		&s.newCoinsMutex,
+		s.config.NewCoinsFetchInterval,
+		limit,
+		offset,
+	)
 }
 
 // GetStore returns the database store (used by banned words manager)
@@ -1157,87 +1253,30 @@ func (s *Service) containsNaughtyWord(text string) bool {
 
 // GetTrendingCoinsRPC implements the RPC method with domain types (renamed to avoid conflict).
 func (s *Service) GetTrendingCoinsRPC(ctx context.Context, limit, offset int32) ([]model.Coin, int32, error) {
-	if cachedCoin, found := s.cache.Get(cacheKey_trending); found {
-		return cachedCoin, int32(len(cachedCoin)), nil
-	}
-
-	listOpts := db.ListOptions{}
-	if limit > 0 {
-		limitInt := int(limit)
-		listOpts.Limit = &limitInt
-	}
-	if offset > 0 {
-		offsetInt := int(offset)
-		listOpts.Offset = &offsetInt
-	}
-
-	// First, check if we have any existing trending coins
-	existingTrendingCoins, _, err := s.store.ListTrendingCoins(ctx, listOpts)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to check for existing trending coins", "error", err)
-		// Continue with the normal flow even if check fails
-	} else if len(existingTrendingCoins) == 0 {
-		// No trending coins exist, fetch them immediately
-		slog.InfoContext(ctx, "No trending coins found in database, fetching immediately...")
-		if fetchErr := s.FechAndStoreTrendingTokens(ctx); fetchErr != nil {
-			slog.ErrorContext(ctx, "Failed to fetch trending coins immediately", "error", fetchErr)
-			// Don't return error, continue with empty results
-		} else {
-			slog.InfoContext(ctx, "Successfully fetched trending coins immediately")
-		}
-	}
-
-	modelCoins, totalCount, err := s.store.ListTrendingCoins(ctx, listOpts)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to list trending coins from store", "error", err)
-		return nil, 0, fmt.Errorf("failed to list trending coins: %w", err)
-	}
-	s.cache.Set(cacheKey_trending, modelCoins, s.config.TrendingFetchInterval)
-
-	return modelCoins, totalCount, nil
+	return s.getCoinsCachedWithFallback(
+		ctx,
+		cacheKey_trending,
+		s.store.ListTrendingCoins,
+		s.FetchAndStoreTrendingTokens,
+		&s.trendingMutex,
+		s.config.TrendingFetchInterval,
+		limit,
+		offset,
+	)
 }
 
 // GetTopGainersCoins implements the RPC method with domain types.
 func (s *Service) GetTopGainersCoins(ctx context.Context, limit, offset int32) ([]model.Coin, int32, error) {
-	if cachedCoin, found := s.cache.Get(cacheKey_top); found {
-		return cachedCoin, int32(len(cachedCoin)), nil
-	}
-
-	listOpts := db.ListOptions{}
-	if limit > 0 {
-		limitInt := int(limit)
-		listOpts.Limit = &limitInt
-	}
-	if offset > 0 {
-		offsetInt := int(offset)
-		listOpts.Offset = &offsetInt
-	}
-
-	// First, check if we have any existing top gainers
-	existingTopGainers, _, err := s.store.ListTopGainersCoins(ctx, listOpts)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to check for existing top gainers", "error", err)
-		// Continue with the normal flow even if check fails
-	} else if len(existingTopGainers) == 0 {
-		// No top gainers exist, fetch them immediately
-		slog.InfoContext(ctx, "No top gainers found in database, fetching immediately...")
-		if fetchErr := s.FetchAndStoreTopGainersTokens(ctx); fetchErr != nil {
-			slog.ErrorContext(ctx, "Failed to fetch top gainers immediately", "error", fetchErr)
-			// Don't return error, continue with empty results
-		} else {
-			slog.InfoContext(ctx, "Successfully fetched top gainers immediately")
-		}
-	}
-
-	modelCoins, totalCount, err := s.store.ListTopGainersCoins(ctx, listOpts)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to list top gainers coins from store", "error", err)
-		return nil, 0, fmt.Errorf("failed to list top gainers coins: %w", err)
-	}
-
-	s.cache.Set(cacheKey_top, modelCoins, s.config.TopGainersFetchInterval)
-
-	return modelCoins, totalCount, nil
+	return s.getCoinsCachedWithFallback(
+		ctx,
+		cacheKey_top,
+		s.store.ListTopGainersCoins,
+		s.FetchAndStoreTopGainersTokens,
+		&s.topGainersMutex,
+		s.config.TopGainersFetchInterval,
+		limit,
+		offset,
+	)
 }
 
 // GetCoinsByAddresses retrieves multiple coins by their addresses using batch operations when possible
@@ -1284,7 +1323,7 @@ func (s *Service) GetCoinsByAddresses(ctx context.Context, addresses []string) (
 		}
 	}
 
-	slog.InfoContext(ctx, "Coin retrieval status", 
+	slog.InfoContext(ctx, "Coin retrieval status",
 		"total_requested", len(validAddresses),
 		"found_in_db", len(existingCoins),
 		"need_to_fetch", len(addressesToFetch))

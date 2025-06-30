@@ -9,4 +9,5 @@ type ClientAPI interface {
 	GetTokenOverview(ctx context.Context, address string) (*TokenOverview, error)
 	GetTokensOverviewBatch(ctx context.Context, addresses []string) ([]TokenOverviewData, error)
 	GetTokensTradeDataBatch(ctx context.Context, addresses []string) ([]TokenTradeData, error)
+	GetNewListingTokens(ctx context.Context, params NewListingTokensParams) (*NewListingTokensResponse, error)
 }
