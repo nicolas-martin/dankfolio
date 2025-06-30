@@ -76,7 +76,7 @@ const TopTrendingGainers: React.FC<TopTrendingGainersProps> = ({
 					{isLoading && topTrendingGainers.length === 0 ? (
 						<ShimmerPlaceholder style={styles.titleShimmer} />
 					) : (
-						<Text style={styles.title}>Trending Gainers</Text>
+						<Text style={styles.title}>24h Volume</Text>
 					)}
 				</View>
 				<View style={styles.scrollContent}>

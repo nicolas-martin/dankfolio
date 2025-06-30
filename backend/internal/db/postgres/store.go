@@ -114,7 +114,6 @@ func (s *Store) Trades() db.Repository[model.Trade] {
 	return s.tradesRepo
 }
 
-
 func (s *Store) ApiStats() db.Repository[model.ApiStat] { // Changed return type
 	return s.apiStatsRepo
 }
@@ -203,7 +202,7 @@ func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, mi
 	if err := tx.Find(&schemaCoins).Error; err != nil {
 		return nil, fmt.Errorf("failed to search coins: %w", err)
 	}
-	
+
 	return mapSchemaCoinsToModel(schemaCoins), nil
 }
 
@@ -325,4 +324,3 @@ func (s *Store) ListTopGainersCoins(ctx context.Context, opts db.ListOptions) ([
 
 	return coins, int32(len(coins)), nil
 }
-
