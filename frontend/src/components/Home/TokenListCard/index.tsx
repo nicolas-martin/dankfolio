@@ -5,7 +5,7 @@ import { FlatList } from 'react-native';
 import CoinInfoBlock from '@components/Common/CoinInfoBlock';
 import ShimmerPlaceholder from '@/components/Common/ShimmerPlaceholder';
 import SparklineChart from '@/components/Chart/SparklineChart';
-import { formatPercentage, formatTokenBalance, formatPrice } from '@/utils/numberFormat';
+import { formatTokenBalance, formatPrice, formatCompactPercentage } from '@/utils/numberFormat';
 import { TokenListCardProps, TokenListItemProps, ExtendedCoin } from './tokenlistcard_types';
 import { useStyles } from './tokenlistcard_styles';
 import { handleTokenPress } from './tokenlistcard_scripts';
@@ -96,7 +96,7 @@ const TokenListItem: React.FC<TokenListItemProps> = React.memo(({
 								>
 									{formatPrice((coin as ExtendedCoin).value || 0, true)}
 								</Text>
-							</>  
+							</>
 						) : (
 							<>
 								{coin.price24hChangePercent !== undefined ? (
@@ -114,7 +114,7 @@ const TokenListItem: React.FC<TokenListItemProps> = React.memo(({
 										accessible={true}
 										accessibilityRole="text"
 									>
-										{formatPercentage(coin.price24hChangePercent, 1, true)}
+										{formatCompactPercentage(coin.price24hChangePercent, 1, true)}
 									</Text>
 								) : (
 									<Text
@@ -124,7 +124,7 @@ const TokenListItem: React.FC<TokenListItemProps> = React.memo(({
 										--%
 									</Text>
 								)}
-							</>  
+							</>
 						)}
 					</View>
 				</View>
@@ -183,7 +183,7 @@ const TokenListCard: React.FC<TokenListCardProps> = ({
 		);
 	}, [coins.length, priceHistories, isLoadingPriceHistories, onCoinPress, showSparkline, showBalanceAndValue, testIdPrefix]);
 
-	const containerStyle = noHorizontalMargin 
+	const containerStyle = noHorizontalMargin
 		? [styles.container, { marginHorizontal: 0 }]
 		: styles.container;
 
@@ -192,6 +192,21 @@ const TokenListCard: React.FC<TokenListCardProps> = ({
 			<View style={styles.header}>
 				<Text style={styles.title}>{title}</Text>
 			</View>
+			{!showBalanceAndValue && (
+				<View style={styles.columnHeader}>
+					<View style={styles.leftSection}>
+						<Text style={styles.columnHeaderText}>Token</Text>
+					</View>
+					{showSparkline && (
+						<View style={styles.sparklineContainer}>
+							<Text style={styles.columnHeaderText}>4H Chart</Text>
+						</View>
+					)}
+					<View style={styles.rightSection}>
+						<Text style={styles.columnHeaderText}>24h Change</Text>
+					</View>
+				</View>
+			)}
 			<View style={styles.listContainer}>
 				<FlatList
 					data={coins}

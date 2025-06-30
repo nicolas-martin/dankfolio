@@ -1,9 +1,9 @@
 import React, { useCallback, useMemo } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { Text } from 'react-native-paper';
-import { formatPercentage } from '@/utils/numberFormat';
+import { formatCompactPercentage } from '@/utils/numberFormat';
 import { TrendUpIcon, TrendDownIcon } from '@/components/Common/Icons';
-import CoinInfoBlock from '@/components/Common/CoinInfoBlock';
+import CachedImage from '@/components/Common/CachedImage';
 import { TrendingGainerCardProps } from './types';
 import { useStyles } from './styles';
 
@@ -40,14 +40,26 @@ const TrendingGainerCard: React.FC<TrendingGainerCardProps> = ({
 			accessibilityRole="button"
 			activeOpacity={0.7}
 		>
-			<CoinInfoBlock
-				iconUri={coin.resolvedIconUrl}
-				iconSize={40}
-				primaryText={coin.symbol}
-				primaryTextStyle={styles.symbol}
-				iconStyle={styles.iconContainer}
-				testIdPrefix={testIdPrefix}
-			/>
+			<View style={styles.iconContainer}>
+				<CachedImage
+					uri={coin.resolvedIconUrl}
+					size={36}
+					showLoadingIndicator={true}
+					borderRadius={18}
+					testID={`${testIdPrefix}-icon-${coin.symbol.toLowerCase()}`}
+				/>
+			</View>
+			
+			<Text
+				style={styles.symbol}
+				numberOfLines={1}
+				ellipsizeMode="tail"
+				testID={`${testIdPrefix}-symbol-${coin.symbol.toLowerCase()}`}
+				accessible={true}
+				accessibilityRole="text"
+			>
+				{coin.symbol}
+			</Text>
 			
 			{changeValue !== undefined && (
 				<View style={styles.changeContainer}>
@@ -66,11 +78,12 @@ const TrendingGainerCard: React.FC<TrendingGainerCardProps> = ({
 					<Text
 						style={changeTextStyle}
 						numberOfLines={1}
+						ellipsizeMode="tail"
 						testID={`${testIdPrefix}-change-${coin.symbol.toLowerCase()}`}
 						accessible={true}
 						accessibilityRole="text"
 					>
-						{formatPercentage(changeValue, 1, true)}
+						{formatCompactPercentage(changeValue, 1, true)}
 					</Text>
 				</View>
 			)}

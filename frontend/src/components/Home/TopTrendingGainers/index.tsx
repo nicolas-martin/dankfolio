@@ -10,7 +10,7 @@ import TrendingGainerPlaceholderCard from '@/components/Home/TrendingGainerCard/
 import { useStyles } from './TopTrendingGainers.styles';
 import { Coin } from '@/types';
 
-const CARD_WIDTH = 120;
+const CARD_WIDTH = 110;
 const CARD_MARGIN = 12;
 
 type TopTrendingGainersNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CoinDetail'>;
