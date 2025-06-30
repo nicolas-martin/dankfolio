@@ -22,7 +22,6 @@ type Store interface {
 	// Repository operations
 	Coins() Repository[model.Coin]
 	Trades() Repository[model.Trade]
-	RawCoins() Repository[model.RawCoin]
 	Wallet() Repository[model.Wallet]
 	// ApiStats() ApiStatsRepository // Changed to use generic repository
 	ApiStats() Repository[model.ApiStat]         // model.ApiStat will be used as T in Repository[T Entity]

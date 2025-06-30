@@ -399,52 +399,6 @@ func (_c *MockStore_NaughtyWords_Call) RunAndReturn(run func() db.Repository[mod
 	return _c
 }
 
-// RawCoins provides a mock function for the type MockStore
-func (_mock *MockStore) RawCoins() db.Repository[model.RawCoin] {
-	ret := _mock.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for RawCoins")
-	}
-
-	var r0 db.Repository[model.RawCoin]
-	if returnFunc, ok := ret.Get(0).(func() db.Repository[model.RawCoin]); ok {
-		r0 = returnFunc()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(db.Repository[model.RawCoin])
-		}
-	}
-	return r0
-}
-
-// MockStore_RawCoins_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RawCoins'
-type MockStore_RawCoins_Call struct {
-	*mock.Call
-}
-
-// RawCoins is a helper method to define mock.On call
-func (_e *MockStore_Expecter) RawCoins() *MockStore_RawCoins_Call {
-	return &MockStore_RawCoins_Call{Call: _e.mock.On("RawCoins")}
-}
-
-func (_c *MockStore_RawCoins_Call) Run(run func()) *MockStore_RawCoins_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *MockStore_RawCoins_Call) Return(repository db.Repository[model.RawCoin]) *MockStore_RawCoins_Call {
-	_c.Call.Return(repository)
-	return _c
-}
-
-func (_c *MockStore_RawCoins_Call) RunAndReturn(run func() db.Repository[model.RawCoin]) *MockStore_RawCoins_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // SearchCoins provides a mock function for the type MockStore
 func (_mock *MockStore) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit int32, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error) {
 	ret := _mock.Called(ctx, query, tags, minVolume24h, limit, offset, sortBy, sortDesc)

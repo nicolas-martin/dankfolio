@@ -149,20 +149,8 @@ func (s *coinServiceHandler) GetAllCoins(
 	ctx context.Context,
 	req *connect.Request[pb.GetAllCoinsRequest],
 ) (*connect.Response[pb.GetAllCoinsResponse], error) {
-	coins, err := s.coinService.GetAllTokens(ctx)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get coins: %w", err))
-	}
-
-	pbCoins := make([]*pb.Coin, len(coins.Coins))
-	for i, coin := range coins.Coins {
-		pbCoins[i] = convertModelCoinToPbCoin(coin.ToModelCoin())
-	}
-
-	res := connect.NewResponse(&pb.GetAllCoinsResponse{
-		Coins: pbCoins,
-	})
-	return res, nil
+	// This endpoint is deprecated - use GetCoins with pagination instead
+	return nil, connect.NewError(connect.CodeUnimplemented, fmt.Errorf("GetAllCoins is deprecated, use GetCoins with pagination"))
 }
 
 // Search allows searching coins by various criteria

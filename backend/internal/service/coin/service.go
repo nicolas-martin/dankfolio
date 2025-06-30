@@ -265,18 +265,7 @@ func (s *Service) GetCoinByAddress(ctx context.Context, address string) (*model.
 		return nil, fmt.Errorf("error fetching coin %s from database: %w", address, err)
 	}
 
-	// Step 2: Check raw_coins table for metadata
-	rawCoin, rawErr := s.store.RawCoins().GetByField(ctx, "address", address)
-	if rawErr == nil {
-		slog.InfoContext(ctx, "Coin found in raw_coins table, enriching with market data", slog.String("address", address))
-		return s.enrichRawCoinWithMarketData(ctx, rawCoin)
-	}
-
-	if !errors.Is(rawErr, db.ErrNotFound) {
-		return nil, fmt.Errorf("error fetching coin %s from raw_coins: %w", address, rawErr)
-	}
-
-	// Step 3: Fetch completely new coin from Birdeye
+	// Step 2: Fetch completely new coin from Birdeye
 	slog.InfoContext(ctx, "Coin not found in database, fetching from Birdeye", slog.String("address", address))
 	return s.fetchNewCoin(ctx, address)
 }
@@ -334,60 +323,6 @@ func (s *Service) updateCoinMarketData(ctx context.Context, coin *model.Coin) (*
 	return coin, nil
 }
 
-// enrichRawCoinWithMarketData creates a full coin from raw coin metadata + fresh market data
-func (s *Service) enrichRawCoinWithMarketData(ctx context.Context, rawCoin *model.RawCoin) (*model.Coin, error) {
-	// Get trade data from Birdeye
-	tradeData, err := s.birdeyeClient.GetTokensTradeDataBatch(ctx, []string{rawCoin.Address})
-	if err != nil {
-		slog.WarnContext(ctx, "Failed to fetch trade data for raw coin", slog.String("address", rawCoin.Address), slog.Any("error", err))
-		// Create coin with zero trade data if Birdeye fails
-		tradeData = []birdeye.TokenTradeData{{Address: rawCoin.Address}}
-	}
-
-	// Check for naughty words
-	if s.coinContainsNaughtyWord(rawCoin.Name, rawCoin.Symbol) {
-		return nil, fmt.Errorf("token contains inappropriate content: %s", rawCoin.Name)
-	}
-
-	// Create coin from raw coin metadata
-	coin := &model.Coin{
-		Address:     rawCoin.Address,
-		Name:        rawCoin.Name,
-		Symbol:      rawCoin.Symbol,
-		Decimals:    rawCoin.Decimals,
-		LogoURI:     rawCoin.LogoUrl,
-		Tags:        []string{}, // Raw coins don't have tags
-		CreatedAt:   time.Now().Format(time.RFC3339),
-		LastUpdated: time.Now().Format(time.RFC3339),
-	}
-
-	// Add trade data if available
-	if len(tradeData) > 0 {
-		data := tradeData[0]
-		coin.Price = data.Price
-		coin.Price24hChangePercent = data.Price24hChangePercent
-		coin.Marketcap = data.MarketCap
-		coin.Volume24hUSD = data.Volume24hUSD
-		coin.Volume24hChangePercent = data.Volume24hChangePercent
-		coin.Liquidity = data.Liquidity
-		coin.FDV = data.FDV
-		coin.Rank = data.Rank
-	}
-
-	// Save to coins table
-	if createErr := s.store.Coins().Create(ctx, coin); createErr != nil {
-		slog.WarnContext(ctx, "Failed to create enriched coin from raw coin", slog.String("address", coin.Address), slog.Any("error", createErr))
-	}
-
-	// Delete from raw_coins table
-	rawCoinPKIDStr := strconv.FormatUint(rawCoin.ID, 10)
-	if delErr := s.store.RawCoins().Delete(ctx, rawCoinPKIDStr); delErr != nil {
-		slog.WarnContext(ctx, "Failed to delete processed raw coin", slog.String("address", rawCoin.Address), slog.Any("error", delErr))
-	}
-
-	slog.InfoContext(ctx, "Successfully enriched raw coin with trade data", slog.String("address", coin.Address))
-	return coin, nil
-}
 
 // fetchNewCoin fetches a completely new coin from Birdeye (metadata + market data)
 func (s *Service) fetchNewCoin(ctx context.Context, address string) (*model.Coin, error) {
@@ -467,50 +402,6 @@ func (s *Service) fetchNewCoin(ctx context.Context, address string) (*model.Coin
 	return coin, nil
 }
 
-func (s *Service) enrichRawCoinAndSave(ctx context.Context, rawCoin *model.RawCoin) (*model.Coin, error) {
-	slog.InfoContext(ctx, "Starting enrichment from raw_coin data", slog.String("address", rawCoin.Address), slog.String("rawCoinSymbol", rawCoin.Symbol))
-	initialData := &birdeye.TokenDetails{
-		Address:  rawCoin.Address,
-		Name:     rawCoin.Name,
-		Symbol:   rawCoin.Symbol,
-		LogoURI:  rawCoin.LogoUrl,
-		Decimals: rawCoin.Decimals,
-	}
-
-	enrichedCoin, err := s.EnrichCoinData(ctx, initialData)
-	if err != nil {
-		slog.ErrorContext(ctx, "Enrichment from raw_coin failed", slog.String("address", rawCoin.Address), slog.Any("error", err))
-		return nil, fmt.Errorf("failed to enrich raw_coin %s: %w", rawCoin.Address, err)
-	}
-
-	existingCoin, getErr := s.store.Coins().GetByField(ctx, "address", enrichedCoin.Address)
-	if getErr == nil && existingCoin != nil {
-		enrichedCoin.ID = existingCoin.ID
-		if dbErr := s.store.Coins().Update(ctx, enrichedCoin); dbErr != nil {
-			slog.WarnContext(ctx, "Failed to update enriched coin (from raw) in store", slog.String("address", enrichedCoin.Address), slog.Any("error", dbErr))
-		} else {
-			slog.InfoContext(ctx, "Successfully updated coin in 'coins' table from raw_coin enrichment", slog.String("address", enrichedCoin.Address))
-		}
-	} else if errors.Is(getErr, db.ErrNotFound) {
-		if dbErr := s.store.Coins().Create(ctx, enrichedCoin); dbErr != nil {
-			slog.WarnContext(ctx, "Failed to create enriched coin (from raw) in store", slog.String("address", enrichedCoin.Address), slog.Any("error", dbErr))
-		} else {
-			slog.InfoContext(ctx, "Successfully created coin in 'coins' table from raw_coin enrichment", slog.String("address", enrichedCoin.Address))
-		}
-	} else if getErr != nil {
-		slog.ErrorContext(ctx, "Error checking for existing coin before saving enriched (from raw) coin", slog.String("address", enrichedCoin.Address), slog.Any("error", getErr))
-		return nil, fmt.Errorf("error checking existing coin %s before save: %w", enrichedCoin.Address, getErr)
-	}
-	rawCoinPKIDStr := strconv.FormatUint(rawCoin.ID, 10)
-	slog.DebugContext(ctx, "Attempting to delete processed coin from 'raw_coins' table", slog.String("address", rawCoin.Address), slog.String("rawCoinID", rawCoinPKIDStr))
-	if delErr := s.store.RawCoins().Delete(ctx, rawCoinPKIDStr); delErr != nil {
-		slog.WarnContext(ctx, "Failed to delete coin from 'raw_coins' table after successful enrichment", slog.String("address", rawCoin.Address), slog.String("rawCoinID", rawCoinPKIDStr), slog.Any("error", delErr))
-	} else {
-		slog.InfoContext(ctx, "Successfully deleted coin from 'raw_coins' table after enrichment", slog.String("address", rawCoin.Address), slog.String("rawCoinID", rawCoinPKIDStr))
-	}
-	slog.InfoContext(ctx, "Successfully enriched and saved coin from raw_coin data", slog.String("address", enrichedCoin.Address))
-	return enrichedCoin, nil
-}
 
 func (s *Service) fetchAndCacheCoin(ctx context.Context, address string) (*model.Coin, error) {
 	slog.DebugContext(ctx, "Starting dynamic coin enrichment", slog.String("address", address))
@@ -812,41 +703,6 @@ func (s *Service) FetchAndStoreTopGainersTokens(ctx context.Context) error {
 	})
 }
 
-func (s *Service) GetAllTokens(ctx context.Context) (*jupiter.CoinListResponse, error) {
-	slog.InfoContext(ctx, "Starting to fetch all tokens from Jupiter")
-	resp, err := s.jupiterClient.GetAllCoins(ctx)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to get all coins from Jupiter", slog.Any("error", err))
-		return nil, fmt.Errorf("failed to get all coins from Jupiter: %w", err)
-	}
-	if resp == nil || len(resp.Coins) == 0 {
-		slog.InfoContext(ctx, "No coins found from Jupiter.")
-		return resp, nil
-	}
-	slog.InfoContext(ctx, "Successfully fetched all coins from Jupiter", slog.Int("fetched_count", len(resp.Coins)))
-	rawCoinsToUpsert := make([]model.RawCoin, 0, len(resp.Coins))
-	for _, jupiterCoin := range resp.Coins {
-		if s.coinContainsNaughtyWord(jupiterCoin.Symbol, jupiterCoin.Name) {
-			continue // Skip this token
-		}
-		rawCoinModelPtr := jupiterCoin.ToRawCoin()
-		if rawCoinModelPtr != nil {
-			rawCoinsToUpsert = append(rawCoinsToUpsert, *rawCoinModelPtr)
-		}
-	}
-	if len(rawCoinsToUpsert) > 0 {
-		slog.InfoContext(ctx, "Attempting to bulk upsert raw coins in GetAllTokens", slog.Int("count", len(rawCoinsToUpsert)))
-		rowsAffected, err := s.store.RawCoins().BulkUpsert(ctx, &rawCoinsToUpsert)
-		if err != nil {
-			slog.ErrorContext(ctx, "Failed to bulk upsert raw coins in GetAllTokens", slog.Any("error", err), slog.Int("attempted_count", len(rawCoinsToUpsert)))
-		} else {
-			slog.InfoContext(ctx, "Successfully bulk upserted raw coins in GetAllTokens", slog.Int64("rows_affected", rowsAffected), slog.Int("submitted_count", len(rawCoinsToUpsert)))
-		}
-	} else {
-		slog.InfoContext(ctx, "No valid raw coins were prepared for upserting after fetching from Jupiter in GetAllTokens.")
-	}
-	return resp, nil
-}
 
 func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 	return s.store.WithTransaction(ctx, func(txStore db.Store) error {
@@ -864,70 +720,49 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 			slog.ErrorContext(ctx, "Failed to get new listing tokens from Birdeye", slog.Any("error", err))
 			return fmt.Errorf("failed to get new listing tokens from Birdeye: %w", err)
 		}
-		
+
 		if len(birdeyeTokens.Data.Items) == 0 {
 			slog.InfoContext(ctx, "No new listing tokens found from Birdeye.")
 			return nil
 		}
 
-		// Convert Birdeye new listing tokens to TokenDetails for enrichment
-		tokenDetails := make([]birdeye.TokenDetails, 0, len(birdeyeTokens.Data.Items))
+		// Convert Birdeye new listing tokens to enriched coins directly
+		enrichedCoins := make([]model.Coin, 0, len(birdeyeTokens.Data.Items))
 		for _, newToken := range birdeyeTokens.Data.Items {
 			// Check for naughty words before processing
 			if s.coinContainsNaughtyWord(newToken.Name, newToken.Symbol) {
-				slog.InfoContext(ctx, "Skipping token with inappropriate name", 
+				slog.InfoContext(ctx, "Skipping token with inappropriate name",
 					"address", newToken.Address, "name", newToken.Name)
 				continue
 			}
 
-			// Convert NewListingToken to TokenDetails
+			// Convert NewListingToken to TokenDetails for enrichment
 			tokenDetail := birdeye.TokenDetails{
 				Address:   newToken.Address,
 				Name:      newToken.Name,
 				Symbol:    newToken.Symbol,
 				LogoURI:   newToken.LogoURI,
 				Decimals:  newToken.Decimals,
-				Liquidity: newToken.Liquidity, // Direct field, not pointer
+				Liquidity: newToken.Liquidity,
 			}
 
-			// Add market data if available (these are pointers)
-			if newToken.Price != nil {
-				tokenDetail.Price = *newToken.Price
-			}
-			if newToken.MarketCap != nil {
-				tokenDetail.MarketCap = *newToken.MarketCap
-			}
-			if newToken.Volume24hUSD != nil {
-				tokenDetail.Volume24hUSD = *newToken.Volume24hUSD
-			}
-			if newToken.Volume24hChangePercent != nil {
-				tokenDetail.Volume24hChangePercent = *newToken.Volume24hChangePercent
-			}
-			if newToken.Price24hChangePercent != nil {
-				tokenDetail.Price24hChangePercent = *newToken.Price24hChangePercent
-			}
-			if newToken.FDV != nil {
-				tokenDetail.FDV = *newToken.FDV
-			}
-			if newToken.Rank != nil {
-				tokenDetail.Rank = *newToken.Rank
-			}
-			if newToken.Tags != nil {
-				tokenDetail.Tags = newToken.Tags
+			// Enrich the token
+			enrichedCoin, err := s.EnrichCoinData(ctx, &tokenDetail)
+			if err != nil {
+				slog.WarnContext(ctx, "Failed to enrich new token", "address", newToken.Address, "error", err)
+				continue
 			}
 
-			tokenDetails = append(tokenDetails, tokenDetail)
+			// Use liquidityAddedAt as the created_at timestamp for proper chronological ordering
+			enrichedCoin.CreatedAt = newToken.LiquidityAddedAt.Time.Format(time.RFC3339)
+			enrichedCoin.Tags = append(enrichedCoin.Tags, "new-coin")
+			
+			enrichedCoins = append(enrichedCoins, *enrichedCoin)
 		}
 
-		if len(tokenDetails) == 0 {
+		if len(enrichedCoins) == 0 {
 			slog.InfoContext(ctx, "No valid tokens to process after filtering inappropriate content.")
 			return nil
-		}
-
-		// Enrich the tokens using the existing enrichment process
-		enrichedCoins, err := s.processBirdeyeTokens(ctx, tokenDetails)
-		if err != nil {
-			return fmt.Errorf("failed to enrich new tokens from Birdeye source: %w", err)
 		}
 
 		// Get existing coins with "new-coin" tag to clear them

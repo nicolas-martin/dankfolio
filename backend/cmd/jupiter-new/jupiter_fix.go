@@ -107,12 +107,12 @@ func main() {
 			log.Printf("      Decimals: %d", firstCoin.Decimals)
 			log.Printf("      LogoURI: '%s'", firstCoin.LogoURI)
 
-			// Convert to RawCoin and check
-			rawCoin := firstCoin.ToRawCoin()
-			log.Printf("   🔍 Converted RawCoin:")
-			log.Printf("      MintAddress: '%s'", rawCoin.Address)
-			log.Printf("      Name: '%s'", rawCoin.Name)
-			log.Printf("      Symbol: '%s'", rawCoin.Symbol)
+			// RawCoin functionality has been removed
+			// rawCoin := firstCoin.ToRawCoin()
+			// log.Printf("   🔍 Converted RawCoin:")
+			// log.Printf("      MintAddress: '%s'", rawCoin.Address)
+			// log.Printf("      Name: '%s'", rawCoin.Name)
+			// log.Printf("      Symbol: '%s'", rawCoin.Symbol)
 		}
 	}
 

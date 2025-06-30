@@ -20,20 +20,20 @@ import (
 // S is the schema type (used with GORM), M is the model type (used in services).
 // For ApiStat, S and M might be the same (model.ApiStat).
 type Repository[S interface {
-	schema.Coin | schema.Trade | schema.RawCoin | schema.Wallet | model.ApiStat | schema.NaughtyWord // Added schema.NaughtyWord for S
+	schema.Coin | schema.Trade | schema.Wallet | model.ApiStat | schema.NaughtyWord // Added schema.NaughtyWord for S
 	db.Entity
 }, M interface {
-	model.Coin | model.Trade | model.RawCoin | model.Wallet | model.ApiStat | model.NaughtyWord // Added model.NaughtyWord for M
+	model.Coin | model.Trade | model.Wallet | model.ApiStat | model.NaughtyWord // Added model.NaughtyWord for M
 }] struct {
 	db *gorm.DB
 }
 
 // NewRepository creates a new GORM repository.
 func NewRepository[S interface {
-	schema.Coin | schema.Trade | schema.RawCoin | schema.Wallet | model.ApiStat | schema.NaughtyWord
+	schema.Coin | schema.Trade | schema.Wallet | model.ApiStat | schema.NaughtyWord
 	db.Entity
 }, M interface {
-	model.Coin | model.Trade | model.RawCoin | model.Wallet | model.ApiStat | model.NaughtyWord
+	model.Coin | model.Trade | model.Wallet | model.ApiStat | model.NaughtyWord
 }](db *gorm.DB) *Repository[S, M] {
 	return &Repository[S, M]{db: db}
 }
@@ -209,8 +209,6 @@ func (r *Repository[S, M]) BulkUpsert(ctx context.Context, items *[]M) (int64, e
 
 	switch any(s).(type) {
 	case schema.Coin:
-		conflictColumns = []clause.Column{{Name: "address"}}
-	case schema.RawCoin:
 		conflictColumns = []clause.Column{{Name: "address"}}
 	// model.ApiStat is not expected in BulkUpsert with PK conflict, it has its own unique index.
 	// If it were, its PK is 'id'.
@@ -398,17 +396,6 @@ func (r *Repository[S, M]) toModel(s S) any {
 			Finalized:              v.Finalized,
 			Error:                  v.Error,
 		}
-	case schema.RawCoin:
-		return &model.RawCoin{
-			ID:               v.ID, // Added
-			Address:          v.Address,
-			Symbol:           v.Symbol,
-			Name:             v.Name,
-			Decimals:         v.Decimals,
-			LogoUrl:          v.LogoUrl,
-			UpdatedAt:        v.UpdatedAt.Format(time.RFC3339),
-			JupiterCreatedAt: v.JupiterCreatedAt, // Map JupiterCreatedAt field
-		}
 	case schema.Wallet:
 		return &model.Wallet{
 			ID:        v.ID,
@@ -498,26 +485,6 @@ func (r *Repository[S, M]) fromModel(m M) any {
 			Finalized:              v.Finalized,
 			Error:                  v.Error,
 		}
-	case model.RawCoin:
-		updatedAt, _ := time.Parse(time.RFC3339, v.UpdatedAt) // v.UpdatedAt is string
-		// schema.RawCoin.UpdatedAt is time.Time
-
-		// Directly assign JupiterCreatedAt as it's already *time.Time in model.RawCoin
-		// and schema.RawCoin expects *time.Time for its JupiterCreatedAt field.
-		sRawCoin := &schema.RawCoin{
-			// ID is not set here if v.ID is 0 (new record)
-			Address:          v.Address,
-			Symbol:           v.Symbol,
-			Name:             v.Name,
-			Decimals:         v.Decimals,
-			LogoUrl:          v.LogoUrl,
-			UpdatedAt:        updatedAt,          // Parsed from model's string UpdatedAt
-			JupiterCreatedAt: v.JupiterCreatedAt, // Assign *time.Time directly
-		}
-		if v.ID != 0 {
-			sRawCoin.ID = v.ID
-		}
-		return sRawCoin
 	case model.Wallet:
 		return &schema.Wallet{
 			ID:        v.ID,
@@ -563,9 +530,6 @@ func getColumnNames(data any) []string {
 			"status", "transaction_hash", "unsigned_transaction",
 			"completed_at", "confirmations", "finalized", "error", // CreatedAt is usually set on create
 		}
-	case *schema.RawCoin:
-		// Explicitly list columns to update, excluding PK 'id'
-		return []string{"mint_address", "symbol", "name", "decimals", "logo_url", "updated_at", "jupiter_created_at"}
 	case *schema.Wallet:
 		// Explicitly list columns to update, excluding PK 'id'
 		return []string{"public_key"} // CreatedAt is usually set on create

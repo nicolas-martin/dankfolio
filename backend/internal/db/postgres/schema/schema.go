@@ -72,27 +72,6 @@ func (c Coin) GetID() string {
 	return "id"
 }
 
-// RawCoin represents the structure of the 'raw_coins' table for raw Jupiter tokens.
-type RawCoin struct {
-	ID               uint64    `gorm:"primaryKey;autoIncrement;not null"`
-	Address          string    `gorm:"column:address;not null;uniqueIndex:idx_raw_coins_address"`
-	Symbol           string    `gorm:"column:symbol;not null"`
-	Name             string    `gorm:"column:name;not null"`
-	Decimals         int       `gorm:"column:decimals;not null"`
-	LogoUrl          string    `gorm:"column:logo_url"`
-	UpdatedAt        time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP"`
-	JupiterCreatedAt time.Time `gorm:"column:jupiter_created_at;not null;index"`
-}
-
-// TableName overrides the default table name generation for RawCoin.
-func (RawCoin) TableName() string {
-	return "raw_coins"
-}
-
-// GetID returns the primary key field name for RawCoin
-func (r RawCoin) GetID() string {
-	return "id"
-}
 
 // Trade represents the structure of the 'trades' table in the database.
 type Trade struct {

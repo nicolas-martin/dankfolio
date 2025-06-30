@@ -16,7 +16,7 @@ func (bt *BirdEyeTime) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &s); err != nil {
 		return err
 	}
-	
+
 	// Try parsing with the BirdEye format (without timezone)
 	t, err := time.Parse("2006-01-02T15:04:05", s)
 	if err != nil {
@@ -26,7 +26,7 @@ func (bt *BirdEyeTime) UnmarshalJSON(data []byte) error {
 			return err
 		}
 	}
-	
+
 	bt.Time = t
 	return nil
 }
