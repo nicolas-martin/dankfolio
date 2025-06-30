@@ -1,8 +1,8 @@
 appId: com.nicolasmartin.dankfolio
 ---
-# Test CoinCard main container (TouchableOpacity)
+# Test TokenListCard main container (TouchableOpacity)
 - assertVisible:
-      id: "trending-coin-card-${COIN_SYMBOL}"
+      id: "trending-coin-item-${COIN_SYMBOL}"
 
 # Test coin icon image element
 - assertVisible:
@@ -12,10 +12,14 @@ appId: com.nicolasmartin.dankfolio
 - assertVisible:
       id: "trending-coin-symbol-${COIN_SYMBOL}"
 
-# Test coin price text element
+# Test percentage change text element
 - assertVisible:
-      id: "trending-coin-price-${COIN_SYMBOL}"
+      id: "trending-coin-change-${COIN_SYMBOL}"
 
 # Test sparkline chart component
 - assertVisible:
       id: "trending-coin-sparkline-${COIN_SYMBOL}"
+
+# Test card container (shared container for trending coins)
+- assertVisible:
+      id: "trending-coin-card"

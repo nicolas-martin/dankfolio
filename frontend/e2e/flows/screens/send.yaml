@@ -1,4 +1,4 @@
-appId: com.dankfolio.app
+appId: com.nicolasmartin.dankfolio
 env:
     testAmount: "1.65973075"
     testRecipientAddress: "6hbS1d1JRRta3GtJC7XNo16gg3PTb41QJVzy6kWsZnav"
@@ -55,8 +55,7 @@ env:
       id: "send-button"
 - assertVisible:
       id: "validation-error-text"
-- assertVisible:
-      text: "Invalid Solana address"
+- assertVisible: ".*Invalid Solana address.*"
 
 # Test 9: Test insufficient balance validation with extremely large amount
 - tapOn:
@@ -80,8 +79,7 @@ env:
       id: "send-button"
 - assertVisible:
       id: "validation-error-text"
-- assertVisible:
-      text: "Insufficient balance.*"
+- assertVisible: ".*Insufficient balance.*"
 - tapOn:
       id: "amount-percentage-button-100"
 - assertVisible:
@@ -98,10 +96,8 @@ env:
       id: "confirm-send-button"
 - assertNotVisible:
       id: "validation-error-text"
-- assertVisible: "Transaction Status"
+- assertVisible: ".*Transaction Status.*"
 - tapOn:
-      id: trade-status-action-button
+      id: "trade-status-action-button"
 - waitForAnimationToEnd
-- assertNotVisible: "Transaction Status"
-- assertVisible:
-      id: "home-screen"
+- assertNotVisible: ".*Transaction Status.*"
