@@ -1,0 +1,45 @@
+appId: com.nicolasmartin.dankfolio
+env:
+    jupSymbol: "jup"
+    solSymbol: "sol"
+---
+- runFlow: ../../common/app-setup.yaml
+
+# Navigate to trade screen via trending coin - default setup is SOL -> JUP
+- tapOn:
+      id: "trending-coin-item-${jupSymbol}"
+- tapOn:
+      id: "trade-button-${jupSymbol}"
+
+# Set up some amount first
+- tapOn:
+      id: "amount-percentage-text-50"
+- waitForAnimationToEnd
+
+# Verify USD toggle button is available
+- assertVisible:
+      id: "from-token-selector-swap-button"
+
+# Test: USD toggle functionality
+- tapOn:
+      id: "from-token-selector-swap-button"
+- waitForAnimationToEnd
+
+# Enter USD amount
+- tapOn:
+      id: "from-token-selector-amount-input"
+- eraseText
+- inputText: "50"
+- waitForAnimationToEnd
+- hideKeyboard
+
+# Verify USD value input worked (should show $ or USD somewhere)
+- assertVisible:
+      text: ".*50.*"
+# sol token amount
+- assertVisible:
+      text: ".*0.50.*"
+
+# assert jup value
+- assertVisible:
+      text: ".*57.18.*"

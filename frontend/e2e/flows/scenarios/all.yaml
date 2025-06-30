@@ -1,7 +1,0 @@
-appId: com.nicolasmartin.dankfolio
----
-- runFlow: ../common/app-setup.yaml
-
-- runFlow: home-new-listings.yaml
-- runFlow: home-trending-coins.yaml
-- runflow: trade-token-selector.yaml

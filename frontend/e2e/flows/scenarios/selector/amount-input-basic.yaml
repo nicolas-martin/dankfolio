@@ -1,0 +1,36 @@
+appId: com.nicolasmartin.dankfolio
+env:
+    jupSymbol: "jup"
+    solSymbol: "sol"
+---
+- runFlow: ../../common/app-setup.yaml
+
+# Navigate to trade screen via trending coin - default setup is SOL -> JUP
+- tapOn:
+      id: "trending-coin-item-${jupSymbol}"
+- tapOn:
+      id: "trade-button-${jupSymbol}"
+
+# Test 1: Basic amount input
+- tapOn:
+      id: "from-token-selector-amount-input"
+- inputText: "0.1"
+- waitForAnimationToEnd
+- hideKeyboard
+
+# Verify amount input worked - use flexible assertions
+- assertVisible:
+      text: ".*0.1.*"
+
+# Test 2: Change amount to different value
+- tapOn:
+      id: "from-token-selector-amount-input"
+- eraseText
+- inputText: "1.0"
+- waitForAnimationToEnd
+- hideKeyboard
+
+# Verify new amount
+- assertVisible:
+      text: ".*1.0.*"
+
