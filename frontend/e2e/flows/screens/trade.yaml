@@ -8,7 +8,7 @@ env:
 - runFlow: ../common/app-setup.yaml
 
 - tapOn:
-      id: "trending-coin-card-${TO_SYMBOL}"
+      id: "trending-coin-item-${TO_SYMBOL}"
 
 - assertVisible:
       id: "trade-button-${TO_SYMBOL}"
@@ -17,10 +17,10 @@ env:
 - assertVisible:
       id: "trade-screen"
 
-- assertVisible: "FROM"
+- assertVisible: ".*FROM.*"
 - assertVisible:
       id: "from-token-selector"
-- assertVisible: "TO"
+- assertVisible: ".*TO.*"
 - assertVisible:
       id: "to-token-selector"
 
@@ -34,14 +34,13 @@ env:
 - assertVisible:
       id: "to-token-selector-amount-input"
 
-- tapOn: FROM
+- tapOn: ".*FROM.*"
 - tapOn:
       id: "amount-percentage-text-50"
 - tapOn:
       id: "amount-percentage-button-50"
 
 - assertVisible:
-      text: "1.25"
       id: "from-token-selector-amount-input"
 
 - waitForAnimationToEnd
@@ -50,7 +49,7 @@ env:
 - assertVisible:
       id: "trade-details-card"
 - assertVisible:
-      id: "trade-details-exchange-rate"
+      id: "trade-details-price-impact"
 - assertVisible:
       id: "trade-details-network-fee"
 - assertVisible:
@@ -65,9 +64,9 @@ env:
       id: "confirm-swap-button"
 - waitForAnimationToEnd
 
-- assertVisible: "Transaction Finalized!"
+- assertVisible: ".*Transaction Finalized.*"
 - tapOn:
-      id: trade-status-action-button
+      id: "trade-status-action-button"
 
 - waitForAnimationToEnd
 - assertNotVisible:

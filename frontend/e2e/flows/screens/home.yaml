@@ -13,10 +13,14 @@ env:
 ---
 - launchApp
 
-# Test main sections are visible
-- assertVisible: "New Listings"
-- assertVisible: "Trending Coins"
-- assertVisible: "Trending Gainers"
+# Assert home screen is loaded
+- assertVisible:
+      id: "home-screen"
+
+# Test main sections are visible using regex for more reliable text matching
+- assertVisible: ".*New Listings.*"
+- assertVisible: ".*Trending Coins.*"
+- assertVisible: ".*24h Volume.*"
 
 # Trending
 - runFlow:

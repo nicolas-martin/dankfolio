@@ -4,13 +4,13 @@ env:
 ---
 - runFlow: ../common/app-setup.yaml
 
-- assertVisible: "Trending Coins"
+- assertVisible: ".*Trending Coins.*"
 
 - tapOn:
-      id: "trending-coin-card-${JUP_SYMBOL}"
+      id: "trending-coin-item-${JUP_SYMBOL}"
 
 - assertVisible:
-      id: "coin-detail-price-card-${JUP_SYMBOL}"
+      id: "coin-detail-screen-${JUP_SYMBOL}"
 
 - runFlow:
       file: ../components/coin-detail.yaml
