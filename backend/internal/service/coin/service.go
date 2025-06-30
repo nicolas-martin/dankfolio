@@ -323,7 +323,6 @@ func (s *Service) updateCoinMarketData(ctx context.Context, coin *model.Coin) (*
 	return coin, nil
 }
 
-
 // fetchNewCoin fetches a completely new coin from Birdeye (metadata + market data)
 func (s *Service) fetchNewCoin(ctx context.Context, address string) (*model.Coin, error) {
 	// Use the batch overview endpoint for complete data
@@ -401,7 +400,6 @@ func (s *Service) fetchNewCoin(ctx context.Context, address string) (*model.Coin
 	slog.InfoContext(ctx, "Successfully fetched and saved new coin", slog.String("address", coin.Address))
 	return coin, nil
 }
-
 
 func (s *Service) fetchAndCacheCoin(ctx context.Context, address string) (*model.Coin, error) {
 	slog.DebugContext(ctx, "Starting dynamic coin enrichment", slog.String("address", address))
@@ -703,7 +701,6 @@ func (s *Service) FetchAndStoreTopGainersTokens(ctx context.Context) error {
 	})
 }
 
-
 func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 	return s.store.WithTransaction(ctx, func(txStore db.Store) error {
 		slog.InfoContext(ctx, "Starting to fetch and store new tokens from Birdeye")
@@ -756,7 +753,7 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 			// Use liquidityAddedAt as the created_at timestamp for proper chronological ordering
 			enrichedCoin.CreatedAt = newToken.LiquidityAddedAt.Time.Format(time.RFC3339)
 			enrichedCoin.Tags = append(enrichedCoin.Tags, "new-coin")
-			
+
 			enrichedCoins = append(enrichedCoins, *enrichedCoin)
 		}
 
