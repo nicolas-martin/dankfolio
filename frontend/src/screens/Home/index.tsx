@@ -35,6 +35,135 @@ const fetchPriceHistory = async (coin: Coin, timeframeKey: string): Promise<{ da
 	}
 };
 
+const fetchPriceHistoriesBatched = async (
+	coins: Coin[], 
+	timeframeKey: string
+): Promise<{ 
+	results: Record<string, PriceData[]>, 
+	errors: Record<string, Error>,
+	failedAddresses: string[]
+}> => {
+	const results: Record<string, PriceData[]> = {};
+	const errors: Record<string, Error> = {};
+	const failedAddresses: string[] = [];
+
+	if (!coins || coins.length === 0) {
+		return { results, errors, failedAddresses };
+	}
+
+	const validCoins = coins.filter(coin => coin?.address);
+	if (validCoins.length === 0) {
+		return { results, errors, failedAddresses };
+	}
+
+	try {
+		const currentTime = new Date().toISOString();
+		const batchRequests = validCoins.map(coin => ({
+			address: coin.address,
+			type: timeframeKey,
+			time: currentTime,
+			addressType: "token"
+		}));
+
+		logger.info(`[HomeScreen] 🚀 Using BATCHED price history fetch for ${validCoins.length} coins`);
+		
+		const batchResponse = await grpcApi.getPriceHistoriesByIDs(batchRequests);
+		
+		// Process successful results
+		Object.entries(batchResponse.results).forEach(([address, result]) => {
+			if (result.success && result.data?.items) {
+				results[address] = result.data.items;
+			} else {
+				const errorMessage = result.errorMessage || 'Unknown error in batch response';
+				errors[address] = new Error(errorMessage);
+				failedAddresses.push(address);
+			}
+		});
+
+		// Add explicitly failed addresses to our tracking
+		batchResponse.failedAddresses.forEach(address => {
+			if (!failedAddresses.includes(address)) {
+				failedAddresses.push(address);
+				errors[address] = new Error('Address failed in batch processing');
+			}
+		});
+
+		logger.info(`[HomeScreen] ✅ Batch fetch completed: ${Object.keys(results).length} successful, ${failedAddresses.length} failed`);
+		
+		return { results, errors, failedAddresses };
+	} catch (error: unknown) {
+		logger.error('[HomeScreen] ❌ Batch price history fetch failed:', error);
+		
+		// On batch failure, add all addresses to failed list so they can be retried individually
+		validCoins.forEach(coin => {
+			failedAddresses.push(coin.address);
+			errors[coin.address] = error instanceof Error ? error : new Error(String(error));
+		});
+		
+		return { results, errors, failedAddresses };
+	}
+};
+
+const fetchPriceHistoriesWithFallback = async (
+	coins: Coin[], 
+	timeframeKey: string
+): Promise<{ 
+	results: Record<string, PriceData[]>, 
+	errors: Record<string, Error>
+}> => {
+	const finalResults: Record<string, PriceData[]> = {};
+	const finalErrors: Record<string, Error> = {};
+
+	// First, try the batched approach
+	const { results: batchResults, errors: batchErrors, failedAddresses } = await fetchPriceHistoriesBatched(coins, timeframeKey);
+	
+	// Add successful batch results
+	Object.assign(finalResults, batchResults);
+
+	// If we have failures, fall back to individual calls for those addresses
+	if (failedAddresses.length > 0) {
+		logger.info(`[HomeScreen] 🔄 Falling back to individual calls for ${failedAddresses.length} failed addresses`);
+		
+		const failedCoins = coins.filter(coin => failedAddresses.includes(coin.address));
+		
+		const individualResults = await Promise.allSettled(
+			failedCoins.map(async (coin): Promise<{ address: string; data: PriceData[]; error: Error | null; }> => {
+				const result = await fetchPriceHistory(coin, timeframeKey);
+				return {
+					address: coin.address,
+					data: result.data || [],
+					error: result.error
+				};
+			})
+		);
+
+		// Process individual call results
+		individualResults.forEach(settledResult => {
+			if (settledResult.status === 'fulfilled' && settledResult.value) {
+				const { address, data, error } = settledResult.value;
+				if (error) {
+					finalErrors[address] = error;
+				} else {
+					finalResults[address] = data;
+					// Remove from batch errors since individual call succeeded
+					delete finalErrors[address];
+				}
+			}
+		});
+		
+		logger.info(`[HomeScreen] 🔄 Individual fallback completed: ${Object.keys(finalResults).length - Object.keys(batchResults).length} recovered`);
+	}
+
+	// Add any remaining batch errors that weren't recovered
+	Object.entries(batchErrors).forEach(([address, error]) => {
+		if (!finalResults[address]) {
+			finalErrors[address] = error;
+		}
+	});
+
+	return { results: finalResults, errors: finalErrors };
+};
+
 const HomeScreen = () => {
 	const styles = useStyles();
 	const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -201,8 +330,6 @@ const HomeScreen = () => {
 		console.log('🔍 [HomeScreen] Price history fetch decision:', debugInfo);
 		logger.info('[HomeScreen] Price history fetch decision:', debugInfo);
 
-		logger.info('[HomeScreen] 🚀 Using PARALLEL price history fetching', { coinCount: topCoins.length });
-
 		// Set initial loading states for all coins to be fetched
 		const initialLoadingStates = topCoins.reduce((acc, coin) => {
 			if (coin?.address) acc[coin.address] = true;
@@ -210,37 +337,37 @@ const HomeScreen = () => {
 		}, {} as Record<string, boolean>);
 		setIsLoadingPriceHistories(prev => ({ ...prev, ...initialLoadingStates }));
 
-		Promise.allSettled(
-			topCoins.map(async (coin): Promise<{ address: string; data: PriceData[]; error: Error | null; } | null> => {
-				if (!coin || !coin.address) return Promise.resolve(null); // Skip invalid coins
-				const result = await fetchPriceHistory(coin, fourHourTimeframeKey);
-				return ({
-					address: coin.address!,
-					data: result.data || [],
-					error: result.error
-				});
-			})
-		).then(results => {
+		// Use the new batched approach with fallback
+		fetchPriceHistoriesWithFallback(topCoins, fourHourTimeframeKey).then(({ results, errors }) => {
 			const newHistoriesBatch: Record<string, PriceData[]> = {};
 			const newLoadingStatesBatch: Record<string, boolean> = {};
 
-			results.forEach(settledResult => {
-				if (settledResult.status === 'fulfilled' && settledResult.value) {
-					const { address, data, error } = settledResult.value;
-					newHistoriesBatch[address] = data;
-					newLoadingStatesBatch[address] = false;
-					if (error) {
-						logger.error(`[HomeScreen] Error fetching (parallel) ${address}:`, error);
-					}
-				} else if (settledResult.status === 'rejected') {
-					// Handle rejected promises if fetchPriceHistory can throw directly (though it returns {data, error})
-					// This path might not be hit if fetchPriceHistory always resolves.
-					logger.error(`[HomeScreen] Promise rejected for a coin:`, settledResult.reason);
+			// Process successful results
+			Object.entries(results).forEach(([address, data]) => {
+				newHistoriesBatch[address] = data;
+				newLoadingStatesBatch[address] = false;
+			});
+
+			// Process failed addresses
+			Object.entries(errors).forEach(([address, error]) => {
+				newLoadingStatesBatch[address] = false;
+				logger.error(`[HomeScreen] Error fetching price history for ${address}:`, error);
+			});
+
+			// Make sure all addresses have loading state set to false
+			topCoins.forEach(coin => {
+				if (coin?.address && !(coin.address in newLoadingStatesBatch)) {
+					newLoadingStatesBatch[coin.address] = false;
 				}
 			});
 
 			setPriceHistories(prev => ({ ...prev, ...newHistoriesBatch }));
 			setIsLoadingPriceHistories(prev => ({ ...prev, ...newLoadingStatesBatch }));
+
+			// Log performance summary
+			const successCount = Object.keys(results).length;
+			const errorCount = Object.keys(errors).length;
+			logger.info(`[HomeScreen] 📊 Price history batch completed: ${successCount} successful, ${errorCount} failed out of ${topCoins.length} total`);
 		});
 	}, [trendingCoins]); // Removed showToast from deps as logger is used
 

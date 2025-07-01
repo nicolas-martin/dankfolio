@@ -164,6 +164,29 @@ export interface ListTradesResponse {
 	totalCount: number;
 }
 
+export interface PriceHistoryBatchRequest {
+	address: string;
+	type: string;
+	time: string;
+	addressType: string;
+}
+
+export interface PriceHistoryBatchResult {
+	data?: {
+		items: Array<{
+			unixTime: number;
+			value: number;
+		}>;
+	};
+	success: boolean;
+	errorMessage?: string;
+}
+
+export interface PriceHistoryBatchResponse {
+	results: Record<string, PriceHistoryBatchResult>;
+	failedAddresses: string[];
+}
+
 export interface API {
 	getAvailableCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
 	getCoinByID: (mintAddress: string) => Promise<Coin>;
@@ -174,6 +197,7 @@ export interface API {
 	getSwapQuote: (fromCoin: string, toCoin: string, amount: string, includeFeeBreakdown?: boolean, userPublicKey?: string) => Promise<SwapQuoteResponse>;
 	getSwapStatus: (txHash: string) => Promise<TradeStatusResponse>;
 	getPriceHistory: (address: string, type: string, time: string, addressType: string) => Promise<PriceHistoryResponse>;
+	getPriceHistoriesByIDs: (requests: PriceHistoryBatchRequest[]) => Promise<PriceHistoryBatchResponse>;
 	getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
 	getCoinPrices: (coinIds: string[]) => Promise<Record<string, number>>;
 	prepareCoinTransfer: (payload: CoinTransferPrepareRequest) => Promise<CoinTransferPrepareResponse>;

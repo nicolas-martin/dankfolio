@@ -236,6 +236,104 @@ export const grpcApi: grpcModel.API = {
 		}
 	},
 
+	getPriceHistoriesByIDs: async (requests: grpcModel.PriceHistoryBatchRequest[]): Promise<grpcModel.PriceHistoryBatchResponse> => {
+		const serviceName = 'PriceService';
+		const methodName = 'getPriceHistoriesByIDs';
+		try {
+			console.log('[grpcApi] 📤 getPriceHistoriesByIDs REQUEST:', {
+				requestCount: requests.length,
+				addresses: requests.map(r => r.address),
+				timestamp: new Date().toISOString()
+			});
+
+			grpcUtils.logRequest(serviceName, methodName, { requestCount: requests.length, requests });
+
+			// Validate batch size limit (same as getCoinsByIDs)
+			const maxBatchSize = 50;
+			if (requests.length > maxBatchSize) {
+				throw new Error(`Batch size ${requests.length} exceeds maximum allowed ${maxBatchSize}`);
+			}
+
+			const typeMap: { [key: string]: GetPriceHistoryRequest_PriceHistoryType; } = {
+				"1m": GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE,
+				"3m": GetPriceHistoryRequest_PriceHistoryType.THREE_MINUTE,
+				"5m": GetPriceHistoryRequest_PriceHistoryType.FIVE_MINUTE,
+				"15m": GetPriceHistoryRequest_PriceHistoryType.FIFTEEN_MINUTE,
+				"30m": GetPriceHistoryRequest_PriceHistoryType.THIRTY_MINUTE,
+				"1H": GetPriceHistoryRequest_PriceHistoryType.ONE_HOUR,
+				"2H": GetPriceHistoryRequest_PriceHistoryType.TWO_HOUR,
+				"4H": GetPriceHistoryRequest_PriceHistoryType.FOUR_HOUR,
+				"6H": GetPriceHistoryRequest_PriceHistoryType.SIX_HOUR,
+				"8H": GetPriceHistoryRequest_PriceHistoryType.EIGHT_HOUR,
+				"12H": GetPriceHistoryRequest_PriceHistoryType.TWELVE_HOUR,
+				"1D": GetPriceHistoryRequest_PriceHistoryType.ONE_DAY,
+				"3D": GetPriceHistoryRequest_PriceHistoryType.THREE_DAY,
+				"1W": GetPriceHistoryRequest_PriceHistoryType.ONE_WEEK,
+				"1M": GetPriceHistoryRequest_PriceHistoryType.ONE_MONTH,
+			};
+
+			// Convert frontend requests to protobuf format
+			const protoRequests = requests.map(req => ({
+				address: req.address,
+				type: typeMap[req.type] ?? GetPriceHistoryRequest_PriceHistoryType.PRICE_HISTORY_TYPE_UNSPECIFIED,
+				time: req.time,
+				addressType: req.addressType
+			}));
+
+			const response = await priceClient.getPriceHistoriesByIDs({
+				items: protoRequests
+			}, { headers: grpcUtils.getRequestHeaders() });
+
+			grpcUtils.logResponse(serviceName, methodName, {
+				resultsCount: Object.keys(response.results).length,
+				failedCount: response.failedAddresses.length
+			});
+
+			// Convert the response to match frontend model
+			const results: Record<string, grpcModel.PriceHistoryBatchResult> = {};
+			
+			Object.entries(response.results).forEach(([address, result]) => {
+				if (result.data?.items) {
+					results[address] = {
+						data: {
+							items: result.data.items
+								.filter(item => item.value !== null && item.unixTime !== null)
+								.map(item => ({
+									unixTime: parseInt(item.unixTime, 10) * 1000, // Convert to milliseconds
+									value: item.value,
+								}))
+						},
+						success: result.success,
+						errorMessage: result.errorMessage
+					};
+				} else {
+					results[address] = {
+						data: { items: [] },
+						success: false,
+						errorMessage: result.errorMessage || 'No data returned'
+					};
+				}
+			});
+
+			return {
+				results,
+				failedAddresses: response.failedAddresses
+			};
+		} catch (error: unknown) {
+			console.error('[grpcApi] ❌ getPriceHistoriesByIDs ERROR:', {
+				error,
+				requestCount: requests.length,
+				addresses: requests.map(r => r.address)
+			});
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in getPriceHistoriesByIDs");
+			}
+		}
+	},
+
 	getWalletBalance: async (address: string): Promise<grpcModel.WalletBalanceResponse> => {
 		const serviceName = 'WalletService';
 		const methodName = 'getWalletBalances';
