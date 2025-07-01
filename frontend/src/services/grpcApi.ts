@@ -4,7 +4,7 @@ import { Trade } from '@/gen/dankfolio/v1/trade_pb';
 import { logger } from '@/utils/logger';
 import { toRawAmount as commonToRawAmount } from '@/utils/numberFormat';
 import { GetPriceHistoryRequest_PriceHistoryType } from "@/gen/dankfolio/v1/price_pb";
-import { CoinSortField } from '@/gen/dankfolio/v1/coin_pb'; // Import the enum
+// Import the enum
 import * as grpcUtils from './grpc/grpcUtils';
 import { mapGrpcCoinToFrontendCoin } from './grpc/grpcUtils';
 import { Buffer } from 'buffer';
@@ -408,9 +408,8 @@ export const grpcApi: grpcModel.API = {
 
 			const grpcRequest = {
 				query: params.query || "",
-				limit: params.limit || 20,
-				offset: params.offset || 0,
-				sortBy: params.sortBy || "volume24h", // Default to volume24h
+				limit: params.limit || 10,
+				offset: params.offset || 0
 			};
 
 			const response = await coinClient.search(grpcRequest);

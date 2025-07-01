@@ -183,19 +183,8 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 		opts.Offset = &val
 	}
 
-	// Handle sort_by string - default to "volume_24h" if not specified
-	sortByStr := "volume_24h" // Default sort
-	if sortBy := req.Msg.GetSortBy(); sortBy != "" {
-		// Map frontend sort values to backend values
-		switch sortBy {
-		case "volume24h":
-			sortByStr = "volume_24h"
-		case "jupiter_listed_at":
-			sortByStr = "jupiter_listed_at"
-		default:
-			sortByStr = "volume_24h" // Fallback to default
-		}
-	}
+	// Always sort by volume_24h for search results
+	sortByStr := "volume_24h"
 	opts.SortBy = &sortByStr
 
 	// Always sort descending for simplified search

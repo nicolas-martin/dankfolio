@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, TextInput, FlatList, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, TextInput, SafeAreaView } from 'react-native';
 import { Text } from 'react-native-paper';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 // Assuming RootStackParamList is here
-import { SearchScreenRouteProp, SearchScreenNavigationProp, SearchState } from './types';
+import { SearchScreenNavigationProp, SearchState } from './types';
 import { performSearch, DEBOUNCE_DELAY, handleCoinNavigation } from './scripts';
 import { Coin } from '@/types';
-import SearchResultItem from '@/components/Common/SearchResultItem';
+import SearchResultsList from './SearchResultsList';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useStyles } from './styles';
 import { SearchIcon } from '@components/Common/Icons';
@@ -19,23 +19,15 @@ const initialState: SearchState = {
 	error: null,
 	results: [],
 	filters: {
-		query: '',
-		sortBy: 'volume24h'
+		query: ''
 	}
 };
 
 const SearchScreen: React.FC = () => {
 	const navigation = useNavigation<SearchScreenNavigationProp>();
-	const route = useRoute<SearchScreenRouteProp>();
-	const defaultFiltersFromRoute = route.params?.defaultSortBy ? {
-		query: '',
-		sortBy: route.params.defaultSortBy
-	} : initialState.filters;
 
-	const [state, setState] = useState<SearchState>({
-		...initialState,
-		filters: defaultFiltersFromRoute,
-	});
+	const [state, setState] = useState<SearchState>(initialState);
+	const [hasCompletedSearch, setHasCompletedSearch] = useState(false);
 	const styles = useStyles();
 	// const _toast = useToast(); // Prefixed toast
 	useEffect(() => {
@@ -48,6 +40,7 @@ const SearchScreen: React.FC = () => {
 		try {
 			const results = await performSearch(query, state.filters);
 			setState(prev => ({ ...prev, loading: false, results }));
+			setHasCompletedSearch(true);
 		} catch (error: unknown) {
 			const userFriendlyError = getUserFriendlySearchError(error);
 			setState(prev => ({
@@ -55,43 +48,28 @@ const SearchScreen: React.FC = () => {
 				loading: false,
 				error: userFriendlyError
 			}));
+			setHasCompletedSearch(true);
 		}
 	}, [state.filters]); // Keep existing dependencies for handleSearch itself
 
 	// Debounced function to perform search or clear results
 	const debouncedSearchTrigger = useDebouncedCallback(() => {
 		// Logic from the original useEffect
-		if (state.filters.query || state.filters.sortBy === 'jupiter_listed_at' || (state.filters.query === '' && state.results.length > 0)) {
-			if (state.filters.query || state.filters.sortBy === 'jupiter_listed_at') {
-				handleSearch(state.filters.query);
-			} else {
-				setState(prev => ({ ...prev, results: [] }));
-			}
+		if (state.filters.query) {
+			handleSearch(state.filters.query);
 		} else if (!state.filters.query && state.results.length > 0) {
 			setState(prev => ({ ...prev, results: [] }));
+			setHasCompletedSearch(false);
 		}
 	}, DEBOUNCE_DELAY);
 
 	useEffect(() => {
-		// This effect now calls the debounced function whenever relevant filter criteria change.
+		// This effect now calls the debounced function whenever query changes.
 		debouncedSearchTrigger();
 		// The cleanup of the timeout is handled inside useDebouncedCallback.
-	}, [state.filters.query, state.filters.sortBy, state.results.length, debouncedSearchTrigger]);
+	}, [state.filters.query, state.results.length, debouncedSearchTrigger]);
 
 
-	const setSortOrder = (sortBy: string) => {
-		setState(prev => ({
-			...prev,
-			filters: {
-				...prev.filters,
-				sortBy,
-			},
-			results: [], // Clear previous results
-			loading: true, // Set loading true immediately
-			error: null,
-		}));
-		// useEffect will pick this up and call handleSearch
-	};
 
 	const handleQueryChange = (query: string) => {
 		setState(prev => ({
@@ -101,23 +79,13 @@ const SearchScreen: React.FC = () => {
 	};
 
 	const handlePressSearchResult = useCallback((coin: Coin) => {
-		logger.breadcrumb({ category: 'ui', message: 'Pressed search result item', data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress } });
+		logger.breadcrumb({ category: 'ui', message: 'Pressed search result item', data: { coinSymbol: coin.symbol, coinMint: coin.address } });
 		handleCoinNavigation(coin, navigation);
 	}, [navigation]);
 
-	const renderItem = useCallback(({ item }: { item: Coin }) => (
-		<View style={styles.card}>
-			<SearchResultItem
-				coin={item}
-				onPress={handlePressSearchResult}
-				isEnriched={item.price !== undefined && item.dailyVolume !== undefined}
-			/>
-		</View>
-	), [styles.card, handlePressSearchResult]);
-
-	const showEmpty = !state.loading && !state.error && state.results.length === 0 && state.filters.query;
+	const showEmpty = !state.loading && !state.error && state.results.length === 0 && state.filters.query && hasCompletedSearch;
 	const showError = !state.loading && !!state.error;
-	const showResults = !state.loading && !showError && !showEmpty && state.results.length > 0;
+	const showResults = !state.loading && !showError && state.results.length > 0;
 
 
 	return (
@@ -143,17 +111,8 @@ const SearchScreen: React.FC = () => {
 							placeholderTextColor={styles.colors.onSurfaceVariant}
 						/>
 					</View>
-					{/* Sort Buttons */}
-					<View style={styles.sortButtonsContainer}>
-						<TouchableOpacity onPress={() => setSortOrder('volume24h')} style={styles.sortButton}>
-							<Text style={styles.sortButtonText}>Sort by Volume</Text>
-						</TouchableOpacity>
-						<TouchableOpacity onPress={() => setSortOrder('jupiter_listed_at')} style={styles.sortButton}>
-							<Text style={styles.sortButtonText}>Sort by Newly Listed</Text>
-						</TouchableOpacity>
-					</View>
 				</View>
-				{/* Results List / Info States */}
+				{/* Results List / Info States - Now scrollable */}
 				<View style={styles.flex1}>
 					{state.loading && <InfoState isLoading={true} />}
 					{showError && (
@@ -171,15 +130,10 @@ const SearchScreen: React.FC = () => {
 						/>
 					)}
 					{showResults && (
-						<FlatList
-							data={state.results}
-							renderItem={renderItem}
-							keyExtractor={item => item.mintAddress}
-							contentContainerStyle={styles.listContent}
-							initialNumToRender={10}
-							maxToRenderPerBatch={10}
-							windowSize={21}
-						// getItemLayout might be added later if item height is fixed and known
+						<SearchResultsList
+							coins={state.results}
+							onCoinPress={handlePressSearchResult}
+							testIdPrefix="search-result"
 						/>
 					)}
 				</View>
