@@ -1,19 +1,20 @@
 import React, { useMemo } from 'react'; // Add useMemo
 import LottieView from 'lottie-react-native';
 import { ViewStyle, StyleProp } from 'react-native';
-import animationData from '@assets/lottie/error_cross.json'; // Import the JSON file
+import animationData from '@assets/lottie/trading_arrows.json'; // Import the JSON file
 
-interface ErrorAnimationProps {
+interface ArrowsAnimationProps {
 	autoPlay?: boolean;
 	loop?: boolean;
 	style?: StyleProp<ViewStyle>;
 	size?: number;
 	onAnimationFinish?: () => void;
+	// Future props could include color, direction if the Lottie file supports it via expressions
 }
 
-const ErrorAnimation: React.FC<ErrorAnimationProps> = ({
+const Arrows: React.FC<ArrowsAnimationProps> = ({
 	autoPlay = true,
-	loop = false, // Typically, error animations don't loop
+	loop = true,
 	style,
 	size = 100,
 	onAnimationFinish,
@@ -33,4 +34,4 @@ const ErrorAnimation: React.FC<ErrorAnimationProps> = ({
 	);
 };
 
-export default ErrorAnimation;
+export default Arrows;

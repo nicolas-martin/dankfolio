@@ -9,6 +9,7 @@ import CopyToClipboard from '@/components/Common/CopyToClipboard';
 import { env } from '@utils/env';
 import { initializeDebugWallet } from '@/utils/debugWallet';
 import TermsModal from '@/components/Common/TermsModal';
+import { CompletedAnimation } from '@/components/Common/Animations';
 // @ts-expect-error normal import for assets
 import neonBarImage from '../../../assets/onboarding.jpg';
 import { useStyles } from './styles';
@@ -228,6 +229,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 						<ScrollView showsVerticalScrollIndicator={false}>
 							<View style={styles.centeredContent}>
 								<View style={styles.iconPlaceholder} />
+								<CompletedAnimation />
 								<Text style={styles.title}>{WALLET_CREATED_TITLE}</Text>
 								<Text style={styles.subtitle}>{WALLET_CREATED_DESC}</Text>
 

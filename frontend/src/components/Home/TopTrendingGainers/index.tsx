@@ -38,7 +38,7 @@ const TopTrendingGainers: React.FC<TopTrendingGainersProps> = ({
 	);
 
 	// Render function for TrendingGainerCard
-	const renderTrendingGainerCard = useCallback((coin: Coin, index: number) => {
+	const renderTrendingGainerCard = useCallback((coin: Coin, _index: number) => {
 		return (
 			<TrendingGainerCard
 				coin={coin}
@@ -54,7 +54,7 @@ const TopTrendingGainers: React.FC<TopTrendingGainersProps> = ({
 	}, []);
 
 	// Key extractor for coins
-	const keyExtractor = useCallback((coin: Coin, index: number) => {
+	const keyExtractor = useCallback((coin: Coin, _index: number) => {
 		return `top-gainer-${coin.address}`;
 	}, []);
 

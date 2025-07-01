@@ -12,26 +12,6 @@ interface IconProps extends IconBaseProps {
 	name: string;
 }
 
-// Base icon components
-const FeatherIconBase: React.FC<IconProps> = (props) => {
-	const { name, size = 24, color = '#000', style } = props;
-	return <Feather name={name} size={size} color={color} style={style} />;
-};
-
-const MaterialIconBase: React.FC<IconProps> = (props) => {
-	const { name, size = 24, color = '#000', style } = props;
-	return <MaterialCommunityIcons name={name} size={size} color={color} style={style} />;
-};
-
-const FontAwesome6IconBase: React.FC<IconProps> = (props) => {
-	const { name, size = 24, color = '#000', style } = props;
-	return <FontAwesome6 solid name={name} size={size} color={color} style={style} />;
-};
-
-const AntDesignIconBase: React.FC<IconProps> = (props) => {
-	const { name, size = 24, color = '#000', style } = props;
-	return <AntDesign name={name} size={size} color={color} style={style} />;
-};
 
 // Navigation icons
 export const BackIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="arrow-left" {...props} />;
@@ -72,3 +52,23 @@ export const ChevronDownIcon: React.FC<IconBaseProps> = (props) => <FeatherIconB
 export const TrendUpIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="trending-up" {...props} />;
 export const TrendDownIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="trending-down" {...props} />;
 
+// Base icon components
+const FeatherIconBase: React.FC<IconProps> = (props) => {
+	const { name, size = 24, color = '#000', style } = props;
+	return <Feather name={name} size={size} color={color} style={style} />;
+};
+
+const MaterialIconBase: React.FC<IconProps> = (props) => {
+	const { name, size = 24, color = '#000', style } = props;
+	return <MaterialCommunityIcons name={name} size={size} color={color} style={style} />;
+};
+
+const FontAwesome6IconBase: React.FC<IconProps> = (props) => {
+	const { name, size = 24, color = '#000', style } = props;
+	return <FontAwesome6 solid name={name} size={size} color={color} style={style} />;
+};
+
+const AntDesignIconBase: React.FC<IconProps> = (props) => {
+	const { name, size = 24, color = '#000', style } = props;
+	return <AntDesign name={name} size={size} color={color} style={style} />;
+};
