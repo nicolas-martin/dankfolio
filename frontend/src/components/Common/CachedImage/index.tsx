@@ -6,6 +6,7 @@ import { CachedImageProps } from './types';
 import { logCacheResult } from './scripts';
 import { useStyles } from './styles'; // Import useStyles
 import { logger } from '@/utils/logger';
+import { resolveIpfsUrl } from '@/utils/ipfsResolver';
 
 const CachedImage: React.FC<CachedImageProps> = ({
 	uri,
@@ -30,10 +31,10 @@ const CachedImage: React.FC<CachedImageProps> = ({
 		setIsLoading(false);
 		if (loadStartTime > 0) {
 			const loadTime = Date.now() - loadStartTime;
-			const cacheKey = `${uri}-${size}x${size}`;
-			logCacheResult(loadTime, uri, cacheKey);
+			const cacheKey = `${resolvedUri}-${size}x${size}`;
+			logCacheResult(loadTime, resolvedUri || uri, cacheKey);
 		}
-	}, [loadStartTime, uri, size]);
+	}, [loadStartTime, uri, resolvedUri, size]);
 
 	const handleError = useCallback((error: unknown) => {
 		const msg = error instanceof Error
@@ -47,10 +48,13 @@ const CachedImage: React.FC<CachedImageProps> = ({
 	// Default to circular if no borderRadius is provided
 	const finalBorderRadius = borderRadius !== undefined ? borderRadius : size / 2;
 
+	// Resolve IPFS URLs to HTTP gateway URLs
+	const resolvedUri = useMemo(() => resolveIpfsUrl(uri), [uri]);
+	
 	// All hooks must be at top level before any conditional returns
-	const imageSource = useMemo(() => ({ uri }), [uri]);
+	const imageSource = useMemo(() => ({ uri: resolvedUri }), [resolvedUri]);
 
-	if (!uri || hasError) {
+	if (!resolvedUri || hasError) {
 		return (
 			<ShimmerPlaceholder
 				width={size}
@@ -75,7 +79,7 @@ const CachedImage: React.FC<CachedImageProps> = ({
 					styles.createImageStyle(size, finalBorderRadius, style), // Use function from styles
 					isLoading && styles.hiddenImage // Use styles for hidden image
 				]}
-				cacheKey={`${uri}-${size}x${size}`}
+				cacheKey={`${resolvedUri}-${size}x${size}`}
 				onLoadStart={handleLoadStart}
 				onLoadEnd={handleLoadEnd}
 				onError={handleError}
