@@ -130,6 +130,7 @@ const App: React.FC = () => {
 		setNeedsWalletSetup(false);
 	}, [setWallet]);
 
+
 	useEffect(() => {
 		// This effect runs once on app mount
 		logger.log('App launched'); // Using logger.log as per previous convention for general app info

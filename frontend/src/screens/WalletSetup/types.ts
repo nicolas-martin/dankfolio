@@ -6,7 +6,7 @@ export interface WalletSetupScreenProps {
 	onImportWallet: () => void;
 }
 
-export type WalletSetupStep = 'welcome' | 'create' | 'import' | 'creating';
+export type WalletSetupStep = 'welcome' | 'terms' | 'create' | 'import' | 'creating';
 
 export interface WalletSetupState {
 	step: WalletSetupStep;

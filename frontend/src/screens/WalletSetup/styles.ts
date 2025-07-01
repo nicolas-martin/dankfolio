@@ -175,7 +175,7 @@ export const useStyles = () => {
 				width: '100%',
 			},
 			neonBarImageContainer: {
-				height: 300,
+				height: 400,
 				overflow: 'hidden',
 				width: '100%',
 			},
@@ -278,9 +278,10 @@ export const useStyles = () => {
 				backgroundColor: theme.colors.surface,
 				borderTopLeftRadius: 24,
 				borderTopRightRadius: 24,
-				flex: 1,
 				marginTop: -20,
-				padding: 24,
+				paddingBottom: 32,
+				paddingHorizontal: 24,
+				paddingTop: 24,
 			},
 			wordNumber: {
 				color: theme.colors.primary,

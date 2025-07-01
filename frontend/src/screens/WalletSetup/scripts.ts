@@ -155,6 +155,7 @@ export const WALLET_CREATED_DESC = 'Your wallet has been created. Here is your r
 export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 	const [step, setStep] = useState<WalletSetupStep>('welcome');
 	const [recoveryPhrase, setRecoveryPhrase] = useState('');
+	const [nextAction, setNextAction] = useState<'create' | 'import' | null>(null);
 	const [walletInfo, setWalletInfo] = useState<WalletInfo>({
 		publicKey: '',
 		privateKey: '',
@@ -162,9 +163,21 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		isLoading: false
 	});
 
+	const goToTerms = (action: 'create' | 'import') => {
+		setNextAction(action);
+		setStep('terms');
+	};
 	const goToCreate = () => setStep('create');
 	const goToImport = () => setStep('import');
 	const goToWelcome = () => setStep('welcome');
+	
+	const handleTermsAccepted = () => {
+		if (nextAction === 'create') {
+			setStep('create');
+		} else if (nextAction === 'import') {
+			setStep('import');
+		}
+	};
 
 	const handleCreateWallet = async () => {
 		logger.breadcrumb({ category: 'wallet_setup', message: 'Create wallet process started' });
@@ -237,9 +250,11 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 
 	return {
 		step,
+		goToTerms,
 		goToCreate,
 		goToImport,
 		goToWelcome,
+		handleTermsAccepted,
 		handleCreateWallet,
 		handleImportWallet: handleImportWalletClick,
 		recoveryPhrase,
