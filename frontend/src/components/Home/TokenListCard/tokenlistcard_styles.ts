@@ -76,7 +76,7 @@ export const useStyles = () => {
 			},
 			leftSection: {
 				alignItems: 'center',
-				flex: 0.4,
+				flex: 0.5,
 				flexDirection: 'row',
 				minWidth: 0,
 				paddingRight: theme.spacing.sm,
@@ -110,7 +110,7 @@ export const useStyles = () => {
 			},
 			sparklineContainer: {
 				alignItems: 'center',
-				flex: 0.4,
+				flex: 0.3,
 				height: 40,
 				justifyContent: 'center',
 				paddingHorizontal: theme.spacing.sm,
