@@ -14,7 +14,6 @@ type Config struct {
 	NewCoinsFetchInterval   time.Duration
 	TrendingFetchInterval   time.Duration
 	TopGainersFetchInterval time.Duration
-	MaxConcurrentWorkers    int // Number of concurrent workers for parallel API calls
 }
 
 // --- Structs for Trending Tokens Output ---

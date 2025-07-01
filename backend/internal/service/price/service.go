@@ -15,43 +15,11 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
-// BackendTimeframeConfig defines the configuration for a specific timeframe for the backend.
-type BackendTimeframeConfig struct {
-	BirdeyeType         string        // e.g., "1m", "5m", "1H" for Birdeye API
-	DefaultViewDuration time.Duration // Default duration window for this granularity, derived from frontend config
-	Rounding            time.Duration // Rounding granularity in minutes, from frontend config
-	HistoryType         string        // The type of history to fetch, e.g., "1H", "4H", "1D"
-}
-
 type Service struct {
 	birdeyeClient birdeye.ClientAPI
 	jupiterClient jupiter.ClientAPI
 	store         db.Store
 	cache         PriceHistoryCache
-}
-
-func roundDateDown(dateToRound time.Time, granularityMinutes time.Duration) time.Time {
-	if granularityMinutes <= 0 {
-		slog.Warn("roundDateDown called with zero granularityMinutes, returning original time", "dateToRound", dateToRound)
-		return dateToRound
-	}
-
-	// Convert granularity to minutes for proper rounding
-	granularityInMinutes := int(granularityMinutes / time.Minute)
-	if granularityInMinutes <= 0 {
-		granularityInMinutes = 1 // Default to 1 minute if invalid
-	}
-
-	// Truncate to the hour first, then add back the rounded minutes
-	truncatedToHour := dateToRound.Truncate(time.Hour)
-
-	// Get the minutes past the hour
-	minutesPastHour := dateToRound.Minute()
-
-	// Round down to the nearest granularity
-	roundedMinutes := (minutesPastHour / granularityInMinutes) * granularityInMinutes
-
-	return truncatedToHour.Add(time.Duration(roundedMinutes) * time.Minute)
 }
 
 func NewService(birdeyeClient birdeye.ClientAPI, jupiterClient jupiter.ClientAPI, store db.Store, cache PriceHistoryCache) *Service {
@@ -209,7 +177,7 @@ func (s *Service) GetPriceHistoriesByAddresses(ctx context.Context, requests []P
 	}
 
 	// Use parallel processing with worker pool
-	maxWorkers := getMaxWorkers()
+	maxWorkers := s.birdeyeClient.GetMaxWorkers()
 	const bufferSize = 10
 
 	type priceHistoryJob struct {
@@ -280,8 +248,8 @@ func (s *Service) GetPriceHistoriesByAddresses(ctx context.Context, requests []P
 
 // fetchSinglePriceHistory fetches price history for a single address (called by worker goroutines)
 func (s *Service) fetchSinglePriceHistory(ctx context.Context, request PriceHistoryBatchRequest, workerID int) *PriceHistoryBatchResult {
-	slog.DebugContext(ctx, "Worker fetching price history", 
-		"worker_id", workerID, 
+	slog.DebugContext(ctx, "Worker fetching price history",
+		"worker_id", workerID,
 		"address", request.Address,
 		"type", request.Config.HistoryType)
 
@@ -338,10 +306,10 @@ func (s *Service) fetchSinglePriceHistory(ctx context.Context, request PriceHist
 
 	result, err := s.birdeyeClient.GetPriceHistory(ctx, params)
 	if err != nil {
-		slog.ErrorContext(ctx, "Worker failed to fetch price history from birdeye", 
-			"worker_id", workerID, 
-			"address", request.Address, 
-			"params", fmt.Sprintf("%+v", params), 
+		slog.ErrorContext(ctx, "Worker failed to fetch price history from birdeye",
+			"worker_id", workerID,
+			"address", request.Address,
+			"params", fmt.Sprintf("%+v", params),
 			"error", err)
 		return &PriceHistoryBatchResult{
 			Data:         nil,
@@ -353,8 +321,8 @@ func (s *Service) fetchSinglePriceHistory(ctx context.Context, request PriceHist
 	// Cache the result
 	s.cache.Set(cacheKey, result, request.Config.Rounding)
 
-	slog.DebugContext(ctx, "Worker successfully fetched price history", 
-		"worker_id", workerID, 
+	slog.DebugContext(ctx, "Worker successfully fetched price history",
+		"worker_id", workerID,
 		"address", request.Address,
 		"items_count", len(result.Data.Items))
 
@@ -365,9 +333,26 @@ func (s *Service) fetchSinglePriceHistory(ctx context.Context, request PriceHist
 	}
 }
 
-// getMaxWorkers returns the maximum number of workers for parallel processing
-func getMaxWorkers() int {
-	// Limit concurrent requests to avoid rate limiting
-	// This should be configurable in production
-	return 5
+func roundDateDown(dateToRound time.Time, granularityMinutes time.Duration) time.Time {
+	if granularityMinutes <= 0 {
+		slog.Warn("roundDateDown called with zero granularityMinutes, returning original time", "dateToRound", dateToRound)
+		return dateToRound
+	}
+
+	// Convert granularity to minutes for proper rounding
+	granularityInMinutes := int(granularityMinutes / time.Minute)
+	if granularityInMinutes <= 0 {
+		granularityInMinutes = 1 // Default to 1 minute if invalid
+	}
+
+	// Truncate to the hour first, then add back the rounded minutes
+	truncatedToHour := dateToRound.Truncate(time.Hour)
+
+	// Get the minutes past the hour
+	minutesPastHour := dateToRound.Minute()
+
+	// Round down to the nearest granularity
+	roundedMinutes := (minutesPastHour / granularityInMinutes) * granularityInMinutes
+
+	return truncatedToHour.Add(time.Duration(roundedMinutes) * time.Minute)
 }

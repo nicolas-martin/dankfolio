@@ -563,3 +563,10 @@ func postRequest[T any](c *Client, ctx context.Context, requestURL string, reque
 
 	return &responseObject, nil
 }
+
+// getMaxWorkers returns the maximum number of workers for parallel processing
+func (c *Client) GetMaxWorkers() int {
+	// Limit concurrent requests to avoid rate limiting
+	// This should be configurable in production
+	return 5
+}
