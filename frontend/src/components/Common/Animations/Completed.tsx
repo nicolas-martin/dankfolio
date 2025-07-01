@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react'; // Add useMemo
+import React, { useMemo } from 'react';
 import LottieView from 'lottie-react-native';
 import { ViewStyle, StyleProp } from 'react-native';
-import animationData from '@assets/lottie/success_tick.json'; // Import the JSON file
+import animationData from '@assets/lottie/completed.json';
 
-interface SuccessAnimationProps {
+interface CompletedAnimationProps {
 	autoPlay?: boolean;
 	loop?: boolean;
 	style?: StyleProp<ViewStyle>;
@@ -11,7 +11,7 @@ interface SuccessAnimationProps {
 	onAnimationFinish?: () => void;
 }
 
-const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
+const Completed: React.FC<CompletedAnimationProps> = ({
 	autoPlay = true,
 	loop = false, // Typically, success animations don't loop
 	style,
@@ -33,4 +33,4 @@ const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 	);
 };
 
-export default SuccessAnimation;
+export default Completed;

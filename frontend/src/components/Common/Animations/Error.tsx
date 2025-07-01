@@ -1,11 +1,9 @@
 import React, { useMemo } from 'react'; // Add useMemo
 import LottieView from 'lottie-react-native';
 import { ViewStyle, StyleProp } from 'react-native';
-import animationData from '@assets/lottie/loading_spinner.json'; // Import the JSON file
+import animationData from '@assets/lottie/error_cross.json'; // Import the JSON file
 
-// Assuming loading_spinner.json will be downloaded by the user into frontend/assets/lottie/
-
-interface LoadingAnimationProps {
+interface ErrorAnimationProps {
 	autoPlay?: boolean;
 	loop?: boolean;
 	style?: StyleProp<ViewStyle>;
@@ -13,11 +11,11 @@ interface LoadingAnimationProps {
 	onAnimationFinish?: () => void;
 }
 
-const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
+const Error: React.FC<ErrorAnimationProps> = ({
 	autoPlay = true,
-	loop = true,
+	loop = false, // Typically, error animations don't loop
 	style,
-	size = 50, // Default size updated to 50
+	size = 100,
 	onAnimationFinish,
 }) => {
 	const lottieStyle = useMemo(() => {
@@ -35,4 +33,4 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
 	);
 };
 
-export default LoadingAnimation;
+export default Error;

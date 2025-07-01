@@ -49,7 +49,7 @@ const TrendingGainerCard: React.FC<TrendingGainerCardProps> = ({
 					testID={`${testIdPrefix}-icon-${coin.symbol.toLowerCase()}`}
 				/>
 			</View>
-			
+
 			<Text
 				style={styles.symbol}
 				numberOfLines={1}
@@ -60,17 +60,17 @@ const TrendingGainerCard: React.FC<TrendingGainerCardProps> = ({
 			>
 				{coin.symbol}
 			</Text>
-			
+
 			{changeValue !== undefined && (
 				<View style={styles.changeContainer}>
 					{changeValue > 0 && (
-						<TrendUpIcon 
+						<TrendUpIcon
 							size={12}
 							color={trendColor}
 						/>
 					)}
 					{changeValue < 0 && (
-						<TrendDownIcon 
+						<TrendDownIcon
 							size={12}
 							color={trendColor}
 						/>

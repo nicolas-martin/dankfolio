@@ -1,20 +1,19 @@
 import React, { useMemo } from 'react'; // Add useMemo
 import LottieView from 'lottie-react-native';
 import { ViewStyle, StyleProp } from 'react-native';
-import animationData from '@assets/lottie/trading_arrows.json'; // Import the JSON file
+import animationData from '@assets/lottie/success_tick.json'; // Import the JSON file
 
-interface ArrowsAnimationProps {
+interface SuccessAnimationProps {
 	autoPlay?: boolean;
 	loop?: boolean;
 	style?: StyleProp<ViewStyle>;
 	size?: number;
 	onAnimationFinish?: () => void;
-	// Future props could include color, direction if the Lottie file supports it via expressions
 }
 
-const ArrowsAnimation: React.FC<ArrowsAnimationProps> = ({
+const Success: React.FC<SuccessAnimationProps> = ({
 	autoPlay = true,
-	loop = true,
+	loop = false, // Typically, success animations don't loop
 	style,
 	size = 100,
 	onAnimationFinish,
@@ -34,4 +33,4 @@ const ArrowsAnimation: React.FC<ArrowsAnimationProps> = ({
 	);
 };
 
-export default ArrowsAnimation;
+export default Success;
