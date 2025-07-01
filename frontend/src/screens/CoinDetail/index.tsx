@@ -144,7 +144,7 @@ const CoinDetail: React.FC = () => {
 		return tokens.find(token => token.mintAddress === displayCoin.address);
 	}, [tokens, displayCoin?.address]);
 
-	const isLoadingDetails = !displayCoin || (displayCoin && !displayCoin.description); // Removed isPriceHistoryLoading to prevent flickering
+	const isLoadingDetails = !displayCoin; // Only check if displayCoin exists, not description
 
 	// All hooks must be at the top level - moved from after render functions
 	const chartData = useMemo(() => priceHistory || [], [priceHistory]);
