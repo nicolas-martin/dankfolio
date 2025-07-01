@@ -107,6 +107,74 @@ func (_c *MockPriceServiceAPI_GetCoinPrices_Call) RunAndReturn(run func(ctx cont
 	return _c
 }
 
+// GetPriceHistoriesByAddresses provides a mock function for the type MockPriceServiceAPI
+func (_mock *MockPriceServiceAPI) GetPriceHistoriesByAddresses(ctx context.Context, requests []price.PriceHistoryBatchRequest) (map[string]*price.PriceHistoryBatchResult, error) {
+	ret := _mock.Called(ctx, requests)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetPriceHistoriesByAddresses")
+	}
+
+	var r0 map[string]*price.PriceHistoryBatchResult
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []price.PriceHistoryBatchRequest) (map[string]*price.PriceHistoryBatchResult, error)); ok {
+		return returnFunc(ctx, requests)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []price.PriceHistoryBatchRequest) map[string]*price.PriceHistoryBatchResult); ok {
+		r0 = returnFunc(ctx, requests)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]*price.PriceHistoryBatchResult)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []price.PriceHistoryBatchRequest) error); ok {
+		r1 = returnFunc(ctx, requests)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockPriceServiceAPI_GetPriceHistoriesByAddresses_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPriceHistoriesByAddresses'
+type MockPriceServiceAPI_GetPriceHistoriesByAddresses_Call struct {
+	*mock.Call
+}
+
+// GetPriceHistoriesByAddresses is a helper method to define mock.On call
+//   - ctx context.Context
+//   - requests []price.PriceHistoryBatchRequest
+func (_e *MockPriceServiceAPI_Expecter) GetPriceHistoriesByAddresses(ctx interface{}, requests interface{}) *MockPriceServiceAPI_GetPriceHistoriesByAddresses_Call {
+	return &MockPriceServiceAPI_GetPriceHistoriesByAddresses_Call{Call: _e.mock.On("GetPriceHistoriesByAddresses", ctx, requests)}
+}
+
+func (_c *MockPriceServiceAPI_GetPriceHistoriesByAddresses_Call) Run(run func(ctx context.Context, requests []price.PriceHistoryBatchRequest)) *MockPriceServiceAPI_GetPriceHistoriesByAddresses_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []price.PriceHistoryBatchRequest
+		if args[1] != nil {
+			arg1 = args[1].([]price.PriceHistoryBatchRequest)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockPriceServiceAPI_GetPriceHistoriesByAddresses_Call) Return(stringToPriceHistoryBatchResult map[string]*price.PriceHistoryBatchResult, err error) *MockPriceServiceAPI_GetPriceHistoriesByAddresses_Call {
+	_c.Call.Return(stringToPriceHistoryBatchResult, err)
+	return _c
+}
+
+func (_c *MockPriceServiceAPI_GetPriceHistoriesByAddresses_Call) RunAndReturn(run func(ctx context.Context, requests []price.PriceHistoryBatchRequest) (map[string]*price.PriceHistoryBatchResult, error)) *MockPriceServiceAPI_GetPriceHistoriesByAddresses_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetPriceHistory provides a mock function for the type MockPriceServiceAPI
 func (_mock *MockPriceServiceAPI) GetPriceHistory(ctx context.Context, address string, config price.BackendTimeframeConfig, time string, addressType string) (*birdeye.PriceHistory, error) {
 	ret := _mock.Called(ctx, address, config, time, addressType)

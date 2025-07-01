@@ -81,4 +81,43 @@ for TIMEFRAME_TYPE in 5 6 7 8 9 10 11 12 13 14; do
     }' | jq '.data.items | length' | xargs echo "  Items returned:"
 done
 
+echo -e "\n\n7. Testing GetPriceHistoriesByIDs endpoint (NEW BATCHED ENDPOINT)..."
+echo "========================================="
+curl -X POST "$BASE_URL/dankfolio.v1.PriceService/GetPriceHistoriesByIDs" \
+  -H "Content-Type: application/json" \
+  -H "X-Firebase-AppCheck: $APP_CHECK_TOKEN" \
+  -d '{
+    "items": [
+      {
+        "address": "GM2HHHgRmibkBfhWgzGe7QditC9UJJGhHWXYCTkFHpta",
+        "type": 8,
+        "time": "'$CURRENT_TIME'",
+        "address_type": "token"
+      },
+      {
+        "address": "So11111111111111111111111111111111111111112",
+        "type": 8,
+        "time": "'$CURRENT_TIME'",
+        "address_type": "token"
+      }
+    ]
+  }' | jq '.'
+
+echo -e "\n\n8. Testing GetPriceHistoriesByIDs with debug mode..."
+echo "========================================="
+curl -X POST "$BASE_URL/dankfolio.v1.PriceService/GetPriceHistoriesByIDs" \
+  -H "Content-Type: application/json" \
+  -H "X-Firebase-AppCheck: $APP_CHECK_TOKEN" \
+  -H "X-Debug-Mode: true" \
+  -d '{
+    "items": [
+      {
+        "address": "GM2HHHgRmibkBfhWgzGe7QditC9UJJGhHWXYCTkFHpta",
+        "type": 8,
+        "time": "'$CURRENT_TIME'",
+        "address_type": "token"
+      }
+    ]
+  }' | jq '.results | keys'
+
 echo -e "\n\nAll tests completed!"

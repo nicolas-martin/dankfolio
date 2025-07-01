@@ -420,6 +420,234 @@ func (x *GetCoinPricesResponse) GetPrices() map[string]float64 {
 	return nil
 }
 
+// GetPriceHistoriesByIDsRequest represents a batched request for multiple price histories
+type GetPriceHistoriesByIDsRequest struct {
+	state         protoimpl.MessageState     `protogen:"open.v1"`
+	Items         []*PriceHistoryRequestItem `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPriceHistoriesByIDsRequest) Reset() {
+	*x = GetPriceHistoriesByIDsRequest{}
+	mi := &file_dankfolio_v1_price_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPriceHistoriesByIDsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPriceHistoriesByIDsRequest) ProtoMessage() {}
+
+func (x *GetPriceHistoriesByIDsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dankfolio_v1_price_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPriceHistoriesByIDsRequest.ProtoReflect.Descriptor instead.
+func (*GetPriceHistoriesByIDsRequest) Descriptor() ([]byte, []int) {
+	return file_dankfolio_v1_price_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetPriceHistoriesByIDsRequest) GetItems() []*PriceHistoryRequestItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+// PriceHistoryRequestItem represents a single price history request within a batch
+type PriceHistoryRequestItem struct {
+	state         protoimpl.MessageState                  `protogen:"open.v1"`
+	Address       string                                  `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	Type          GetPriceHistoryRequest_PriceHistoryType `protobuf:"varint,2,opt,name=type,proto3,enum=dankfolio.v1.GetPriceHistoryRequest_PriceHistoryType" json:"type,omitempty"`
+	Time          string                                  `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty"`
+	AddressType   string                                  `protobuf:"bytes,4,opt,name=address_type,json=addressType,proto3" json:"address_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PriceHistoryRequestItem) Reset() {
+	*x = PriceHistoryRequestItem{}
+	mi := &file_dankfolio_v1_price_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PriceHistoryRequestItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PriceHistoryRequestItem) ProtoMessage() {}
+
+func (x *PriceHistoryRequestItem) ProtoReflect() protoreflect.Message {
+	mi := &file_dankfolio_v1_price_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PriceHistoryRequestItem.ProtoReflect.Descriptor instead.
+func (*PriceHistoryRequestItem) Descriptor() ([]byte, []int) {
+	return file_dankfolio_v1_price_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *PriceHistoryRequestItem) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *PriceHistoryRequestItem) GetType() GetPriceHistoryRequest_PriceHistoryType {
+	if x != nil {
+		return x.Type
+	}
+	return GetPriceHistoryRequest_PRICE_HISTORY_TYPE_UNSPECIFIED
+}
+
+func (x *PriceHistoryRequestItem) GetTime() string {
+	if x != nil {
+		return x.Time
+	}
+	return ""
+}
+
+func (x *PriceHistoryRequestItem) GetAddressType() string {
+	if x != nil {
+		return x.AddressType
+	}
+	return ""
+}
+
+// GetPriceHistoriesByIDsResponse represents the batched response containing multiple price histories
+type GetPriceHistoriesByIDsResponse struct {
+	state           protoimpl.MessageState         `protogen:"open.v1"`
+	Results         map[string]*PriceHistoryResult `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	FailedAddresses []string                       `protobuf:"bytes,2,rep,name=failed_addresses,json=failedAddresses,proto3" json:"failed_addresses,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *GetPriceHistoriesByIDsResponse) Reset() {
+	*x = GetPriceHistoriesByIDsResponse{}
+	mi := &file_dankfolio_v1_price_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPriceHistoriesByIDsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPriceHistoriesByIDsResponse) ProtoMessage() {}
+
+func (x *GetPriceHistoriesByIDsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_dankfolio_v1_price_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPriceHistoriesByIDsResponse.ProtoReflect.Descriptor instead.
+func (*GetPriceHistoriesByIDsResponse) Descriptor() ([]byte, []int) {
+	return file_dankfolio_v1_price_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GetPriceHistoriesByIDsResponse) GetResults() map[string]*PriceHistoryResult {
+	if x != nil {
+		return x.Results
+	}
+	return nil
+}
+
+func (x *GetPriceHistoriesByIDsResponse) GetFailedAddresses() []string {
+	if x != nil {
+		return x.FailedAddresses
+	}
+	return nil
+}
+
+// PriceHistoryResult contains the price history data and success status for a single address
+type PriceHistoryResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Data          *PriceHistoryData      `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	Success       bool                   `protobuf:"varint,2,opt,name=success,proto3" json:"success,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PriceHistoryResult) Reset() {
+	*x = PriceHistoryResult{}
+	mi := &file_dankfolio_v1_price_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PriceHistoryResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PriceHistoryResult) ProtoMessage() {}
+
+func (x *PriceHistoryResult) ProtoReflect() protoreflect.Message {
+	mi := &file_dankfolio_v1_price_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PriceHistoryResult.ProtoReflect.Descriptor instead.
+func (*PriceHistoryResult) Descriptor() ([]byte, []int) {
+	return file_dankfolio_v1_price_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *PriceHistoryResult) GetData() *PriceHistoryData {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+func (x *PriceHistoryResult) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *PriceHistoryResult) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
 var File_dankfolio_v1_price_proto protoreflect.FileDescriptor
 
 const file_dankfolio_v1_price_proto_rawDesc = "" +
@@ -464,10 +692,28 @@ const file_dankfolio_v1_price_proto_rawDesc = "" +
 	"\x06prices\x18\x01 \x03(\v2/.dankfolio.v1.GetCoinPricesResponse.PricesEntryR\x06prices\x1a9\n" +
 	"\vPricesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x01R\x05value:\x028\x012\xcc\x01\n" +
+	"\x05value\x18\x02 \x01(\x01R\x05value:\x028\x01\"\\\n" +
+	"\x1dGetPriceHistoriesByIDsRequest\x12;\n" +
+	"\x05items\x18\x01 \x03(\v2%.dankfolio.v1.PriceHistoryRequestItemR\x05items\"\xb5\x01\n" +
+	"\x17PriceHistoryRequestItem\x12\x18\n" +
+	"\aaddress\x18\x01 \x01(\tR\aaddress\x12I\n" +
+	"\x04type\x18\x02 \x01(\x0e25.dankfolio.v1.GetPriceHistoryRequest.PriceHistoryTypeR\x04type\x12\x12\n" +
+	"\x04time\x18\x03 \x01(\tR\x04time\x12!\n" +
+	"\faddress_type\x18\x04 \x01(\tR\vaddressType\"\xfe\x01\n" +
+	"\x1eGetPriceHistoriesByIDsResponse\x12S\n" +
+	"\aresults\x18\x01 \x03(\v29.dankfolio.v1.GetPriceHistoriesByIDsResponse.ResultsEntryR\aresults\x12)\n" +
+	"\x10failed_addresses\x18\x02 \x03(\tR\x0ffailedAddresses\x1a\\\n" +
+	"\fResultsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x126\n" +
+	"\x05value\x18\x02 \x01(\v2 .dankfolio.v1.PriceHistoryResultR\x05value:\x028\x01\"\x87\x01\n" +
+	"\x12PriceHistoryResult\x122\n" +
+	"\x04data\x18\x01 \x01(\v2\x1e.dankfolio.v1.PriceHistoryDataR\x04data\x12\x18\n" +
+	"\asuccess\x18\x02 \x01(\bR\asuccess\x12#\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage2\xc3\x02\n" +
 	"\fPriceService\x12`\n" +
 	"\x0fGetPriceHistory\x12$.dankfolio.v1.GetPriceHistoryRequest\x1a%.dankfolio.v1.GetPriceHistoryResponse\"\x00\x12Z\n" +
-	"\rGetCoinPrices\x12\".dankfolio.v1.GetCoinPricesRequest\x1a#.dankfolio.v1.GetCoinPricesResponse\"\x00B\xb6\x01\n" +
+	"\rGetCoinPrices\x12\".dankfolio.v1.GetCoinPricesRequest\x1a#.dankfolio.v1.GetCoinPricesResponse\"\x00\x12u\n" +
+	"\x16GetPriceHistoriesByIDs\x12+.dankfolio.v1.GetPriceHistoriesByIDsRequest\x1a,.dankfolio.v1.GetPriceHistoriesByIDsResponse\"\x00B\xb6\x01\n" +
 	"\x10com.dankfolio.v1B\n" +
 	"PriceProtoP\x01ZEgithub.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1\xa2\x02\x03DXX\xaa\x02\fDankfolio.V1\xca\x02\fDankfolio\\V1\xe2\x02\x18Dankfolio\\V1\\GPBMetadata\xea\x02\rDankfolio::V1b\x06proto3"
 
@@ -484,7 +730,7 @@ func file_dankfolio_v1_price_proto_rawDescGZIP() []byte {
 }
 
 var file_dankfolio_v1_price_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_dankfolio_v1_price_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_dankfolio_v1_price_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_dankfolio_v1_price_proto_goTypes = []any{
 	(GetPriceHistoryRequest_PriceHistoryType)(0), // 0: dankfolio.v1.GetPriceHistoryRequest.PriceHistoryType
 	(*GetPriceHistoryRequest)(nil),               // 1: dankfolio.v1.GetPriceHistoryRequest
@@ -493,22 +739,34 @@ var file_dankfolio_v1_price_proto_goTypes = []any{
 	(*PriceHistoryItem)(nil),                     // 4: dankfolio.v1.PriceHistoryItem
 	(*GetCoinPricesRequest)(nil),                 // 5: dankfolio.v1.GetCoinPricesRequest
 	(*GetCoinPricesResponse)(nil),                // 6: dankfolio.v1.GetCoinPricesResponse
-	nil,                                          // 7: dankfolio.v1.GetCoinPricesResponse.PricesEntry
+	(*GetPriceHistoriesByIDsRequest)(nil),        // 7: dankfolio.v1.GetPriceHistoriesByIDsRequest
+	(*PriceHistoryRequestItem)(nil),              // 8: dankfolio.v1.PriceHistoryRequestItem
+	(*GetPriceHistoriesByIDsResponse)(nil),       // 9: dankfolio.v1.GetPriceHistoriesByIDsResponse
+	(*PriceHistoryResult)(nil),                   // 10: dankfolio.v1.PriceHistoryResult
+	nil,                                          // 11: dankfolio.v1.GetCoinPricesResponse.PricesEntry
+	nil,                                          // 12: dankfolio.v1.GetPriceHistoriesByIDsResponse.ResultsEntry
 }
 var file_dankfolio_v1_price_proto_depIdxs = []int32{
-	0, // 0: dankfolio.v1.GetPriceHistoryRequest.type:type_name -> dankfolio.v1.GetPriceHistoryRequest.PriceHistoryType
-	3, // 1: dankfolio.v1.GetPriceHistoryResponse.data:type_name -> dankfolio.v1.PriceHistoryData
-	4, // 2: dankfolio.v1.PriceHistoryData.items:type_name -> dankfolio.v1.PriceHistoryItem
-	7, // 3: dankfolio.v1.GetCoinPricesResponse.prices:type_name -> dankfolio.v1.GetCoinPricesResponse.PricesEntry
-	1, // 4: dankfolio.v1.PriceService.GetPriceHistory:input_type -> dankfolio.v1.GetPriceHistoryRequest
-	5, // 5: dankfolio.v1.PriceService.GetCoinPrices:input_type -> dankfolio.v1.GetCoinPricesRequest
-	2, // 6: dankfolio.v1.PriceService.GetPriceHistory:output_type -> dankfolio.v1.GetPriceHistoryResponse
-	6, // 7: dankfolio.v1.PriceService.GetCoinPrices:output_type -> dankfolio.v1.GetCoinPricesResponse
-	6, // [6:8] is the sub-list for method output_type
-	4, // [4:6] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	0,  // 0: dankfolio.v1.GetPriceHistoryRequest.type:type_name -> dankfolio.v1.GetPriceHistoryRequest.PriceHistoryType
+	3,  // 1: dankfolio.v1.GetPriceHistoryResponse.data:type_name -> dankfolio.v1.PriceHistoryData
+	4,  // 2: dankfolio.v1.PriceHistoryData.items:type_name -> dankfolio.v1.PriceHistoryItem
+	11, // 3: dankfolio.v1.GetCoinPricesResponse.prices:type_name -> dankfolio.v1.GetCoinPricesResponse.PricesEntry
+	8,  // 4: dankfolio.v1.GetPriceHistoriesByIDsRequest.items:type_name -> dankfolio.v1.PriceHistoryRequestItem
+	0,  // 5: dankfolio.v1.PriceHistoryRequestItem.type:type_name -> dankfolio.v1.GetPriceHistoryRequest.PriceHistoryType
+	12, // 6: dankfolio.v1.GetPriceHistoriesByIDsResponse.results:type_name -> dankfolio.v1.GetPriceHistoriesByIDsResponse.ResultsEntry
+	3,  // 7: dankfolio.v1.PriceHistoryResult.data:type_name -> dankfolio.v1.PriceHistoryData
+	10, // 8: dankfolio.v1.GetPriceHistoriesByIDsResponse.ResultsEntry.value:type_name -> dankfolio.v1.PriceHistoryResult
+	1,  // 9: dankfolio.v1.PriceService.GetPriceHistory:input_type -> dankfolio.v1.GetPriceHistoryRequest
+	5,  // 10: dankfolio.v1.PriceService.GetCoinPrices:input_type -> dankfolio.v1.GetCoinPricesRequest
+	7,  // 11: dankfolio.v1.PriceService.GetPriceHistoriesByIDs:input_type -> dankfolio.v1.GetPriceHistoriesByIDsRequest
+	2,  // 12: dankfolio.v1.PriceService.GetPriceHistory:output_type -> dankfolio.v1.GetPriceHistoryResponse
+	6,  // 13: dankfolio.v1.PriceService.GetCoinPrices:output_type -> dankfolio.v1.GetCoinPricesResponse
+	9,  // 14: dankfolio.v1.PriceService.GetPriceHistoriesByIDs:output_type -> dankfolio.v1.GetPriceHistoriesByIDsResponse
+	12, // [12:15] is the sub-list for method output_type
+	9,  // [9:12] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_dankfolio_v1_price_proto_init() }
@@ -522,7 +780,7 @@ func file_dankfolio_v1_price_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dankfolio_v1_price_proto_rawDesc), len(file_dankfolio_v1_price_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   7,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

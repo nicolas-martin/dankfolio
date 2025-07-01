@@ -126,3 +126,110 @@ func (s *priceServiceHandler) GetCoinPrices(
 	})
 	return res, nil
 }
+
+// GetPriceHistoriesByIDs returns price histories for multiple addresses in a single request
+func (s *priceServiceHandler) GetPriceHistoriesByIDs(
+	ctx context.Context,
+	req *connect.Request[pb.GetPriceHistoriesByIDsRequest],
+) (*connect.Response[pb.GetPriceHistoriesByIDsResponse], error) {
+	items := req.Msg.Items
+	if len(items) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("no price history requests provided"))
+	}
+
+	// Validate batch size limit
+	const maxBatchSize = 20 // Conservative limit for price history API calls
+	if len(items) > maxBatchSize {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("batch size %d exceeds maximum allowed %d", len(items), maxBatchSize))
+	}
+
+	slog.DebugContext(ctx, "gRPC GetPriceHistoriesByIDs request received", "requests_count", len(items))
+
+	// Convert protobuf requests to service requests
+	var serviceRequests []price.PriceHistoryBatchRequest
+	for _, item := range items {
+		if item.Address == "" {
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("address is required for all items"))
+		}
+
+		// Set default values if not provided
+		addressType := item.AddressType
+		if addressType == "" {
+			addressType = "token"
+		}
+
+		historyType := item.Type
+		if historyType == pb.GetPriceHistoryRequest_PRICE_HISTORY_TYPE_UNSPECIFIED {
+			historyType = pb.GetPriceHistoryRequest_FOUR_HOUR // Default
+		}
+
+		config, ok := price.TimeframeConfigMap[historyType]
+		if !ok {
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("unsupported history type: %s", historyType.String()))
+		}
+
+		if item.Time == "" {
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("time is required for all items"))
+		}
+
+		serviceRequests = append(serviceRequests, price.PriceHistoryBatchRequest{
+			Address:     item.Address,
+			Config:      config,
+			Time:        item.Time,
+			AddressType: addressType,
+		})
+	}
+
+	slog.DebugContext(ctx, "Fetching price histories using batch service",
+		"requests_count", len(serviceRequests))
+
+	// Call the batch service method
+	results, err := s.priceService.GetPriceHistoriesByAddresses(ctx, serviceRequests)
+	if err != nil {
+		slog.ErrorContext(ctx, "GetPriceHistoriesByIDs service call failed", "error", err, "requests_count", len(serviceRequests))
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get price histories: %w", err))
+	}
+
+	// Convert service results to protobuf response
+	pbResults := make(map[string]*pb.PriceHistoryResult)
+	var failedAddresses []string
+
+	for address, result := range results {
+		if !result.Success || result.Data == nil {
+			failedAddresses = append(failedAddresses, address)
+			pbResults[address] = &pb.PriceHistoryResult{
+				Data:         nil,
+				Success:      false,
+				ErrorMessage: result.ErrorMessage,
+			}
+		} else {
+			// Convert to protobuf price history data
+			pbItems := make([]*pb.PriceHistoryItem, len(result.Data.Data.Items))
+			for i, item := range result.Data.Data.Items {
+				pbItems[i] = &pb.PriceHistoryItem{
+					UnixTime: fmt.Sprintf("%d", item.UnixTime),
+					Value:    item.Value,
+				}
+			}
+
+			pbResults[address] = &pb.PriceHistoryResult{
+				Data: &pb.PriceHistoryData{
+					Items: pbItems,
+				},
+				Success:      true,
+				ErrorMessage: "",
+			}
+		}
+	}
+
+	slog.InfoContext(ctx, "Successfully processed batch price history request",
+		"requested_count", len(serviceRequests),
+		"successful_count", len(results)-len(failedAddresses),
+		"failed_count", len(failedAddresses))
+
+	res := connect.NewResponse(&pb.GetPriceHistoriesByIDsResponse{
+		Results:         pbResults,
+		FailedAddresses: failedAddresses,
+	})
+	return res, nil
+}
