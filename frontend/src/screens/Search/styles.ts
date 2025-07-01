@@ -31,6 +31,10 @@ export const useStyles = () => {
 			contentPadding: {
 				padding: theme.spacing.lg,
 			},
+			divider: {
+				backgroundColor: theme.colors.outlineVariant,
+				height: 0.5,
+			},
 			emptyContainer: {
 				alignItems: 'center',
 				flex: 1,
@@ -88,7 +92,6 @@ export const useStyles = () => {
 			},
 			listContent: {
 				paddingBottom: theme.spacing.lg,
-				paddingHorizontal: theme.spacing.lg,
 			},
 			loadingContainer: {
 				alignItems: 'center',
@@ -119,6 +122,9 @@ export const useStyles = () => {
 				color: theme.colors.onSurface,
 				height: theme.spacing['4xl'],
 				paddingHorizontal: theme.spacing.md,
+			},
+			searchResultsContainer: {
+				flex: 1,
 			},
 			sortButton: {
 				alignItems: 'center',
@@ -153,14 +159,13 @@ export const useStyles = () => {
 			},
 			tokenItem: {
 				alignItems: 'center',
-				borderBottomColor: theme.colors.outlineVariant,
-				borderBottomWidth: 1,
 				flexDirection: 'row',
-				padding: theme.spacing.lg,
+				paddingHorizontal: theme.spacing.lg,
+				paddingVertical: theme.spacing.lg,
 			},
 			tokenMetrics: {
-				alignItems: 'center',
-				flexDirection: 'row',
+				alignItems: 'flex-end',
+				flexDirection: 'column',
 			},
 			tokenName: {
 				color: theme.colors.onSurface,

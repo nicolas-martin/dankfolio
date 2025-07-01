@@ -9,7 +9,6 @@ export type SearchScreenRouteProp = RouteProp<RootStackParamList, 'Search'>;
 
 export interface SearchFilters {
 	query: string;
-	sortBy: string; // "volume24h" or "jupiter_listed_at"
 }
 
 export interface SearchState {

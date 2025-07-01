@@ -117,7 +117,6 @@ export interface SearchRequest {
 	query: string;
 	limit?: number;
 	offset?: number;
-	sortBy?: string; // "volume24h" or "jupiter_listed_at"
 }
 
 export interface SearchResponse {

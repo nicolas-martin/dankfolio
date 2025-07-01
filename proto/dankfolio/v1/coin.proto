@@ -100,7 +100,6 @@ message SearchRequest {
   string query = 1;                // Text to search in name, symbol, or mint address
   int32 limit = 2;                // Maximum number of results (default: 20)
   int32 offset = 3;               // Offset for pagination
-  optional string sort_by = 4;    // Sort field: "volume24h" or "jupiter_listed_at" (default: "volume24h")
 }
 
 message SearchResponse {
