@@ -39,6 +39,9 @@ const (
 	// PriceServiceGetCoinPricesProcedure is the fully-qualified name of the PriceService's
 	// GetCoinPrices RPC.
 	PriceServiceGetCoinPricesProcedure = "/dankfolio.v1.PriceService/GetCoinPrices"
+	// PriceServiceGetPriceHistoriesByIDsProcedure is the fully-qualified name of the PriceService's
+	// GetPriceHistoriesByIDs RPC.
+	PriceServiceGetPriceHistoriesByIDsProcedure = "/dankfolio.v1.PriceService/GetPriceHistoriesByIDs"
 )
 
 // PriceServiceClient is a client for the dankfolio.v1.PriceService service.
@@ -47,6 +50,8 @@ type PriceServiceClient interface {
 	GetPriceHistory(context.Context, *connect.Request[v1.GetPriceHistoryRequest]) (*connect.Response[v1.GetPriceHistoryResponse], error)
 	// GetCoinPrices returns current prices for multiple coins
 	GetCoinPrices(context.Context, *connect.Request[v1.GetCoinPricesRequest]) (*connect.Response[v1.GetCoinPricesResponse], error)
+	// GetPriceHistoriesByIDs returns historical price data for multiple addresses in a single request
+	GetPriceHistoriesByIDs(context.Context, *connect.Request[v1.GetPriceHistoriesByIDsRequest]) (*connect.Response[v1.GetPriceHistoriesByIDsResponse], error)
 }
 
 // NewPriceServiceClient constructs a client for the dankfolio.v1.PriceService service. By default,
@@ -72,13 +77,20 @@ func NewPriceServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(priceServiceMethods.ByName("GetCoinPrices")),
 			connect.WithClientOptions(opts...),
 		),
+		getPriceHistoriesByIDs: connect.NewClient[v1.GetPriceHistoriesByIDsRequest, v1.GetPriceHistoriesByIDsResponse](
+			httpClient,
+			baseURL+PriceServiceGetPriceHistoriesByIDsProcedure,
+			connect.WithSchema(priceServiceMethods.ByName("GetPriceHistoriesByIDs")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // priceServiceClient implements PriceServiceClient.
 type priceServiceClient struct {
-	getPriceHistory *connect.Client[v1.GetPriceHistoryRequest, v1.GetPriceHistoryResponse]
-	getCoinPrices   *connect.Client[v1.GetCoinPricesRequest, v1.GetCoinPricesResponse]
+	getPriceHistory        *connect.Client[v1.GetPriceHistoryRequest, v1.GetPriceHistoryResponse]
+	getCoinPrices          *connect.Client[v1.GetCoinPricesRequest, v1.GetCoinPricesResponse]
+	getPriceHistoriesByIDs *connect.Client[v1.GetPriceHistoriesByIDsRequest, v1.GetPriceHistoriesByIDsResponse]
 }
 
 // GetPriceHistory calls dankfolio.v1.PriceService.GetPriceHistory.
@@ -91,12 +103,19 @@ func (c *priceServiceClient) GetCoinPrices(ctx context.Context, req *connect.Req
 	return c.getCoinPrices.CallUnary(ctx, req)
 }
 
+// GetPriceHistoriesByIDs calls dankfolio.v1.PriceService.GetPriceHistoriesByIDs.
+func (c *priceServiceClient) GetPriceHistoriesByIDs(ctx context.Context, req *connect.Request[v1.GetPriceHistoriesByIDsRequest]) (*connect.Response[v1.GetPriceHistoriesByIDsResponse], error) {
+	return c.getPriceHistoriesByIDs.CallUnary(ctx, req)
+}
+
 // PriceServiceHandler is an implementation of the dankfolio.v1.PriceService service.
 type PriceServiceHandler interface {
 	// GetPriceHistory returns historical price data for a given address
 	GetPriceHistory(context.Context, *connect.Request[v1.GetPriceHistoryRequest]) (*connect.Response[v1.GetPriceHistoryResponse], error)
 	// GetCoinPrices returns current prices for multiple coins
 	GetCoinPrices(context.Context, *connect.Request[v1.GetCoinPricesRequest]) (*connect.Response[v1.GetCoinPricesResponse], error)
+	// GetPriceHistoriesByIDs returns historical price data for multiple addresses in a single request
+	GetPriceHistoriesByIDs(context.Context, *connect.Request[v1.GetPriceHistoriesByIDsRequest]) (*connect.Response[v1.GetPriceHistoriesByIDsResponse], error)
 }
 
 // NewPriceServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -118,12 +137,20 @@ func NewPriceServiceHandler(svc PriceServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(priceServiceMethods.ByName("GetCoinPrices")),
 		connect.WithHandlerOptions(opts...),
 	)
+	priceServiceGetPriceHistoriesByIDsHandler := connect.NewUnaryHandler(
+		PriceServiceGetPriceHistoriesByIDsProcedure,
+		svc.GetPriceHistoriesByIDs,
+		connect.WithSchema(priceServiceMethods.ByName("GetPriceHistoriesByIDs")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/dankfolio.v1.PriceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case PriceServiceGetPriceHistoryProcedure:
 			priceServiceGetPriceHistoryHandler.ServeHTTP(w, r)
 		case PriceServiceGetCoinPricesProcedure:
 			priceServiceGetCoinPricesHandler.ServeHTTP(w, r)
+		case PriceServiceGetPriceHistoriesByIDsProcedure:
+			priceServiceGetPriceHistoriesByIDsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -139,4 +166,8 @@ func (UnimplementedPriceServiceHandler) GetPriceHistory(context.Context, *connec
 
 func (UnimplementedPriceServiceHandler) GetCoinPrices(context.Context, *connect.Request[v1.GetCoinPricesRequest]) (*connect.Response[v1.GetCoinPricesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.PriceService.GetCoinPrices is not implemented"))
+}
+
+func (UnimplementedPriceServiceHandler) GetPriceHistoriesByIDs(context.Context, *connect.Request[v1.GetPriceHistoriesByIDsRequest]) (*connect.Response[v1.GetPriceHistoriesByIDsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.PriceService.GetPriceHistoriesByIDs is not implemented"))
 }

@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"math"
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
@@ -174,4 +175,199 @@ func (s *Service) generateRandomPriceHistory() (*birdeye.PriceHistory, error) {
 		},
 		Success: true,
 	}, nil
+}
+
+// GetPriceHistoriesByAddresses retrieves price histories for multiple addresses using parallel processing
+func (s *Service) GetPriceHistoriesByAddresses(ctx context.Context, requests []PriceHistoryBatchRequest) (map[string]*PriceHistoryBatchResult, error) {
+	if len(requests) == 0 {
+		return make(map[string]*PriceHistoryBatchResult), nil
+	}
+
+	slog.InfoContext(ctx, "Getting price histories for multiple addresses", "count", len(requests))
+
+	// Check for debug mode
+	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
+		slog.Info("x-debug-mode: true for GetPriceHistoriesByAddresses, returning random price histories")
+		results := make(map[string]*PriceHistoryBatchResult)
+		for _, req := range requests {
+			randomHistory, err := s.generateRandomPriceHistory()
+			if err != nil {
+				results[req.Address] = &PriceHistoryBatchResult{
+					Data:         nil,
+					Success:      false,
+					ErrorMessage: fmt.Sprintf("failed to generate random price history: %v", err),
+				}
+			} else {
+				results[req.Address] = &PriceHistoryBatchResult{
+					Data:         randomHistory,
+					Success:      true,
+					ErrorMessage: "",
+				}
+			}
+		}
+		return results, nil
+	}
+
+	// Use parallel processing with worker pool
+	maxWorkers := getMaxWorkers()
+	const bufferSize = 10
+
+	type priceHistoryJob struct {
+		request PriceHistoryBatchRequest
+	}
+
+	type priceHistoryResult struct {
+		address string
+		result  *PriceHistoryBatchResult
+	}
+
+	// Create job and result channels
+	jobs := make(chan priceHistoryJob, bufferSize)
+	results := make(chan priceHistoryResult, len(requests))
+
+	// Start worker goroutines
+	var wg sync.WaitGroup
+	for i := 0; i < maxWorkers; i++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+			for job := range jobs {
+				result := s.fetchSinglePriceHistory(ctx, job.request, workerID)
+				results <- priceHistoryResult{
+					address: job.request.Address,
+					result:  result,
+				}
+			}
+		}(i)
+	}
+
+	// Send jobs to workers
+	go func() {
+		defer close(jobs)
+		for _, request := range requests {
+			select {
+			case jobs <- priceHistoryJob{request: request}:
+			case <-ctx.Done():
+				slog.WarnContext(ctx, "Context cancelled while queueing price history jobs")
+				return
+			}
+		}
+	}()
+
+	// Wait for all workers to finish
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	// Collect results
+	finalResults := make(map[string]*PriceHistoryBatchResult)
+	successCount := 0
+	for result := range results {
+		finalResults[result.address] = result.result
+		if result.result.Success {
+			successCount++
+		}
+	}
+
+	slog.InfoContext(ctx, "Completed batch price history retrieval",
+		"total_requested", len(requests),
+		"successful", successCount,
+		"failed", len(requests)-successCount)
+
+	return finalResults, nil
+}
+
+// fetchSinglePriceHistory fetches price history for a single address (called by worker goroutines)
+func (s *Service) fetchSinglePriceHistory(ctx context.Context, request PriceHistoryBatchRequest, workerID int) *PriceHistoryBatchResult {
+	slog.DebugContext(ctx, "Worker fetching price history", 
+		"worker_id", workerID, 
+		"address", request.Address,
+		"type", request.Config.HistoryType)
+
+	// Check cache first
+	cacheKey := fmt.Sprintf("%s-%s", request.Address, request.Config.HistoryType)
+	if cachedData, found := s.cache.Get(cacheKey); found {
+		slog.DebugContext(ctx, "Worker found cached price history", "worker_id", workerID, "address", request.Address)
+		return &PriceHistoryBatchResult{
+			Data:         cachedData,
+			Success:      true,
+			ErrorMessage: "",
+		}
+	}
+
+	// Parse and calculate time range
+	parsedTime, err := time.Parse(time.RFC3339, request.Time)
+	if err != nil {
+		slog.ErrorContext(ctx, "Worker failed to parse time", "worker_id", workerID, "address", request.Address, "time", request.Time, "error", err)
+		return &PriceHistoryBatchResult{
+			Data:         nil,
+			Success:      false,
+			ErrorMessage: fmt.Sprintf("failed to parse time: %v", err),
+		}
+	}
+
+	// Calculate time range - ensure we have a meaningful time span
+	timeFrom := parsedTime.Add(-request.Config.DefaultViewDuration)
+	timeTo := parsedTime
+
+	// Round the times to appropriate granularity
+	roundedTimeFrom := roundDateDown(timeFrom, request.Config.Rounding)
+	roundedTimeTo := roundDateDown(timeTo, request.Config.Rounding)
+
+	// Ensure we have at least a minimum time span to get multiple data points
+	minTimeSpan := request.Config.DefaultViewDuration / 4 // At least 1/4 of the default duration
+	if roundedTimeTo.Sub(roundedTimeFrom) < minTimeSpan {
+		// Adjust the time range to ensure we get multiple data points
+		roundedTimeFrom = roundedTimeTo.Add(-request.Config.DefaultViewDuration)
+		slog.DebugContext(ctx, "Worker adjusted time range for minimum span",
+			"worker_id", workerID,
+			"address", request.Address,
+			"originalFrom", roundedTimeFrom.Add(request.Config.DefaultViewDuration),
+			"adjustedFrom", roundedTimeFrom,
+			"minTimeSpan", minTimeSpan)
+	}
+
+	params := birdeye.PriceHistoryParams{
+		Address:     request.Address,
+		AddressType: request.AddressType,
+		HistoryType: request.Config.BirdeyeType,
+		TimeFrom:    roundedTimeFrom,
+		TimeTo:      roundedTimeTo,
+	}
+
+	result, err := s.birdeyeClient.GetPriceHistory(ctx, params)
+	if err != nil {
+		slog.ErrorContext(ctx, "Worker failed to fetch price history from birdeye", 
+			"worker_id", workerID, 
+			"address", request.Address, 
+			"params", fmt.Sprintf("%+v", params), 
+			"error", err)
+		return &PriceHistoryBatchResult{
+			Data:         nil,
+			Success:      false,
+			ErrorMessage: fmt.Sprintf("failed to fetch price history: %v", err),
+		}
+	}
+
+	// Cache the result
+	s.cache.Set(cacheKey, result, request.Config.Rounding)
+
+	slog.DebugContext(ctx, "Worker successfully fetched price history", 
+		"worker_id", workerID, 
+		"address", request.Address,
+		"items_count", len(result.Data.Items))
+
+	return &PriceHistoryBatchResult{
+		Data:         result,
+		Success:      true,
+		ErrorMessage: "",
+	}
+}
+
+// getMaxWorkers returns the maximum number of workers for parallel processing
+func getMaxWorkers() int {
+	// Limit concurrent requests to avoid rate limiting
+	// This should be configurable in production
+	return 5
 }

@@ -13,6 +13,9 @@ service PriceService {
 
   // GetCoinPrices returns current prices for multiple coins
   rpc GetCoinPrices(GetCoinPricesRequest) returns (GetCoinPricesResponse) {}
+
+  // GetPriceHistoriesByIDs returns historical price data for multiple addresses in a single request
+  rpc GetPriceHistoriesByIDs(GetPriceHistoriesByIDsRequest) returns (GetPriceHistoriesByIDsResponse) {}
 }
 
 // GetPriceHistoryRequest represents a request for price history data
@@ -66,4 +69,30 @@ message GetCoinPricesRequest {
 // GetCoinPricesResponse is the response containing coin prices
 message GetCoinPricesResponse {
   map<string, double> prices = 1;
+}
+
+// GetPriceHistoriesByIDsRequest represents a batched request for multiple price histories
+message GetPriceHistoriesByIDsRequest {
+  repeated PriceHistoryRequestItem items = 1;
+}
+
+// PriceHistoryRequestItem represents a single price history request within a batch
+message PriceHistoryRequestItem {
+  string address = 1;
+  GetPriceHistoryRequest.PriceHistoryType type = 2;
+  string time = 3;
+  string address_type = 4;
+}
+
+// GetPriceHistoriesByIDsResponse represents the batched response containing multiple price histories
+message GetPriceHistoriesByIDsResponse {
+  map<string, PriceHistoryResult> results = 1;
+  repeated string failed_addresses = 2;
+}
+
+// PriceHistoryResult contains the price history data and success status for a single address
+message PriceHistoryResult {
+  PriceHistoryData data = 1;
+  bool success = 2;
+  string error_message = 3;
 }

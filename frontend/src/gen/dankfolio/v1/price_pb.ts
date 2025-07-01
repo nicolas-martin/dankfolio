@@ -11,7 +11,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/price.proto.
  */
 export const file_dankfolio_v1_price: GenFile = /*@__PURE__*/
-  fileDesc("ChhkYW5rZm9saW8vdjEvcHJpY2UucHJvdG8SDGRhbmtmb2xpby52MSK4AwoWR2V0UHJpY2VIaXN0b3J5UmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJEkMKBHR5cGUYAiABKA4yNS5kYW5rZm9saW8udjEuR2V0UHJpY2VIaXN0b3J5UmVxdWVzdC5QcmljZUhpc3RvcnlUeXBlEgwKBHRpbWUYAyABKAkSFAoMYWRkcmVzc190eXBlGAQgASgJIqMCChBQcmljZUhpc3RvcnlUeXBlEiIKHlBSSUNFX0hJU1RPUllfVFlQRV9VTlNQRUNJRklFRBAAEg4KCk9ORV9NSU5VVEUQARIQCgxUSFJFRV9NSU5VVEUQAhIPCgtGSVZFX01JTlVURRADEhIKDkZJRlRFRU5fTUlOVVRFEAQSEQoNVEhJUlRZX01JTlVURRAFEgwKCE9ORV9IT1VSEAYSDAoIVFdPX0hPVVIQBxINCglGT1VSX0hPVVIQCBIMCghTSVhfSE9VUhAJEg4KCkVJR0hUX0hPVVIQChIPCgtUV0VMVkVfSE9VUhALEgsKB09ORV9EQVkQDBINCglUSFJFRV9EQVkQDRIMCghPTkVfV0VFSxAOEg0KCU9ORV9NT05USBAPIlgKF0dldFByaWNlSGlzdG9yeVJlc3BvbnNlEiwKBGRhdGEYASABKAsyHi5kYW5rZm9saW8udjEuUHJpY2VIaXN0b3J5RGF0YRIPCgdzdWNjZXNzGAIgASgIIkEKEFByaWNlSGlzdG9yeURhdGESLQoFaXRlbXMYASADKAsyHi5kYW5rZm9saW8udjEuUHJpY2VIaXN0b3J5SXRlbSI0ChBQcmljZUhpc3RvcnlJdGVtEhEKCXVuaXhfdGltZRgBIAEoCRINCgV2YWx1ZRgCIAEoASIoChRHZXRDb2luUHJpY2VzUmVxdWVzdBIQCghjb2luX2lkcxgBIAMoCSKHAQoVR2V0Q29pblByaWNlc1Jlc3BvbnNlEj8KBnByaWNlcxgBIAMoCzIvLmRhbmtmb2xpby52MS5HZXRDb2luUHJpY2VzUmVzcG9uc2UuUHJpY2VzRW50cnkaLQoLUHJpY2VzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgBOgI4ATLMAQoMUHJpY2VTZXJ2aWNlEmAKD0dldFByaWNlSGlzdG9yeRIkLmRhbmtmb2xpby52MS5HZXRQcmljZUhpc3RvcnlSZXF1ZXN0GiUuZGFua2ZvbGlvLnYxLkdldFByaWNlSGlzdG9yeVJlc3BvbnNlIgASWgoNR2V0Q29pblByaWNlcxIiLmRhbmtmb2xpby52MS5HZXRDb2luUHJpY2VzUmVxdWVzdBojLmRhbmtmb2xpby52MS5HZXRDb2luUHJpY2VzUmVzcG9uc2UiAEK2AQoQY29tLmRhbmtmb2xpby52MUIKUHJpY2VQcm90b1ABWkVnaXRodWIuY29tL25pY29sYXMtbWFydGluL2Rhbmtmb2xpby9iYWNrZW5kL2dlbi9wcm90by9nby9kYW5rZm9saW8vdjGiAgNEWFiqAgxEYW5rZm9saW8uVjHKAgxEYW5rZm9saW9cVjHiAhhEYW5rZm9saW9cVjFcR1BCTWV0YWRhdGHqAg1EYW5rZm9saW86OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("ChhkYW5rZm9saW8vdjEvcHJpY2UucHJvdG8SDGRhbmtmb2xpby52MSK4AwoWR2V0UHJpY2VIaXN0b3J5UmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJEkMKBHR5cGUYAiABKA4yNS5kYW5rZm9saW8udjEuR2V0UHJpY2VIaXN0b3J5UmVxdWVzdC5QcmljZUhpc3RvcnlUeXBlEgwKBHRpbWUYAyABKAkSFAoMYWRkcmVzc190eXBlGAQgASgJIqMCChBQcmljZUhpc3RvcnlUeXBlEiIKHlBSSUNFX0hJU1RPUllfVFlQRV9VTlNQRUNJRklFRBAAEg4KCk9ORV9NSU5VVEUQARIQCgxUSFJFRV9NSU5VVEUQAhIPCgtGSVZFX01JTlVURRADEhIKDkZJRlRFRU5fTUlOVVRFEAQSEQoNVEhJUlRZX01JTlVURRAFEgwKCE9ORV9IT1VSEAYSDAoIVFdPX0hPVVIQBxINCglGT1VSX0hPVVIQCBIMCghTSVhfSE9VUhAJEg4KCkVJR0hUX0hPVVIQChIPCgtUV0VMVkVfSE9VUhALEgsKB09ORV9EQVkQDBINCglUSFJFRV9EQVkQDRIMCghPTkVfV0VFSxAOEg0KCU9ORV9NT05USBAPIlgKF0dldFByaWNlSGlzdG9yeVJlc3BvbnNlEiwKBGRhdGEYASABKAsyHi5kYW5rZm9saW8udjEuUHJpY2VIaXN0b3J5RGF0YRIPCgdzdWNjZXNzGAIgASgIIkEKEFByaWNlSGlzdG9yeURhdGESLQoFaXRlbXMYASADKAsyHi5kYW5rZm9saW8udjEuUHJpY2VIaXN0b3J5SXRlbSI0ChBQcmljZUhpc3RvcnlJdGVtEhEKCXVuaXhfdGltZRgBIAEoCRINCgV2YWx1ZRgCIAEoASIoChRHZXRDb2luUHJpY2VzUmVxdWVzdBIQCghjb2luX2lkcxgBIAMoCSKHAQoVR2V0Q29pblByaWNlc1Jlc3BvbnNlEj8KBnByaWNlcxgBIAMoCzIvLmRhbmtmb2xpby52MS5HZXRDb2luUHJpY2VzUmVzcG9uc2UuUHJpY2VzRW50cnkaLQoLUHJpY2VzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgBOgI4ASJVCh1HZXRQcmljZUhpc3Rvcmllc0J5SURzUmVxdWVzdBI0CgVpdGVtcxgBIAMoCzIlLmRhbmtmb2xpby52MS5QcmljZUhpc3RvcnlSZXF1ZXN0SXRlbSKTAQoXUHJpY2VIaXN0b3J5UmVxdWVzdEl0ZW0SDwoHYWRkcmVzcxgBIAEoCRJDCgR0eXBlGAIgASgOMjUuZGFua2ZvbGlvLnYxLkdldFByaWNlSGlzdG9yeVJlcXVlc3QuUHJpY2VIaXN0b3J5VHlwZRIMCgR0aW1lGAMgASgJEhQKDGFkZHJlc3NfdHlwZRgEIAEoCSLYAQoeR2V0UHJpY2VIaXN0b3JpZXNCeUlEc1Jlc3BvbnNlEkoKB3Jlc3VsdHMYASADKAsyOS5kYW5rZm9saW8udjEuR2V0UHJpY2VIaXN0b3JpZXNCeUlEc1Jlc3BvbnNlLlJlc3VsdHNFbnRyeRIYChBmYWlsZWRfYWRkcmVzc2VzGAIgAygJGlAKDFJlc3VsdHNFbnRyeRILCgNrZXkYASABKAkSLwoFdmFsdWUYAiABKAsyIC5kYW5rZm9saW8udjEuUHJpY2VIaXN0b3J5UmVzdWx0OgI4ASJqChJQcmljZUhpc3RvcnlSZXN1bHQSLAoEZGF0YRgBIAEoCzIeLmRhbmtmb2xpby52MS5QcmljZUhpc3RvcnlEYXRhEg8KB3N1Y2Nlc3MYAiABKAgSFQoNZXJyb3JfbWVzc2FnZRgDIAEoCTLDAgoMUHJpY2VTZXJ2aWNlEmAKD0dldFByaWNlSGlzdG9yeRIkLmRhbmtmb2xpby52MS5HZXRQcmljZUhpc3RvcnlSZXF1ZXN0GiUuZGFua2ZvbGlvLnYxLkdldFByaWNlSGlzdG9yeVJlc3BvbnNlIgASWgoNR2V0Q29pblByaWNlcxIiLmRhbmtmb2xpby52MS5HZXRDb2luUHJpY2VzUmVxdWVzdBojLmRhbmtmb2xpby52MS5HZXRDb2luUHJpY2VzUmVzcG9uc2UiABJ1ChZHZXRQcmljZUhpc3Rvcmllc0J5SURzEisuZGFua2ZvbGlvLnYxLkdldFByaWNlSGlzdG9yaWVzQnlJRHNSZXF1ZXN0GiwuZGFua2ZvbGlvLnYxLkdldFByaWNlSGlzdG9yaWVzQnlJRHNSZXNwb25zZSIAQrYBChBjb20uZGFua2ZvbGlvLnYxQgpQcmljZVByb3RvUAFaRWdpdGh1Yi5jb20vbmljb2xhcy1tYXJ0aW4vZGFua2ZvbGlvL2JhY2tlbmQvZ2VuL3Byb3RvL2dvL2Rhbmtmb2xpby92MaICA0RYWKoCDERhbmtmb2xpby5WMcoCDERhbmtmb2xpb1xWMeICGERhbmtmb2xpb1xWMVxHUEJNZXRhZGF0YeoCDURhbmtmb2xpbzo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
 
 /**
  * GetPriceHistoryRequest represents a request for price history data
@@ -246,6 +246,112 @@ export const GetCoinPricesResponseSchema: GenMessage<GetCoinPricesResponse> = /*
   messageDesc(file_dankfolio_v1_price, 5);
 
 /**
+ * GetPriceHistoriesByIDsRequest represents a batched request for multiple price histories
+ *
+ * @generated from message dankfolio.v1.GetPriceHistoriesByIDsRequest
+ */
+export type GetPriceHistoriesByIDsRequest = Message<"dankfolio.v1.GetPriceHistoriesByIDsRequest"> & {
+  /**
+   * @generated from field: repeated dankfolio.v1.PriceHistoryRequestItem items = 1;
+   */
+  items: PriceHistoryRequestItem[];
+};
+
+/**
+ * Describes the message dankfolio.v1.GetPriceHistoriesByIDsRequest.
+ * Use `create(GetPriceHistoriesByIDsRequestSchema)` to create a new message.
+ */
+export const GetPriceHistoriesByIDsRequestSchema: GenMessage<GetPriceHistoriesByIDsRequest> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_price, 6);
+
+/**
+ * PriceHistoryRequestItem represents a single price history request within a batch
+ *
+ * @generated from message dankfolio.v1.PriceHistoryRequestItem
+ */
+export type PriceHistoryRequestItem = Message<"dankfolio.v1.PriceHistoryRequestItem"> & {
+  /**
+   * @generated from field: string address = 1;
+   */
+  address: string;
+
+  /**
+   * @generated from field: dankfolio.v1.GetPriceHistoryRequest.PriceHistoryType type = 2;
+   */
+  type: GetPriceHistoryRequest_PriceHistoryType;
+
+  /**
+   * @generated from field: string time = 3;
+   */
+  time: string;
+
+  /**
+   * @generated from field: string address_type = 4;
+   */
+  addressType: string;
+};
+
+/**
+ * Describes the message dankfolio.v1.PriceHistoryRequestItem.
+ * Use `create(PriceHistoryRequestItemSchema)` to create a new message.
+ */
+export const PriceHistoryRequestItemSchema: GenMessage<PriceHistoryRequestItem> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_price, 7);
+
+/**
+ * GetPriceHistoriesByIDsResponse represents the batched response containing multiple price histories
+ *
+ * @generated from message dankfolio.v1.GetPriceHistoriesByIDsResponse
+ */
+export type GetPriceHistoriesByIDsResponse = Message<"dankfolio.v1.GetPriceHistoriesByIDsResponse"> & {
+  /**
+   * @generated from field: map<string, dankfolio.v1.PriceHistoryResult> results = 1;
+   */
+  results: { [key: string]: PriceHistoryResult };
+
+  /**
+   * @generated from field: repeated string failed_addresses = 2;
+   */
+  failedAddresses: string[];
+};
+
+/**
+ * Describes the message dankfolio.v1.GetPriceHistoriesByIDsResponse.
+ * Use `create(GetPriceHistoriesByIDsResponseSchema)` to create a new message.
+ */
+export const GetPriceHistoriesByIDsResponseSchema: GenMessage<GetPriceHistoriesByIDsResponse> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_price, 8);
+
+/**
+ * PriceHistoryResult contains the price history data and success status for a single address
+ *
+ * @generated from message dankfolio.v1.PriceHistoryResult
+ */
+export type PriceHistoryResult = Message<"dankfolio.v1.PriceHistoryResult"> & {
+  /**
+   * @generated from field: dankfolio.v1.PriceHistoryData data = 1;
+   */
+  data?: PriceHistoryData;
+
+  /**
+   * @generated from field: bool success = 2;
+   */
+  success: boolean;
+
+  /**
+   * @generated from field: string error_message = 3;
+   */
+  errorMessage: string;
+};
+
+/**
+ * Describes the message dankfolio.v1.PriceHistoryResult.
+ * Use `create(PriceHistoryResultSchema)` to create a new message.
+ */
+export const PriceHistoryResultSchema: GenMessage<PriceHistoryResult> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_price, 9);
+
+/**
  * PriceService provides methods for retrieving price data
  *
  * @generated from service dankfolio.v1.PriceService
@@ -270,6 +376,16 @@ export const PriceService: GenService<{
     methodKind: "unary";
     input: typeof GetCoinPricesRequestSchema;
     output: typeof GetCoinPricesResponseSchema;
+  },
+  /**
+   * GetPriceHistoriesByIDs returns historical price data for multiple addresses in a single request
+   *
+   * @generated from rpc dankfolio.v1.PriceService.GetPriceHistoriesByIDs
+   */
+  getPriceHistoriesByIDs: {
+    methodKind: "unary";
+    input: typeof GetPriceHistoriesByIDsRequestSchema;
+    output: typeof GetPriceHistoriesByIDsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_dankfolio_v1_price, 0);
