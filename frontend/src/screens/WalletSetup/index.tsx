@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, TextInput, ActivityIndicator, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { WalletSetupScreenProps } from './types';
 import { useToast } from '@/components/Common/Toast';
@@ -8,7 +8,7 @@ import { logger } from '@/utils/logger';
 import CopyToClipboard from '@/components/Common/CopyToClipboard';
 import { env } from '@utils/env';
 import { initializeDebugWallet } from '@/utils/debugWallet';
-import TermsModal from '@/components/Common/TermsModal';
+import TermsOfService from '@/screens/TermsOfService';
 import { CompletedAnimation } from '@/components/Common/Animations';
 // @ts-expect-error normal import for assets
 import neonBarImage from '../../../assets/onboarding.jpg';
@@ -26,13 +26,12 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 		[styles.actionButton, styles.actionButtonYellow].flat(),
 		[styles.actionButton, styles.actionButtonYellow]
 	);
-	const [termsModalVisible, setTermsModalVisible] = useState(false);
 
 	const {
 		step,
-		goToCreate,
-		goToImport,
+		goToTerms,
 		goToWelcome,
+		handleTermsAccepted,
 		handleCreateWallet,
 		handleImportWallet,
 		recoveryPhrase,
@@ -71,18 +70,6 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 		));
 	};
 
-	const handleTermsPress = () => {
-		logger.breadcrumb({ category: 'ui', message: 'Terms and conditions link pressed' });
-		setTermsModalVisible(true);
-	};
-
-	const handleAcceptTerms = () => {
-		logger.breadcrumb({ category: 'ui', message: 'Terms and conditions accepted' });
-		showToast({
-			message: "Terms & Conditions accepted",
-			type: 'success'
-		});
-	};
 
 	return (
 		<View style={styles.container}>
@@ -104,7 +91,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 							<TouchableOpacity
 								onPress={() => {
 									logger.breadcrumb({ category: 'ui', message: 'Create new wallet button pressed (welcome step)' });
-									goToCreate();
+									goToTerms('create');
 								}}
 								style={welcomeActionButtonStyle}
 							>
@@ -113,20 +100,13 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 							<TouchableOpacity
 								onPress={() => {
 									logger.breadcrumb({ category: 'ui', message: 'Import recovery phrase button pressed (welcome step)' });
-									goToImport();
+									goToTerms('import');
 								}}
 								style={welcomeActionButtonStyle}
 							>
 								<Text style={styles.buttonText}>Import a recovery phrase</Text>
 							</TouchableOpacity>
 						</View>
-
-						<TouchableOpacity
-							onPress={handleTermsPress}
-							style={styles.termsContainer}
-						>
-							<Text style={styles.termsText}>By proceeding, you agree to our Terms & Conditions</Text>
-						</TouchableOpacity>
 					</View>
 
 					{isDevelopmentOrSimulator && (
@@ -140,6 +120,9 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 						</Text>
 					)}
 				</View>
+			)}
+			{step === 'terms' && (
+				<TermsOfService onTermsAccepted={handleTermsAccepted} />
 			)}
 			{step === 'create' && (
 				<View style={styles.createContainer}>
@@ -228,7 +211,6 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 					) : (
 						<ScrollView showsVerticalScrollIndicator={false}>
 							<View style={styles.centeredContent}>
-								<View style={styles.iconPlaceholder} />
 								<CompletedAnimation />
 								<Text style={styles.title}>{WALLET_CREATED_TITLE}</Text>
 								<Text style={styles.subtitle}>{WALLET_CREATED_DESC}</Text>
@@ -289,12 +271,6 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 				</View>
 			)}
 
-			{/* Terms and Conditions Modal */}
-			<TermsModal
-				isVisible={termsModalVisible}
-				onAccept={handleAcceptTerms}
-				onClose={() => setTermsModalVisible(false)}
-			/>
 		</View>
 	);
 };
