@@ -97,6 +97,44 @@ func GRPCLoggerInterceptor() connect.UnaryInterceptorFunc {
 					}
 				}
 			}
+			if req.Spec().Procedure == "/dankfolio.v1.PriceService/GetCoinPrices" {
+				if respTyped, ok := res.Any().(*pb.GetCoinPricesResponse); ok && respTyped.GetPrices() != nil {
+					prices := respTyped.GetPrices()
+					count := len(prices)
+					if count == 0 {
+						resDetails = "{ prices: [empty] }"
+					} else {
+						var firstEntry string
+						for coinId, price := range prices {
+							priceJSON, _ := structToJSON(price)
+							firstEntry = fmt.Sprintf("%s: %s", coinId, priceJSON)
+							break
+						}
+						resDetails = fmt.Sprintf("{ prices: [count=%d, first_entry=(%s), ...] }", count, firstEntry)
+					}
+				}
+			}
+			if req.Spec().Procedure == "/dankfolio.v1.PriceService/GetPriceHistoriesByIDs" {
+				if respTyped, ok := res.Any().(*pb.GetPriceHistoriesByIDsResponse); ok && respTyped.GetResults() != nil {
+					results := respTyped.GetResults()
+					count := len(results)
+					if count == 0 {
+						resDetails = "{ results: [empty] }"
+					} else {
+						var firstEntry string
+						for address, result := range results {
+							if result.GetSuccess() && result.GetData() != nil {
+								itemCount := len(result.GetData().GetItems())
+								firstEntry = fmt.Sprintf("%s: {success=true, items_count=%d}", address, itemCount)
+							} else {
+								firstEntry = fmt.Sprintf("%s: {success=false, error=%s}", address, result.GetErrorMessage())
+							}
+							break
+						}
+						resDetails = fmt.Sprintf("{ results: [count=%d, first_entry=(%s), ...] }", count, firstEntry)
+					}
+				}
+			}
 			if req.Spec().Procedure == "/dankfolio.v1.CoinService/GetAllCoins" {
 				// NOTE: skip logging for the GetAllCoins
 				return res, nil
