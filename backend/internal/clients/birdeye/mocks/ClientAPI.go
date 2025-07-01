@@ -38,6 +38,50 @@ func (_m *MockClientAPI) EXPECT() *MockClientAPI_Expecter {
 	return &MockClientAPI_Expecter{mock: &_m.Mock}
 }
 
+// GetMaxWorkers provides a mock function for the type MockClientAPI
+func (_mock *MockClientAPI) GetMaxWorkers() int {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetMaxWorkers")
+	}
+
+	var r0 int
+	if returnFunc, ok := ret.Get(0).(func() int); ok {
+		r0 = returnFunc()
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+	return r0
+}
+
+// MockClientAPI_GetMaxWorkers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetMaxWorkers'
+type MockClientAPI_GetMaxWorkers_Call struct {
+	*mock.Call
+}
+
+// GetMaxWorkers is a helper method to define mock.On call
+func (_e *MockClientAPI_Expecter) GetMaxWorkers() *MockClientAPI_GetMaxWorkers_Call {
+	return &MockClientAPI_GetMaxWorkers_Call{Call: _e.mock.On("GetMaxWorkers")}
+}
+
+func (_c *MockClientAPI_GetMaxWorkers_Call) Run(run func()) *MockClientAPI_GetMaxWorkers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockClientAPI_GetMaxWorkers_Call) Return(n int) *MockClientAPI_GetMaxWorkers_Call {
+	_c.Call.Return(n)
+	return _c
+}
+
+func (_c *MockClientAPI_GetMaxWorkers_Call) RunAndReturn(run func() int) *MockClientAPI_GetMaxWorkers_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetNewListingTokens provides a mock function for the type MockClientAPI
 func (_mock *MockClientAPI) GetNewListingTokens(ctx context.Context, params birdeye.NewListingTokensParams) (*birdeye.NewListingTokensResponse, error) {
 	ret := _mock.Called(ctx, params)

@@ -1263,7 +1263,7 @@ func (s *Service) GetCoinsByAddresses(ctx context.Context, addresses []string) (
 	for _, coin := range existingCoins {
 		coinCopy := coin
 		existingAddresses[coin.Address] = &coinCopy
-		
+
 		// Check if market data is fresh (using same logic as GetCoinByAddress)
 		if s.isCoinMarketDataFresh(&coinCopy) {
 			freshCoins = append(freshCoins, coinCopy)
@@ -1309,7 +1309,7 @@ func (s *Service) GetCoinsByAddresses(ctx context.Context, addresses []string) (
 				staleCoins = append(staleCoins, *coin)
 			}
 		}
-		
+
 		updatedCoins, err := s.updateCoinsBatch(ctx, staleCoins)
 		if err != nil {
 			slog.WarnContext(ctx, "Failed to update stale coins with fresh market data", "error", err)
@@ -1358,8 +1358,7 @@ func (s *Service) fetchCoinsBatch(ctx context.Context, addresses []string) ([]mo
 		return []model.Coin{}, nil
 	}
 
-	// Use parallel processing with worker pool
-	maxWorkers := s.getMaxWorkers() // Configurable limit to avoid rate limiting
+	maxWorkers := s.birdeyeClient.GetMaxWorkers()
 	const bufferSize = 10
 
 	type coinFetchJob struct {
@@ -1562,8 +1561,7 @@ func (s *Service) updateCoinsBatch(ctx context.Context, coins []model.Coin) ([]m
 		coinMap[coin.Address] = &coinCopy
 	}
 
-	// Use parallel processing with worker pool to respect rate limits
-	maxWorkers := s.getMaxWorkers() // Configurable limit to avoid rate limiting
+	maxWorkers := s.birdeyeClient.GetMaxWorkers()
 	const bufferSize = 10
 
 	type coinUpdateJob struct {
@@ -1677,14 +1675,6 @@ func (s *Service) batchUpdateCoinsInDB(ctx context.Context, coins []model.Coin) 
 
 	slog.DebugContext(ctx, "Successfully batch updated coins in database", "count", len(coins))
 	return nil
-}
-
-// getMaxWorkers returns the configured number of workers or a sensible default
-func (s *Service) getMaxWorkers() int {
-	if s.config != nil && s.config.MaxConcurrentWorkers > 0 {
-		return s.config.MaxConcurrentWorkers
-	}
-	return 5 // Conservative default to avoid rate limiting
 }
 
 // min is a helper function to find the minimum of two integers.
