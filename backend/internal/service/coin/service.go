@@ -288,20 +288,20 @@ func (s *Service) isCoinMarketDataFresh(coin *model.Coin) bool {
 
 // updateCoinMarketData updates only the market data (price, volume, etc.) for an existing coin
 func (s *Service) updateCoinMarketData(ctx context.Context, coin *model.Coin) (*model.Coin, error) {
-	// Use the new trade data batch endpoint for single coin (more efficient than token overview)
-	tradeData, err := s.birdeyeClient.GetTokensTradeDataBatch(ctx, []string{coin.Address})
+	// Use the single token overview endpoint instead of batch trade data (which requires premium)
+	tokenOverview, err := s.birdeyeClient.GetTokenOverview(ctx, coin.Address)
 	if err != nil {
-		slog.WarnContext(ctx, "Failed to fetch trade data from Birdeye", slog.String("address", coin.Address), slog.Any("error", err))
+		slog.WarnContext(ctx, "Failed to fetch token overview from Birdeye", slog.String("address", coin.Address), slog.Any("error", err))
 		return coin, nil // Return stale data rather than failing
 	}
 
-	if len(tradeData) == 0 {
-		slog.WarnContext(ctx, "No trade data returned for coin", slog.String("address", coin.Address))
+	if !tokenOverview.Success || tokenOverview.Data.Address == "" {
+		slog.WarnContext(ctx, "No valid data returned for coin", slog.String("address", coin.Address))
 		return coin, nil // Return stale data
 	}
 
-	// Update coin with fresh trade data
-	data := tradeData[0]
+	// Update coin with fresh data
+	data := tokenOverview.Data
 	coin.Price = data.Price
 	coin.Price24hChangePercent = data.Price24hChangePercent
 	coin.Marketcap = data.MarketCap
@@ -325,8 +325,8 @@ func (s *Service) updateCoinMarketData(ctx context.Context, coin *model.Coin) (*
 
 // fetchNewCoin fetches a completely new coin from Birdeye (metadata + market data)
 func (s *Service) fetchNewCoin(ctx context.Context, address string) (*model.Coin, error) {
-	// Use the batch overview endpoint for complete data
-	tokenOverviews, err := s.birdeyeClient.GetTokensOverviewBatch(ctx, []string{address})
+	// Use the single token overview endpoint instead of batch (which requires premium)
+	tokenOverview, err := s.birdeyeClient.GetTokenOverview(ctx, address)
 	if err != nil {
 		// Check if it's an API key/permissions error
 		if strings.Contains(err.Error(), "401") || strings.Contains(err.Error(), "API key") || strings.Contains(err.Error(), "suspended") {
@@ -335,11 +335,11 @@ func (s *Service) fetchNewCoin(ctx context.Context, address string) (*model.Coin
 		return nil, fmt.Errorf("unable to fetch token data. Please try again")
 	}
 
-	if len(tokenOverviews) == 0 {
+	if !tokenOverview.Success || tokenOverview.Data.Address == "" {
 		return nil, fmt.Errorf("token not found. Please check the address and try again")
 	}
 
-	tokenData := tokenOverviews[0]
+	tokenData := tokenOverview.Data
 
 	// Check for naughty words
 	if s.coinContainsNaughtyWord(tokenData.Name, "") {
@@ -1339,50 +1339,46 @@ func (s *Service) fetchCoinsBatch(ctx context.Context, addresses []string) ([]mo
 		}
 		batchAddresses := addresses[i:end]
 
-		// Use the new batch Birdeye API
-		tokenOverviews, err := s.birdeyeClient.GetTokensOverviewBatch(ctx, batchAddresses)
-		if err != nil {
-			slog.ErrorContext(ctx, "Failed to fetch token overviews batch from Birdeye", "error", err, "addresses", batchAddresses)
-			// Fallback to individual calls for this batch
-			fallbackCoins, fallbackErr := s.fetchCoinsIndividually(ctx, batchAddresses)
-			if fallbackErr != nil {
-				slog.ErrorContext(ctx, "Fallback individual fetch also failed", "error", fallbackErr)
+		// Use individual calls instead of batch API (batch requires Premium tier)
+		for _, address := range batchAddresses {
+			tokenOverview, err := s.birdeyeClient.GetTokenOverview(ctx, address)
+			if err != nil {
+				slog.WarnContext(ctx, "Failed to fetch token overview from Birdeye", "error", err, "address", address)
 				continue
 			}
-			allCoins = append(allCoins, fallbackCoins...)
-			continue
-		}
 
-		// Process each token overview and enrich
-		for _, tokenOverview := range tokenOverviews {
+			if tokenOverview == nil || !tokenOverview.Success || tokenOverview.Data.Address == "" {
+				slog.WarnContext(ctx, "Invalid token overview response", "address", address)
+				continue
+			}
 			// Check for naughty words
-			if s.coinContainsNaughtyWord(tokenOverview.Name, "") {
-				slog.InfoContext(ctx, "Skipping token with inappropriate content", "address", tokenOverview.Address, "name", tokenOverview.Name)
+			if s.coinContainsNaughtyWord(tokenOverview.Data.Name, "") {
+				slog.InfoContext(ctx, "Skipping token with inappropriate content", "address", address, "name", tokenOverview.Data.Name)
 				continue
 			}
 
 			// Convert to TokenDetails format for enrichment
 			tokenDetails := &birdeye.TokenDetails{
-				Address:                tokenOverview.Address,
-				Name:                   tokenOverview.Name,
-				Symbol:                 tokenOverview.Symbol,
-				Decimals:               tokenOverview.Decimals,
-				LogoURI:                tokenOverview.LogoURI,
-				Price:                  tokenOverview.Price,
-				Volume24hUSD:           tokenOverview.Volume24hUSD,
-				Volume24hChangePercent: tokenOverview.Volume24hChangePercent,
-				MarketCap:              tokenOverview.MarketCap,
-				Liquidity:              tokenOverview.Liquidity,
-				FDV:                    tokenOverview.FDV,
-				Rank:                   tokenOverview.Rank,
-				Price24hChangePercent:  tokenOverview.Price24hChangePercent,
-				Tags:                   tokenOverview.Tags,
+				Address:                address,
+				Name:                   tokenOverview.Data.Name,
+				Symbol:                 tokenOverview.Data.Symbol,
+				Decimals:               tokenOverview.Data.Decimals,
+				LogoURI:                tokenOverview.Data.LogoURI,
+				Price:                  tokenOverview.Data.Price,
+				Volume24hUSD:           tokenOverview.Data.Volume24hUSD,
+				Volume24hChangePercent: tokenOverview.Data.Volume24hChangePercent,
+				MarketCap:              tokenOverview.Data.MarketCap,
+				Liquidity:              tokenOverview.Data.Liquidity,
+				FDV:                    tokenOverview.Data.FDV,
+				Rank:                   tokenOverview.Data.Rank,
+				Price24hChangePercent:  tokenOverview.Data.Price24hChangePercent,
+				Tags:                   tokenOverview.Data.Tags,
 			}
 
 			// Enrich the coin data
 			enrichedCoin, err := s.EnrichCoinData(ctx, tokenDetails)
 			if err != nil {
-				slog.ErrorContext(ctx, "Failed to enrich coin data", "error", err, "address", tokenOverview.Address)
+				slog.ErrorContext(ctx, "Failed to enrich coin data", "error", err, "address", address)
 				continue
 			}
 
@@ -1449,29 +1445,29 @@ func (s *Service) updateCoinsBatch(ctx context.Context, coins []model.Coin) ([]m
 		}
 		batchAddresses := addresses[i:end]
 
-		// Get fresh market data
-		tokenOverviews, err := s.birdeyeClient.GetTokensOverviewBatch(ctx, batchAddresses)
-		if err != nil {
-			slog.WarnContext(ctx, "Failed to get batch market data for price updates", "error", err, "addresses", batchAddresses)
-			continue
-		}
-
-		// Update coins with fresh data
-		for _, tokenOverview := range tokenOverviews {
-			if coin, exists := coinMap[tokenOverview.Address]; exists {
-				coin.Price = tokenOverview.Price
-				coin.Price24hChangePercent = tokenOverview.Price24hChangePercent
-				coin.Marketcap = tokenOverview.MarketCap
-				coin.Volume24hUSD = tokenOverview.Volume24hUSD
-				coin.Volume24hChangePercent = tokenOverview.Volume24hChangePercent
-				coin.Liquidity = tokenOverview.Liquidity
-				coin.FDV = tokenOverview.FDV
-				coin.Rank = tokenOverview.Rank
-				coin.LastUpdated = time.Now().Format(time.RFC3339)
-
-				// Update in database
-				if updateErr := s.store.Coins().Update(ctx, coin); updateErr != nil {
-					slog.WarnContext(ctx, "Failed to update coin with fresh price data", "address", coin.Address, "error", updateErr)
+		// Use individual calls instead of batch API (batch requires Premium tier)
+		for _, address := range batchAddresses {
+			if coin, exists := coinMap[address]; exists {
+				tokenOverview, err := s.birdeyeClient.GetTokenOverview(ctx, address)
+				if err != nil {
+					slog.WarnContext(ctx, "Failed to get individual token overview", "error", err, "address", address)
+					continue
+				}
+				if tokenOverview.Success && tokenOverview.Data.Address != "" {
+					coin.Price = tokenOverview.Data.Price
+					coin.Price24hChangePercent = tokenOverview.Data.Price24hChangePercent
+					coin.Marketcap = tokenOverview.Data.MarketCap
+					coin.Volume24hUSD = tokenOverview.Data.Volume24hUSD
+					coin.Volume24hChangePercent = tokenOverview.Data.Volume24hChangePercent
+					coin.Liquidity = tokenOverview.Data.Liquidity
+					coin.FDV = tokenOverview.Data.FDV
+					coin.Rank = tokenOverview.Data.Rank
+					coin.LastUpdated = time.Now().Format(time.RFC3339)
+					
+					// Update in database
+					if updateErr := s.store.Coins().Update(ctx, coin); updateErr != nil {
+						slog.WarnContext(ctx, "Failed to update coin with fresh price data", "address", coin.Address, "error", updateErr)
+					}
 				}
 			}
 		}

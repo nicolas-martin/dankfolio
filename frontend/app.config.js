@@ -14,7 +14,7 @@ module.exports = ({ config }) => ({
 	...config,
 	name: "dankfolio",
 	slug: "dankfolio-mobile",
-	version: "1.0.1",
+	version: "1.0.2",
 	orientation: "portrait",
 	icon: "./assets/icon.png",
 	userInterfaceStyle: "dark",
