@@ -13,7 +13,6 @@ import (
 	cacheMocks "github.com/nicolas-martin/dankfolio/backend/internal/cache/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	birdeye_mocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye/mocks"
-	jupiter_mocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 )
@@ -175,40 +174,53 @@ func TestService_GetCoinPrices(t *testing.T) {
 	tokenAddresses := []string{"addr1", "addr2"}
 
 	t.Run("successful fetch", func(t *testing.T) {
-		mockJupiterClient := new(jupiter_mocks.MockClientAPI)
+		mockBirdeyeClient := new(birdeye_mocks.MockClientAPI)
 		expectedPrices := map[string]float64{"addr1": 10.0, "addr2": 20.0}
 
-		mockJupiterClient.On("GetCoinPrices", ctx, tokenAddresses).Return(expectedPrices, nil).Once()
+		// Mock GetTokenOverview for each address
+		for addr, price := range expectedPrices {
+			overview := &birdeye.TokenOverview{
+				Data: birdeye.TokenOverviewData{
+					Address: addr,
+					Price:   price,
+				},
+				Success: true,
+			}
+			mockBirdeyeClient.On("GetTokenOverview", ctx, addr).Return(overview, nil).Once()
+		}
 
-		// Pass nil for unused dependencies (birdeye, store, cache)
-		service := price.NewService(nil, mockJupiterClient, nil, nil)
+		// Pass birdeye client instead of jupiter
+		service := price.NewService(mockBirdeyeClient, nil, nil, nil)
 		result, err := service.GetCoinPrices(ctx, tokenAddresses)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedPrices, result)
-		mockJupiterClient.AssertExpectations(t)
+		mockBirdeyeClient.AssertExpectations(t)
 	})
 
-	t.Run("jupiter client error", func(t *testing.T) {
-		mockJupiterClient := new(jupiter_mocks.MockClientAPI)
-		expectedError := fmt.Errorf("jupiter client error")
+	t.Run("birdeye client error", func(t *testing.T) {
+		mockBirdeyeClient := new(birdeye_mocks.MockClientAPI)
+		expectedError := fmt.Errorf("birdeye client error")
 
-		mockJupiterClient.On("GetCoinPrices", ctx, tokenAddresses).Return(nil, expectedError).Once()
+		// Mock GetTokenOverview to return error for both addresses
+		for _, addr := range tokenAddresses {
+			mockBirdeyeClient.On("GetTokenOverview", ctx, addr).Return(nil, expectedError).Maybe()
+		}
 
-		service := price.NewService(nil, mockJupiterClient, nil, nil)
+		service := price.NewService(mockBirdeyeClient, nil, nil, nil)
 		result, err := service.GetCoinPrices(ctx, tokenAddresses)
 
-		assert.Error(t, err)
-		assert.Nil(t, result)
-		assert.Contains(t, err.Error(), "failed to get coin prices from jupiter")
-		mockJupiterClient.AssertExpectations(t)
+		// Should return empty map but no error since we handle individual failures
+		assert.NoError(t, err)
+		assert.Empty(t, result)
+		mockBirdeyeClient.AssertExpectations(t)
 	})
 
 	t.Run("debug mode for GetCoinPrices", func(t *testing.T) { // Renamed t.Run for clarity
-		mockJupiterClient := new(jupiter_mocks.MockClientAPI) // Should not be used
+		mockBirdeyeClient := new(birdeye_mocks.MockClientAPI) // Should not be used
 		debugCtx := context.WithValue(ctx, model.DebugModeKey, true)
 
-		service := price.NewService(nil, mockJupiterClient, nil, nil)
+		service := price.NewService(mockBirdeyeClient, nil, nil, nil)
 		result, err := service.GetCoinPrices(debugCtx, tokenAddresses)
 
 		assert.NoError(t, err)
@@ -220,7 +232,7 @@ func TestService_GetCoinPrices(t *testing.T) {
 			// Random prices are 1.0 + rand.Float64(), so they are > 1.0
 			assert.Greater(t, result[addr], 1.0, "price for %s should be > 1.0 in debug", addr)
 		}
-		mockJupiterClient.AssertExpectations(t) // No calls expected
+		mockBirdeyeClient.AssertExpectations(t) // No calls expected
 	})
 }
 
