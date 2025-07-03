@@ -96,6 +96,7 @@ func (s *Service) GetPriceHistory(ctx context.Context, address string, timeFrame
 	return result, nil
 }
 
+// TODO: Should we update all the data instead of just returning the price?
 func (s *Service) GetCoinPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
 		slog.Info("x-debug-mode: true for GetCoinPrices, returning random prices")
@@ -105,10 +106,47 @@ func (s *Service) GetCoinPrices(ctx context.Context, tokenAddresses []string) (m
 		}
 		return mockPrices, nil
 	}
-	prices, err := s.jupiterClient.GetCoinPrices(ctx, tokenAddresses)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get coin prices from jupiter: %w", err)
+
+	// Use Birdeye's single token overview endpoint in parallel
+	prices := make(map[string]float64)
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+
+	// Limit concurrent requests to avoid rate limiting
+	semaphore := make(chan struct{}, 5)
+
+	for _, address := range tokenAddresses {
+		wg.Add(1)
+		go func(addr string) {
+			defer wg.Done()
+
+			// Acquire semaphore
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+
+			// Get token overview which includes price
+			overview, err := s.birdeyeClient.GetTokenOverview(ctx, addr)
+			if err != nil {
+				slog.Warn("Failed to get price for token", "address", addr, "error", err)
+				return
+			}
+
+			// Store the price
+			mu.Lock()
+			prices[addr] = overview.Data.Price
+			mu.Unlock()
+		}(address)
 	}
+
+	wg.Wait()
+
+	// Log any missing prices
+	for _, addr := range tokenAddresses {
+		if _, found := prices[addr]; !found {
+			slog.Warn("Price not found for token", "address", addr)
+		}
+	}
+
 	return prices, nil
 }
 
