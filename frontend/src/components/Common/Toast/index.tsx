@@ -87,8 +87,8 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 	const toastType = state.type || 'info';
 	const toastForegroundColor = toastType === 'error' ? styles.colors.onError :
 		toastType === 'success' ? styles.colors.onPrimary :
-		toastType === 'warning' ? styles.colors.onError :
-		styles.colors.onSurface;
+			toastType === 'warning' ? styles.colors.onError :
+				styles.colors.onSurface;
 
 	let IconToRender;
 	// Ensure toastType is valid for getOriginalToastIconComponent by casting, as state.type can be undefined initially.

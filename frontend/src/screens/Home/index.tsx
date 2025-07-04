@@ -36,10 +36,10 @@ const fetchPriceHistory = async (coin: Coin, timeframeKey: string): Promise<{ da
 };
 
 const fetchPriceHistoriesBatched = async (
-	coins: Coin[], 
+	coins: Coin[],
 	timeframeKey: string
-): Promise<{ 
-	results: Record<string, PriceData[]>, 
+): Promise<{
+	results: Record<string, PriceData[]>,
 	errors: Record<string, Error>,
 	failedAddresses: string[]
 }> => {
@@ -66,9 +66,9 @@ const fetchPriceHistoriesBatched = async (
 		}));
 
 		logger.info(`[HomeScreen] 🚀 Using BATCHED price history fetch for ${validCoins.length} coins`);
-		
+
 		const batchResponse = await grpcApi.getPriceHistoriesByIDs(batchRequests);
-		
+
 		// Process successful results
 		Object.entries(batchResponse.results).forEach(([address, result]) => {
 			if (result.success && result.data?.items) {
@@ -89,26 +89,26 @@ const fetchPriceHistoriesBatched = async (
 		});
 
 		logger.info(`[HomeScreen] ✅ Batch fetch completed: ${Object.keys(results).length} successful, ${failedAddresses.length} failed`);
-		
+
 		return { results, errors, failedAddresses };
 	} catch (error: unknown) {
 		logger.error('[HomeScreen] ❌ Batch price history fetch failed:', error);
-		
+
 		// On batch failure, add all addresses to failed list so they can be retried individually
 		validCoins.forEach(coin => {
 			failedAddresses.push(coin.address);
 			errors[coin.address] = error instanceof Error ? error : new Error(String(error));
 		});
-		
+
 		return { results, errors, failedAddresses };
 	}
 };
 
 const fetchPriceHistoriesWithFallback = async (
-	coins: Coin[], 
+	coins: Coin[],
 	timeframeKey: string
-): Promise<{ 
-	results: Record<string, PriceData[]>, 
+): Promise<{
+	results: Record<string, PriceData[]>,
 	errors: Record<string, Error>
 }> => {
 	const finalResults: Record<string, PriceData[]> = {};
@@ -116,16 +116,16 @@ const fetchPriceHistoriesWithFallback = async (
 
 	// First, try the batched approach
 	const { results: batchResults, errors: batchErrors, failedAddresses } = await fetchPriceHistoriesBatched(coins, timeframeKey);
-	
+
 	// Add successful batch results
 	Object.assign(finalResults, batchResults);
 
 	// If we have failures, fall back to individual calls for those addresses
 	if (failedAddresses.length > 0) {
 		logger.info(`[HomeScreen] 🔄 Falling back to individual calls for ${failedAddresses.length} failed addresses`);
-		
+
 		const failedCoins = coins.filter(coin => failedAddresses.includes(coin.address));
-		
+
 		const individualResults = await Promise.allSettled(
 			failedCoins.map(async (coin): Promise<{ address: string; data: PriceData[]; error: Error | null; }> => {
 				const result = await fetchPriceHistory(coin, timeframeKey);
@@ -150,7 +150,7 @@ const fetchPriceHistoriesWithFallback = async (
 				}
 			}
 		});
-		
+
 		logger.info(`[HomeScreen] 🔄 Individual fallback completed: ${Object.keys(finalResults).length - Object.keys(batchResults).length} recovered`);
 	}
 

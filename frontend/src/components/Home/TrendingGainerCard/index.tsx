@@ -83,7 +83,7 @@ const TrendingGainerCard: React.FC<TrendingGainerCardProps> = ({
 						accessible={true}
 						accessibilityRole="text"
 					>
-						{formatCompactPercentage(changeValue, 1, true)}
+						{formatCompactPercentage(changeValue, 1, false)}
 					</Text>
 				</View>
 			)}

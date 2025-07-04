@@ -53,9 +53,9 @@ const CoinInfoBlock: React.FC<CoinInfoBlockProps> = ({
 				)}
 			</View>
 			<View style={styles.createTextContainerStyle(textContainerStyle, true)}>
-				<Text 
-					style={styles.createPrimaryTextStyle(primaryTextStyle)} 
-					numberOfLines={1} 
+				<Text
+					style={styles.createPrimaryTextStyle(primaryTextStyle)}
+					numberOfLines={1}
 					ellipsizeMode="tail"
 					testID={symbolTestID}
 					accessible={true}
@@ -64,9 +64,9 @@ const CoinInfoBlock: React.FC<CoinInfoBlockProps> = ({
 					{primaryText}
 				</Text>
 				{secondaryText && (
-					<Text 
-						style={styles.createSecondaryTextStyle(secondaryTextStyle)} 
-						numberOfLines={1} 
+					<Text
+						style={styles.createSecondaryTextStyle(secondaryTextStyle)}
+						numberOfLines={1}
 						ellipsizeMode="tail"
 						accessible={true}
 						accessibilityRole="text"

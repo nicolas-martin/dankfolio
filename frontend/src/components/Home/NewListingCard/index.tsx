@@ -43,7 +43,7 @@ const NewListingCard: React.FC<NewListingCardProps> = ({
 					/>
 				)}
 			</View>
-			
+
 			{/* Symbol text */}
 			<Text
 				style={styles.symbol}

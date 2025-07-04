@@ -50,7 +50,7 @@ const CachedImage: React.FC<CachedImageProps> = ({
 
 	// Resolve IPFS URLs to HTTP gateway URLs
 	const resolvedUri = useMemo(() => resolveIpfsUrl(uri), [uri]);
-	
+
 	// All hooks must be at top level before any conditional returns
 	const imageSource = useMemo(() => ({ uri: resolvedUri }), [resolvedUri]);
 

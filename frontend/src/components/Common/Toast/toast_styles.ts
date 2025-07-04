@@ -26,9 +26,9 @@ export const useStyles = () => {
 			shadowRadius: 3.84,
 		},
 		toastType === "error" ? { backgroundColor: theme.colors.error } :
-		toastType === "success" ? { backgroundColor: theme.success } :
-		toastType === "warning" ? { backgroundColor: theme.warning } :
-		{ backgroundColor: theme.colors.surfaceVariant }
+			toastType === "success" ? { backgroundColor: theme.success } :
+				toastType === "warning" ? { backgroundColor: theme.warning } :
+					{ backgroundColor: theme.colors.surfaceVariant }
 	];
 
 	const createMessageTextStyle = (toastForegroundColor: string) => [

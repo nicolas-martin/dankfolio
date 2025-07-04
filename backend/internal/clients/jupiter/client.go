@@ -116,6 +116,8 @@ func (c *Client) GetQuote(ctx context.Context, params QuoteParams) (*QuoteRespon
 	}
 
 	fullURL := fmt.Sprintf("%s/swap/v1/quote?%s", c.baseURL, queryParams.Encode())
+	
+	slog.Info("Jupiter API request", "url", fullURL, "baseURL", c.baseURL)
 
 	quoteRespData, rawBody, err := GetRequest[QuoteResponse](c, ctx, fullURL)
 	if err != nil {

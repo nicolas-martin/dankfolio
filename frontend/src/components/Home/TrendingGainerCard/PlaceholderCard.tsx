@@ -8,13 +8,13 @@ const TrendingGainerPlaceholderCard: React.FC = () => {
 
 	return (
 		<View style={styles.card}>
-			<ShimmerPlaceholder 
+			<ShimmerPlaceholder
 				style={styles.shimmerIcon}
 			/>
-			<ShimmerPlaceholder 
+			<ShimmerPlaceholder
 				style={styles.shimmerSymbol}
 			/>
-			<ShimmerPlaceholder 
+			<ShimmerPlaceholder
 				style={styles.shimmerChange}
 			/>
 		</View>

@@ -89,9 +89,9 @@ const CoinCard: React.FC<CoinCardProps> = ({
 					{coin.value !== undefined ? formatPrice(Number(coin.value)) : formatPrice(Number(coin.price))}
 				</Text>
 				{/* Optionally, add a small 24h change if space permits */}
-						{coin.price24hChangePercent !== undefined && (
-			<Text style={styles.horizontalChangeStyle(coin.price24hChangePercent)} numberOfLines={1}>
-				{formatPercentage(coin.price24hChangePercent, 1, true)}
+				{coin.price24hChangePercent !== undefined && (
+					<Text style={styles.horizontalChangeStyle(coin.price24hChangePercent)} numberOfLines={1}>
+						{formatPercentage(coin.price24hChangePercent, 1, true)}
 					</Text>
 				)}
 			</TouchableOpacity>

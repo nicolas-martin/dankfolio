@@ -124,11 +124,11 @@ export const usePortfolioStore = create<PortfolioState>((set, _get) => ({
 			// Use batch API to fetch all portfolio coins efficiently
 			const startTime = Date.now();
 			const missingCoinIds: string[] = [];
-			
+
 			// Check which coins are already cached vs need to be fetched
 			const cachedCoins: (typeof coinStore.coinMap[string])[] = [];
 			const addressesToFetch: string[] = [];
-			
+
 			balanceIds.forEach(id => {
 				const existingCoin = coinStore.coinMap[id];
 				if (existingCoin && !forceRefresh) {
@@ -137,28 +137,28 @@ export const usePortfolioStore = create<PortfolioState>((set, _get) => ({
 					addressesToFetch.push(id);
 				}
 			});
-			
+
 			// Fetch missing coins using batch API
 			let fetchedCoins: typeof cachedCoins = [];
 			if (addressesToFetch.length > 0) {
 				try {
 					log.log(`📊 [PortfolioStore] Using batch API to fetch ${addressesToFetch.length} portfolio tokens`);
 					fetchedCoins = await grpcApi.getCoinsByIDs(addressesToFetch);
-					
+
 					// Update coin store with fetched coins
 					fetchedCoins.forEach(coin => {
 						coinStore.setCoin(coin);
 					});
 				} catch (error) {
 					log.error(`❌ [PortfolioStore] Batch fetch failed, falling back to individual calls:`, error);
-					
+
 					// Fallback to individual calls if batch fails
 					const individualResults = await Promise.all(
 						addressesToFetch.map(id => coinStore.getCoinByID(id, forceRefresh))
 					);
-					
+
 					fetchedCoins = individualResults.filter((coin): coin is NonNullable<typeof coin> => coin !== null);
-					
+
 					// Track failed individual fetches
 					addressesToFetch.forEach((id, index) => {
 						if (!individualResults[index]) {
@@ -167,7 +167,7 @@ export const usePortfolioStore = create<PortfolioState>((set, _get) => ({
 					});
 				}
 			}
-			
+
 			const fetchTime = Date.now() - startTime;
 			const totalFetched = cachedCoins.length + fetchedCoins.length;
 			log.log(`📊 [PortfolioStore] Portfolio coin fetch complete: ${totalFetched}/${balanceIds.length} coins in ${fetchTime}ms (${cachedCoins.length} cached, ${fetchedCoins.length} fetched, ${missingCoinIds.length} missing)`);

@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
-	
+
 	return useMemo(() => {
 		const styles = StyleSheet.create({
 			card: {
@@ -70,14 +70,14 @@ export const useStyles = () => {
 				textAlign: 'center',
 			},
 		});
-		
+
 		const getTrendColor = (value: number | undefined): string => {
 			if (value === undefined) return theme.colors.onSurfaceVariant;
 			if (value > 0) return theme.trend.positive;
 			if (value < 0) return theme.trend.negative;
 			return theme.colors.onSurfaceVariant;
 		};
-		
+
 		return {
 			...styles,
 			colors: theme.colors,

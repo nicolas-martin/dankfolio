@@ -13,7 +13,7 @@ export const useStyles = () => {
 			marginTop: theme.spacing.sm,
 			paddingHorizontal: theme.spacing.sm,
 			paddingVertical: theme.spacing.lg,
-		}, 
+		},
 		style
 	];
 	const styles = StyleSheet.create({

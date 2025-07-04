@@ -8,7 +8,7 @@ const REAL_TEST_IMAGES = [
 		symbol: 'SOL'
 	},
 	{
-		name: 'USDC', 
+		name: 'USDC',
 		url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png',
 		symbol: 'USDC'
 	},
@@ -39,16 +39,16 @@ export const debugCacheStatus = async (uri: string) => {
 	try {
 		// Simple cache test - try to load the same image twice quickly
 		const startTime = Date.now();
-		
+
 		// First load
 		const response1 = await fetch(uri, { method: 'HEAD' });
 		const firstLoadTime = Date.now() - startTime;
-		
+
 		// Second load (should be cached)
 		const startTime2 = Date.now();
 		const _response2 = await fetch(uri, { method: 'HEAD' });
 		const secondLoadTime = Date.now() - startTime2;
-		
+
 		logger.info(`[CacheDebug] 🔍 Network Test | URL: ${uri}`);
 		logger.info(`[CacheDebug] First load: ${firstLoadTime}ms | Second load: ${secondLoadTime}ms`);
 		logger.info(`[CacheDebug] Response headers:`, {
@@ -57,7 +57,7 @@ export const debugCacheStatus = async (uri: string) => {
 			lastModified: response1.headers.get('last-modified'),
 			expires: response1.headers.get('expires')
 		});
-		
+
 		return {
 			firstLoadTime,
 			secondLoadTime,
@@ -77,14 +77,14 @@ export const debugCacheStatus = async (uri: string) => {
 // Test expo-cached-image with real images from mock data
 export const testExpoImageCache = async (testUri?: string) => {
 	logger.info(`[CacheDebug] 🧪 Testing expo-cached-image with REAL images from mock data`);
-	
+
 	// Log current cache settings
 	logger.info(`[CacheDebug] Using: expo-cached-image`);
 	logger.info(`[CacheDebug] Cache: File system based`);
-	
+
 	// Use real test images from mock data
 	const testImages = [...REAL_TEST_IMAGES];
-	
+
 	// Add the provided test URI if any
 	if (testUri) {
 		testImages.push({
@@ -95,21 +95,21 @@ export const testExpoImageCache = async (testUri?: string) => {
 	}
 
 	logger.info(`[CacheDebug] 🖼️ Testing ${testImages.length} real images from mock data`);
-	
+
 	// Test each image
 	for (let i = 0; i < testImages.length; i++) {
 		const image = testImages[i];
-		
+
 		logger.info(`[CacheDebug] 📸 Testing ${i + 1}/${testImages.length}: ${image.name} (${image.symbol})`);
 		logger.info(`[CacheDebug] 🔗 URL: ${image.url}`);
-		
+
 		// Test network caching for this image
 		await debugCacheStatus(image.url);
-		
+
 		// Add a small delay between tests
 		await new Promise(resolve => setTimeout(resolve, 100));
 	}
-	
+
 	logger.info(`[CacheDebug] ✅ Real image cache test completed`);
 	logger.info(`[CacheDebug] 💡 Now scroll through the app to see actual expo-cached-image performance!`);
 	return true;
@@ -122,7 +122,7 @@ const getImageName = (uri: string): string => {
 	if (realImage) {
 		return `${realImage.name} (${realImage.symbol})`;
 	}
-	
+
 	// Extract filename from URL
 	const parts = uri.split('/');
 	const filename = parts[parts.length - 1] || 'Unknown';
@@ -135,8 +135,8 @@ export const logCacheResult = (loadTime: number, uri: string, cacheKey: string) 
 	const status = isLikelyHit ? 'HIT' : 'MISS';
 	const emoji = isLikelyHit ? '⚡' : '🐢';
 	const imageName = getImageName(uri);
-	
+
 	logger.info(`[CacheResult] ${emoji} ${status} | ${imageName} | ${loadTime}ms | cacheKey: ${cacheKey}`);
-	
+
 	return { isLikelyHit, status, loadTime, cacheKey };
 }; 

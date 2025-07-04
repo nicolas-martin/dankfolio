@@ -291,7 +291,7 @@ export const grpcApi: grpcModel.API = {
 
 			// Convert the response to match frontend model
 			const results: Record<string, grpcModel.PriceHistoryBatchResult> = {};
-			
+
 			Object.entries(response.results).forEach(([address, result]) => {
 				if (result.data?.items) {
 					results[address] = {
