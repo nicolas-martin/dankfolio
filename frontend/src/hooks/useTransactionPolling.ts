@@ -62,7 +62,7 @@ export const useTransactionPolling = <T>(
 
 		try {
 			const result = await pollingFunction(hash) as PollingResponse;
-			
+
 			if (!isActiveRef.current) return; // Check again after async call
 
 			if (!result) {
@@ -108,8 +108,8 @@ export const useTransactionPolling = <T>(
 			}
 
 			// Handle confirmed states
-			if (result.status === 'Confirmed' || result.status === 'confirmed' || 
-			    result.status === 'Processed' || result.status === 'processed') {
+			if (result.status === 'Confirmed' || result.status === 'confirmed' ||
+				result.status === 'Processed' || result.status === 'processed') {
 				logger.info(`[useTransactionPolling] Transaction confirmed for tx: ${hash}`);
 				setStatus('confirmed');
 				return; // Continue polling until finalized
@@ -121,7 +121,7 @@ export const useTransactionPolling = <T>(
 
 		} catch (e) {
 			if (!isActiveRef.current) return;
-			
+
 			const errorMessage = e instanceof Error ? e.message : 'Polling failed';
 			logger.error(`[useTransactionPolling] Polling error: ${errorMessage}`);
 			setError(errorMessage);
@@ -133,23 +133,23 @@ export const useTransactionPolling = <T>(
 
 	const startPolling = useCallback((hash: string) => {
 		logger.info(`[useTransactionPolling] Starting polling for tx: ${hash}`);
-		
+
 		// Clean up any existing polling
 		cleanup();
-		
+
 		// Reset state
 		setTxHash(hash);
 		setStatus('pending');
 		setData(null);
 		setError(null);
 		setConfirmations(0);
-		
+
 		// Mark as active
 		isActiveRef.current = true;
 
 		// Start polling immediately, then on interval
 		poll(hash);
-		
+
 		intervalRef.current = setInterval(() => {
 			poll(hash);
 		}, pollInterval);

@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
-	
+
 	return useMemo(() => {
 		const styles = StyleSheet.create({
 			container: {
@@ -15,7 +15,7 @@ export const useStyles = () => {
 				// Default content container - can be overridden
 			},
 		});
-		
+
 		return {
 			...styles,
 			colors: theme.colors,

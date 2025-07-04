@@ -14,7 +14,7 @@ const IPFS_GATEWAYS = [
  */
 export const isIpfsUrl = (url: string | undefined): boolean => {
 	if (!url) return false;
-	
+
 	return (
 		url.startsWith('ipfs://') ||
 		url.includes('ipfs.io') ||
@@ -33,13 +33,13 @@ const extractIpfsHash = (url: string): string | null => {
 	if (url.startsWith('ipfs://')) {
 		return url.replace('ipfs://', '');
 	}
-	
+
 	// Handle HTTP IPFS gateway URLs
 	const ipfsMatch = url.match(/\/ipfs\/(Qm[a-zA-Z0-9]+|bafy[a-zA-Z0-9]+)/);
 	if (ipfsMatch) {
 		return ipfsMatch[1];
 	}
-	
+
 	return null;
 };
 
@@ -48,19 +48,19 @@ const extractIpfsHash = (url: string): string | null => {
  */
 export const resolveIpfsUrl = (url: string | undefined): string | undefined => {
 	if (!url) return undefined;
-	
+
 	// If it's not an IPFS URL, return as is
 	if (!isIpfsUrl(url)) {
 		return url;
 	}
-	
+
 	// Extract IPFS hash
 	const ipfsHash = extractIpfsHash(url);
 	if (!ipfsHash) {
 		console.warn('[ipfsResolver] Could not extract IPFS hash from URL:', url);
 		return url;
 	}
-	
+
 	// Use the first gateway as default
 	// In production, you might want to implement fallback logic
 	return `${IPFS_GATEWAYS[0]}${ipfsHash}`;

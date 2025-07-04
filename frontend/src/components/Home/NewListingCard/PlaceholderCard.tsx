@@ -10,13 +10,13 @@ const NewListingPlaceholderCard: React.FC = () => {
 		<View style={styles.card}>
 			{/* Icon shimmer */}
 			<View style={styles.iconContainer}>
-				<ShimmerPlaceholder 
+				<ShimmerPlaceholder
 					style={styles.shimmerIcon}
 				/>
 			</View>
-			
+
 			{/* Symbol shimmer */}
-			<ShimmerPlaceholder 
+			<ShimmerPlaceholder
 				style={styles.shimmerSymbol}
 			/>
 		</View>

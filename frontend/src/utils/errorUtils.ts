@@ -41,6 +41,13 @@ export const getUserFriendlyTradeError = (error: unknown): string => {
 	// Log the original error for debugging
 	logger.error('[ErrorUtils] Processing trade error:', errorMessage);
 
+	// Check for authentication/authorization errors
+	if (errorMessage.includes('401') ||
+		errorMessage.toLowerCase().includes('unauthorized') ||
+		errorMessage.toLowerCase().includes('authentication')) {
+		return 'Service temporarily unavailable. Please try again later.';
+	}
+
 	// Check for Jupiter route errors (case-insensitive)
 	if (errorMessage.toLowerCase().includes('could not find any route') ||
 		errorMessage.toLowerCase().includes('could_not_find_any_route')) {
@@ -154,7 +161,7 @@ export const SEARCH_ERROR_MESSAGES = {
 	MARKET_DATA_UNAVAILABLE: 'Unable to access market data at this time. Please try again later.',
 	TOKEN_NOT_FOUND: 'Token not found. Please check the address and try again.',
 	INVALID_ADDRESS: 'Invalid token address. Please enter a valid Solana token address.',
-	
+
 	// Generic fallbacks
 	SEARCH_FAILED: 'Search failed. Please try again.',
 	NETWORK_ERROR: 'Network error. Please check your connection and try again.',
@@ -187,7 +194,7 @@ export const getUserFriendlySearchError = (error: unknown): string => {
 		return SEARCH_ERROR_MESSAGES.TOKEN_NOT_FOUND;
 	}
 
-	if (errorMessage.toLowerCase().includes('invalid address') || 
+	if (errorMessage.toLowerCase().includes('invalid address') ||
 		errorMessage.toLowerCase().includes('invalid token address')) {
 		return SEARCH_ERROR_MESSAGES.INVALID_ADDRESS;
 	}
