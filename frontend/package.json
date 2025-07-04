@@ -10,21 +10,10 @@
     "ios": "npx expo run:ios",
     "tsc:watch": "tsc --watch",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
-    "_msw:start": "ts-node frontend/e2e/mocks/run-msw-server.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:logic": "jest",
-    "test:e2e": "maestro-cli test frontend/e2e/flows",
-    "test:e2e:all": "maestro-cli test frontend/e2e/flows/run-all-tests.yaml",
-    "test:e2e:home": "maestro-cli test frontend/e2e/flows/home",
-    "test:e2e:trading": "maestro-cli test frontend/e2e/flows/trading",
-    "test:e2e:settings": "maestro-cli test frontend/e2e/flows/settings",
-    "test:e2e:components": "maestro-cli test frontend/e2e/flows/components",
-    "test:e2e:single": "maestro-cli test",
-    "test:all": "yarn test:logic && yarn test:e2e:all",
-    "start:e2e:ios": "cross-env E2E_MOCKING_ENABLED=true LOAD_DEBUG_WALLET=true npx expo run:ios --device",
-    "start:e2e:android": "cross-env E2E_MOCKING_ENABLED=true LOAD_DEBUG_WALLET=true npx expo run:android --device"
+    "android": "expo run:android"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.5.0",
