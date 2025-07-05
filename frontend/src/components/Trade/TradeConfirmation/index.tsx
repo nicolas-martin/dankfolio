@@ -26,10 +26,10 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 
 	const TokenIcon: React.FC<{ token: Coin }> = ({ token }) => {
 
-		if (token.resolvedIconUrl) {
+		if (token.logoURI) {
 			return (
 				<CachedImage
-					uri={token.resolvedIconUrl}
+					uri={token.logoURI}
 					size={32}
 					style={styles.tokenIcon}
 					showLoadingIndicator={true}

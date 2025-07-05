@@ -35,7 +35,6 @@ type Coin struct {
 	Decimals        int      `json:"decimals"`
 	Description     string   `json:"description"`
 	LogoURI         string   `json:"logoURI"`                     // Was: IconUrl (BirdEye uses logoURI)
-	ResolvedIconUrl string   `json:"resolved_icon_url,omitempty"` // Keep for our internal optimization
 	Tags            []string `json:"tags,omitempty"`
 
 	// Price and Market Data (aligned with BirdEye)
@@ -252,11 +251,6 @@ func (m *Coin) ToProto() (*pb.Coin, error) {
 	// Handle optional float64/int fields by wrapping with pointers if they are set (non-zero for numbers, non-empty for strings)
 	// This depends on how protoc-gen-go generates optional scalar fields.
 	// If pb.Coin fields are like *float64, *int32:
-	if m.ResolvedIconUrl != "" {
-		pbCoin.ResolvedIconUrl = &m.ResolvedIconUrl
-	} else {
-		pbCoin.ResolvedIconUrl = nil // Explicitly set to nil if empty, though a nil *string is default
-	}
 	if m.Website != "" {
 		pbCoin.Website = &m.Website
 	} else {

@@ -27,12 +27,12 @@ Based on the [Theodo article](https://blog.theodo.com/2024/03/three-hacks-level-
 ```tsx
 // In React Native component
 <TouchableOpacity
-    testID={`coin-card-${coin.mintAddress}`}
+    testID={`coin-card-${coin.address}`}
     onPress={handlePress}
 >
     <CachedImage
-        testID={`coin-icon-${coin.mintAddress}`}
-        uri={coin.resolvedIconUrl}
+        testID={`coin-icon-${coin.address}`}
+        uri={coin.logoURI}
     />
 </TouchableOpacity>
 ```

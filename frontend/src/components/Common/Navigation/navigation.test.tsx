@@ -18,7 +18,7 @@ const mockCoin: Coin = {
 	mintAddress: 'BTC123',
 	symbol: 'BTC',
 	name: 'Bitcoin',
-	resolvedIconUrl: 'https://example.com/btc-from-nav.png',
+	logoURI: 'https://example.com/btc-from-nav.png',
 	decimals: 8,
 	price: 50000,
 	change24h: 2.5,

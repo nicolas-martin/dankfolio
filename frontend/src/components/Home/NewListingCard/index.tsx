@@ -33,9 +33,9 @@ const NewListingCard: React.FC<NewListingCardProps> = ({
 		>
 			{/* Icon container - always reserve space for consistent layout */}
 			<View style={styles.iconContainer}>
-				{coin.resolvedIconUrl && (
+				{coin.logoURI && (
 					<CachedImage
-						uri={coin.resolvedIconUrl}
+						uri={coin.logoURI}
 						size={20}
 						showLoadingIndicator={true}
 						borderRadius={10}
@@ -63,6 +63,6 @@ export default React.memo(NewListingCard, (prevProps, nextProps) => {
 	return (
 		prevProps.coin.address === nextProps.coin.address &&
 		prevProps.coin.symbol === nextProps.coin.symbol &&
-		prevProps.coin.resolvedIconUrl === nextProps.coin.resolvedIconUrl
+		prevProps.coin.logoURI === nextProps.coin.logoURI
 	);
 }); 

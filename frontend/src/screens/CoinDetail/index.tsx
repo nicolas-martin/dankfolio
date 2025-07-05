@@ -311,7 +311,10 @@ const CoinDetail: React.FC = () => {
 	}
 
 	const renderPriceCard = () => {
-		if (!displayCoin || priceHistory.length < 2 || !displayCoin.resolvedIconUrl) return null;
+		if (!displayCoin || priceHistory.length < 2) return null;
+
+		// Use logoURI as the single source of truth for icons
+		const iconUrl = displayCoin.logoURI;
 
 		return (
 			<View style={styles.priceCard} testID={`coin-detail-price-card-${displayCoin?.symbol?.toLowerCase()}`}>
@@ -320,7 +323,7 @@ const CoinDetail: React.FC = () => {
 					periodChange={displayData.periodChange}
 					valueChange={displayData.valueChange}
 					period={TIMEFRAMES.find(tf => tf.value === selectedTimeframe)?.label || selectedTimeframe}
-					resolvedIconUrl={displayCoin.resolvedIconUrl}
+					logoURI={iconUrl}
 					name={displayCoin.name}
 					symbol={displayCoin.symbol}
 					address={displayCoin.address} // Use displayCoin.address

@@ -242,7 +242,6 @@ func mapSchemaCoinsToModel(schemaCoins []schema.Coin) []model.Coin {
 			Decimals:               sc.Decimals,
 			Description:            sc.Description,
 			LogoURI:                sc.LogoURI,
-			ResolvedIconUrl:        sc.ResolvedIconUrl,
 			Tags:                   sc.Tags,
 			Price:                  sc.Price,
 			Price24hChangePercent:  sc.Price24hChangePercent,

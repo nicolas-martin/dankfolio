@@ -40,8 +40,8 @@ const TokenItem = React.memo<{
 		onSelect(coin);
 	}, [coin, onSelect]);
 
-	if (!coin.resolvedIconUrl) {
-		logger.warn('TokenItem: Missing resolvedIconUrl for coin', coin.address);
+	if (!coin.logoURI) {
+		logger.warn('TokenItem: Missing logoURI for coin', coin.address);
 		return
 	}
 
@@ -56,7 +56,7 @@ const TokenItem = React.memo<{
 			accessibilityHint="Double tap to select this token"
 			importantForAccessibility="yes"
 		>
-			<RenderIcon iconUrl={coin.resolvedIconUrl} styles={styles} />
+			<RenderIcon iconUrl={coin.logoURI} styles={styles} />
 			<View style={styles.tokenDetails}>
 				<Text style={styles.tokenSymbol}>{coin.symbol}</Text>
 				<Text style={styles.tokenName}>{coin.name}</Text>
@@ -468,9 +468,9 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 							accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol.toLowerCase()}` : (label || "Select token")}
 						>
 							<View style={styles.tokenInfo}>
-								{selectedToken?.resolvedIconUrl ? (
+								{selectedToken?.logoURI ? (
 									<>
-										<RenderIcon iconUrl={selectedToken.resolvedIconUrl} styles={styles} />
+										<RenderIcon iconUrl={selectedToken.logoURI} styles={styles} />
 										<Text style={styles.tokenSymbol} testID={`${testID}-symbol`}>{selectedToken.symbol}</Text>
 									</>
 								) : (

@@ -43,7 +43,7 @@ export const performSearch = async (
 };
 
 export const getTokenLogoURI = (token: Coin): string => {
-	return token.resolvedIconUrl || '';
+	return token.logoURI || '';
 };
 
 export const formatTokenBalance = (balance: number, decimals: number): string => {

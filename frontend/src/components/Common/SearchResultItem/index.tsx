@@ -11,7 +11,7 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
 	isEnriched = true,
 }) => {
 	const styles = useStyles();
-	if (!coin || !coin.resolvedIconUrl) {
+	if (!coin || !coin.logoURI) {
 		return null;
 	}
 
@@ -30,10 +30,10 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
 			disabled={!onPress}
 		>
 			<CoinInfoBlock
-				iconUri={coin.resolvedIconUrl}
+				iconUri={coin.logoURI}
 				iconSize={36}
 				primaryText={coin.name}
-				secondaryText={formatAddress(coin.mintAddress, 6, 6)}
+				secondaryText={formatAddress(coin.address, 6, 6)}
 				primaryTextStyle={styles.tokenName}
 				secondaryTextStyle={styles.tokenAddress}
 			/>
@@ -43,7 +43,7 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
 				</View>
 			)}
 			<View style={styles.symbolColumn}>
-				<Text style={styles.tokenSymbol}>{coin.symbol || formatAddress(coin.mintAddress, 6, 6)}</Text>
+				<Text style={styles.tokenSymbol}>{coin.symbol || formatAddress(coin.address, 6, 6)}</Text>
 			</View>
 			{!isEnriched && (
 				<View style={styles.unenrichedBadge}>

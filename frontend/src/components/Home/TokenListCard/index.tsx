@@ -43,7 +43,7 @@ const TokenListItem: React.FC<TokenListItemProps> = React.memo(({
 				<View style={styles.itemContent}>
 					<CoinInfoBlock
 						containerStyle={styles.leftSection}
-						iconUri={coin.resolvedIconUrl}
+						iconUri={coin.logoURI}
 						iconSize={36}
 						primaryText={coin.symbol}
 						secondaryText={coin.name}
@@ -137,7 +137,7 @@ const TokenListItem: React.FC<TokenListItemProps> = React.memo(({
 		prevProps.coin.address === nextProps.coin.address &&
 		prevProps.coin.price === nextProps.coin.price &&
 		prevProps.coin.price24hChangePercent === nextProps.coin.price24hChangePercent &&
-		prevProps.coin.resolvedIconUrl === nextProps.coin.resolvedIconUrl &&
+		prevProps.coin.logoURI === nextProps.coin.logoURI &&
 		prevProps.coin.symbol === nextProps.coin.symbol &&
 		prevProps.coin.name === nextProps.coin.name &&
 		prevProps.priceHistory === nextProps.priceHistory &&

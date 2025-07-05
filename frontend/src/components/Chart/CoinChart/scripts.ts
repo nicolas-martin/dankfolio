@@ -51,60 +51,27 @@ export const getTimeFormat = (period?: string) => {
 };
 
 export const prepareChartData = (data: PriceData[]): PricePoint[] => {
-	console.log('[prepareChartData] Input data:', {
-		length: data?.length || 0,
-		firstItem: data?.[0],
-		lastItem: data?.[data?.length - 1],
-		sampleData: data?.slice(0, 3)
-	});
-
 	if (!data || data.length === 0) {
-		console.log('[prepareChartData] No data provided, returning empty array');
 		return [];
 	}
-	
+
 	// Limit points for better performance if needed
 	const targetLength = 150;
 	let dataToProcess = data;
-	
+
 	// If we have too many points, sample them to reduce workload
 	if (data.length > targetLength) {
 		const skipFactor = Math.ceil(data.length / targetLength);
 		dataToProcess = data.filter((_, i) => i % skipFactor === 0 || i === data.length - 1);
-		console.log('[prepareChartData] Sampled data for performance:', {
-			originalLength: data.length,
-			sampledLength: dataToProcess.length,
-			skipFactor
-		});
 	}
-	
-	const processedPoints = dataToProcess.map((pt, index) => {
+
+	const processedPoints = dataToProcess.map((pt, _index) => {
 		// Use unixTime directly (already in milliseconds from grpcApi)
 		const t = pt.unixTime;
 		const v = pt.value; // No conversion needed - value is always a number now
 		const point = { timestamp: t, price: v, value: v, x: t, y: v };
-		
-		// Log first few points for debugging
-		if (index < 3) {
-			console.log(`[prepareChartData] Point ${index}:`, {
-				original: pt,
-				processed: point,
-				timestampDate: new Date(t).toISOString()
-			});
-		}
-		
-		return point;
-	});
 
-	console.log('[prepareChartData] Final processed data:', {
-		length: processedPoints.length,
-		firstPoint: processedPoints[0],
-		lastPoint: processedPoints[processedPoints.length - 1],
-		timeRange: processedPoints.length > 1 ? {
-			start: new Date(processedPoints[0].x).toISOString(),
-			end: new Date(processedPoints[processedPoints.length - 1].x).toISOString(),
-			durationMs: processedPoints[processedPoints.length - 1].x - processedPoints[0].x
-		} : null
+		return point;
 	});
 
 	return processedPoints;
@@ -117,7 +84,7 @@ export const formatPrice = (price: number): string => {
 		minimumFractionDigits: 2,
 		maximumFractionDigits: 6,
 	}).format(price);
-}; 
+};
 
 export const determineChartColor = (data: PricePoint[]): 'green' | 'red' => {
 	if (!data || data.length < 2) return 'green';
@@ -126,7 +93,7 @@ export const determineChartColor = (data: PricePoint[]): 'green' | 'red' => {
 	return lastValue >= firstValue ? 'green' : 'red';
 };
 
-export const createPulsateAnimation = (animatedValue: SharedValue<number>) => {
+export const createPulsateAnimation = (_animatedValue: SharedValue<number>) => {
 	// Use a simpler animation with fewer keyframes
 	return withRepeat(
 		withSpring(CHART_CONSTANTS.dotSize.pulse.max, {
@@ -140,57 +107,57 @@ export const createPulsateAnimation = (animatedValue: SharedValue<number>) => {
 	);
 };
 
- 
+
 
 // ─── GradientArea Component Logic ────────────────────────────────────────────
-export const useGradientArea = ({ points, y0, color, opacity = 0.8, gradientColors }: AreaProps) => {
+export const useGradientArea = ({ points, y0, color, _opacity = 0.8, gradientColors }: AreaProps) => {
 	// Extract base color for gradient
-	const baseColor = color.startsWith('rgba') 
-		? color.replace(/rgba\((\d+),\s*(\d+),\s*(\d+).*/, 'rgb($1, $2, $3)') 
+	const baseColor = color.startsWith('rgba')
+		? color.replace(/rgba\((\d+),\s*(\d+),\s*(\d+).*/, 'rgb($1, $2, $3)')
 		: color;
-	
+
 	// Create default gradient colors if not provided
 	const colors = gradientColors || [
 		baseColor,         // Solid color at top
 		`${baseColor}80`,  // 50% opacity in middle
 		`${baseColor}10`   // 10% opacity at bottom
 	];
-	
+
 	// Get the line path from victory-native's useLinePath
 	const { path: linePath } = useLinePath(points, { curveType: 'cardinal' });
-	
+
 	// Create the area path with Skia
 	const areaPath = useMemo(() => {
 		if (!points || !Array.isArray(points) || points.length === 0 || !linePath) return null;
-		
+
 		// Get the first and last points
 		const lastPoint = points[points.length - 1];
 		const firstPoint = points[0];
-		
+
 		// Ensure points have the expected structure
 		if (!lastPoint || !firstPoint || typeof lastPoint.x !== 'number' || typeof firstPoint.x !== 'number') {
 			return null;
 		}
-		
+
 		// Create a new path for the area
 		const Skia = require('@shopify/react-native-skia').Skia;
 		const path = Skia.Path.Make();
-		
+
 		// Add the line path
 		path.addPath(linePath);
-		
+
 		// Add line to bottom right
 		path.lineTo(lastPoint.x, y0);
-		
+
 		// Add line to bottom left
 		path.lineTo(firstPoint.x, y0);
-		
+
 		// Close the path
 		path.close();
-		
+
 		return path;
 	}, [points, y0, linePath]);
-	
+
 	return {
 		areaPath,
 		colors
@@ -243,16 +210,16 @@ export const createHorizontalDottedLinePoints = (
 	startX: number,
 	endX: number,
 	y: number,
-	dotSpacing: number = 6, 
+	dotSpacing: number = 6,
 	dotSize: number = 3
 ) => {
 	// Create a dotted line by drawing multiple segments
 	// This produces a true dotted appearance without relying on dash patterns
 	const lineWidth = endX - startX;
-	
+
 	// Calculate number of dots that will fit
 	const numDots = Math.floor(lineWidth / dotSpacing);
-	
+
 	return Array.from({ length: numDots }).map((_, i) => ({
 		start: { x: startX + i * dotSpacing, y },
 		end: { x: startX + i * dotSpacing + dotSize, y }

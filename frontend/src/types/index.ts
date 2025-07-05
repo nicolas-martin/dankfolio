@@ -9,7 +9,6 @@ export interface Coin {
 	decimals: number;
 	description: string;
 	logoURI: string;                    // Was: iconUrl (aligned with BirdEye)
-	resolvedIconUrl?: string;           // Keep for our internal optimization
 	tags: string[];
 	price: number;
 	balance?: number;                   // Keep for frontend calculations

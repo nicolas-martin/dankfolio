@@ -42,7 +42,7 @@ const TrendingGainerCard: React.FC<TrendingGainerCardProps> = ({
 		>
 			<View style={styles.iconContainer}>
 				<CachedImage
-					uri={coin.resolvedIconUrl}
+					uri={coin.logoURI}
 					size={36}
 					showLoadingIndicator={true}
 					borderRadius={18}
@@ -95,7 +95,7 @@ export default React.memo(TrendingGainerCard, (prevProps, nextProps) => {
 	return (
 		prevProps.coin.address === nextProps.coin.address &&
 		prevProps.coin.symbol === nextProps.coin.symbol &&
-		prevProps.coin.resolvedIconUrl === nextProps.coin.resolvedIconUrl &&
+		prevProps.coin.logoURI === nextProps.coin.logoURI &&
 		prevProps.coin.price24hChangePercent === nextProps.coin.price24hChangePercent
 	);
 }); 

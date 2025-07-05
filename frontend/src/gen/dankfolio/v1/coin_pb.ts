@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/coin.proto.
  */
 export const file_dankfolio_v1_coin: GenFile = /*@__PURE__*/
-  fileDesc("ChdkYW5rZm9saW8vdjEvY29pbi5wcm90bxIMZGFua2ZvbGlvLnYxIssGCgRDb2luEg8KB2FkZHJlc3MYASABKAkSDAoEbmFtZRgCIAEoCRIOCgZzeW1ib2wYAyABKAkSEAoIZGVjaW1hbHMYBCABKAUSEwoLZGVzY3JpcHRpb24YBSABKAkSEAoIbG9nb191cmkYBiABKAkSHgoRcmVzb2x2ZWRfaWNvbl91cmwYByABKAlIAIgBARIMCgR0YWdzGAggAygJEg0KBXByaWNlGAkgASgBEiQKF3ByaWNlMjRoX2NoYW5nZV9wZXJjZW50GAogASgBSAGIAQESFgoJbWFya2V0Y2FwGAsgASgBSAKIAQESGgoNdm9sdW1lMjRoX3VzZBgMIAEoAUgDiAEBEiUKGHZvbHVtZTI0aF9jaGFuZ2VfcGVyY2VudBgNIAEoAUgEiAEBEhYKCWxpcXVpZGl0eRgOIAEoAUgFiAEBEhAKA2ZkdhgPIAEoAUgGiAEBEhEKBHJhbmsYECABKAVIB4gBARIUCgd3ZWJzaXRlGBEgASgJSAiIAQESFAoHdHdpdHRlchgSIAEoCUgJiAEBEhUKCHRlbGVncmFtGBMgASgJSAqIAQESFAoHZGlzY29yZBgUIAEoCUgLiAEBEi4KCmNyZWF0ZWRfYXQYFSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjUKDGxhc3RfdXBkYXRlZBgWIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBIDIgBARI6ChFqdXBpdGVyX2xpc3RlZF9hdBgXIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBIDYgBAUIUChJfcmVzb2x2ZWRfaWNvbl91cmxCGgoYX3ByaWNlMjRoX2NoYW5nZV9wZXJjZW50QgwKCl9tYXJrZXRjYXBCEAoOX3ZvbHVtZTI0aF91c2RCGwoZX3ZvbHVtZTI0aF9jaGFuZ2VfcGVyY2VudEIMCgpfbGlxdWlkaXR5QgYKBF9mZHZCBwoFX3JhbmtCCgoIX3dlYnNpdGVCCgoIX3R3aXR0ZXJCCwoJX3RlbGVncmFtQgoKCF9kaXNjb3JkQg8KDV9sYXN0X3VwZGF0ZWRCFAoSX2p1cGl0ZXJfbGlzdGVkX2F0IjkKGEdldEF2YWlsYWJsZUNvaW5zUmVxdWVzdBINCgVsaW1pdBgBIAEoBRIOCgZvZmZzZXQYAiABKAUiUwoZR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZRIhCgVjb2lucxgBIAMoCzISLmRhbmtmb2xpby52MS5Db2luEhMKC3RvdGFsX2NvdW50GAIgASgFIiUKEkdldENvaW5CeUlEUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIikKFEdldENvaW5zQnlJRHNSZXF1ZXN0EhEKCWFkZHJlc3NlcxgBIAMoCSI6ChVHZXRDb2luc0J5SURzUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbiItChpTZWFyY2hDb2luQnlBZGRyZXNzUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIj8KG1NlYXJjaENvaW5CeUFkZHJlc3NSZXNwb25zZRIgCgRjb2luGAEgASgLMhIuZGFua2ZvbGlvLnYxLkNvaW4iFAoSR2V0QWxsQ29pbnNSZXF1ZXN0IjgKE0dldEFsbENvaW5zUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbiI9Cg1TZWFyY2hSZXF1ZXN0Eg0KBXF1ZXJ5GAEgASgJEg0KBWxpbWl0GAIgASgFEg4KBm9mZnNldBgDIAEoBSJICg5TZWFyY2hSZXNwb25zZRIhCgVjb2lucxgBIAMoCzISLmRhbmtmb2xpby52MS5Db2luEhMKC3RvdGFsX2NvdW50GAIgASgFIlIKEkdldE5ld0NvaW5zUmVxdWVzdBISCgVsaW1pdBgBIAEoBUgAiAEBEhMKBm9mZnNldBgCIAEoBUgBiAEBQggKBl9saW1pdEIJCgdfb2Zmc2V0IlcKF0dldFRyZW5kaW5nQ29pbnNSZXF1ZXN0EhIKBWxpbWl0GAEgASgFSACIAQESEwoGb2Zmc2V0GAIgASgFSAGIAQFCCAoGX2xpbWl0QgkKB19vZmZzZXQiWQoZR2V0VG9wR2FpbmVyc0NvaW5zUmVxdWVzdBISCgVsaW1pdBgBIAEoBUgAiAEBEhMKBm9mZnNldBgCIAEoBUgBiAEBQggKBl9saW1pdEIJCgdfb2Zmc2V0Mr0GCgtDb2luU2VydmljZRJkChFHZXRBdmFpbGFibGVDb2lucxImLmRhbmtmb2xpby52MS5HZXRBdmFpbGFibGVDb2luc1JlcXVlc3QaJy5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZRJDCgtHZXRDb2luQnlJRBIgLmRhbmtmb2xpby52MS5HZXRDb2luQnlJRFJlcXVlc3QaEi5kYW5rZm9saW8udjEuQ29pbhJYCg1HZXRDb2luc0J5SURzEiIuZGFua2ZvbGlvLnYxLkdldENvaW5zQnlJRHNSZXF1ZXN0GiMuZGFua2ZvbGlvLnYxLkdldENvaW5zQnlJRHNSZXNwb25zZRJqChNTZWFyY2hDb2luQnlBZGRyZXNzEiguZGFua2ZvbGlvLnYxLlNlYXJjaENvaW5CeUFkZHJlc3NSZXF1ZXN0GikuZGFua2ZvbGlvLnYxLlNlYXJjaENvaW5CeUFkZHJlc3NSZXNwb25zZRJSCgtHZXRBbGxDb2lucxIgLmRhbmtmb2xpby52MS5HZXRBbGxDb2luc1JlcXVlc3QaIS5kYW5rZm9saW8udjEuR2V0QWxsQ29pbnNSZXNwb25zZRJDCgZTZWFyY2gSGy5kYW5rZm9saW8udjEuU2VhcmNoUmVxdWVzdBocLmRhbmtmb2xpby52MS5TZWFyY2hSZXNwb25zZRJYCgtHZXROZXdDb2lucxIgLmRhbmtmb2xpby52MS5HZXROZXdDb2luc1JlcXVlc3QaJy5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZRJiChBHZXRUcmVuZGluZ0NvaW5zEiUuZGFua2ZvbGlvLnYxLkdldFRyZW5kaW5nQ29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USZgoSR2V0VG9wR2FpbmVyc0NvaW5zEicuZGFua2ZvbGlvLnYxLkdldFRvcEdhaW5lcnNDb2luc1JlcXVlc3QaJy5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZUK1AQoQY29tLmRhbmtmb2xpby52MUIJQ29pblByb3RvUAFaRWdpdGh1Yi5jb20vbmljb2xhcy1tYXJ0aW4vZGFua2ZvbGlvL2JhY2tlbmQvZ2VuL3Byb3RvL2dvL2Rhbmtmb2xpby92MaICA0RYWKoCDERhbmtmb2xpby5WMcoCDERhbmtmb2xpb1xWMeICGERhbmtmb2xpb1xWMVxHUEJNZXRhZGF0YeoCDURhbmtmb2xpbzo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
+  fileDesc("ChdkYW5rZm9saW8vdjEvY29pbi5wcm90bxIMZGFua2ZvbGlvLnYxIpUGCgRDb2luEg8KB2FkZHJlc3MYASABKAkSDAoEbmFtZRgCIAEoCRIOCgZzeW1ib2wYAyABKAkSEAoIZGVjaW1hbHMYBCABKAUSEwoLZGVzY3JpcHRpb24YBSABKAkSEAoIbG9nb191cmkYBiABKAkSDAoEdGFncxgHIAMoCRINCgVwcmljZRgIIAEoARIkChdwcmljZTI0aF9jaGFuZ2VfcGVyY2VudBgJIAEoAUgAiAEBEhYKCW1hcmtldGNhcBgKIAEoAUgBiAEBEhoKDXZvbHVtZTI0aF91c2QYCyABKAFIAogBARIlChh2b2x1bWUyNGhfY2hhbmdlX3BlcmNlbnQYDCABKAFIA4gBARIWCglsaXF1aWRpdHkYDSABKAFIBIgBARIQCgNmZHYYDiABKAFIBYgBARIRCgRyYW5rGA8gASgFSAaIAQESFAoHd2Vic2l0ZRgQIAEoCUgHiAEBEhQKB3R3aXR0ZXIYESABKAlICIgBARIVCgh0ZWxlZ3JhbRgSIAEoCUgJiAEBEhQKB2Rpc2NvcmQYEyABKAlICogBARIuCgpjcmVhdGVkX2F0GBQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI1CgxsYXN0X3VwZGF0ZWQYFSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wSAuIAQESOgoRanVwaXRlcl9saXN0ZWRfYXQYFiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wSAyIAQFCGgoYX3ByaWNlMjRoX2NoYW5nZV9wZXJjZW50QgwKCl9tYXJrZXRjYXBCEAoOX3ZvbHVtZTI0aF91c2RCGwoZX3ZvbHVtZTI0aF9jaGFuZ2VfcGVyY2VudEIMCgpfbGlxdWlkaXR5QgYKBF9mZHZCBwoFX3JhbmtCCgoIX3dlYnNpdGVCCgoIX3R3aXR0ZXJCCwoJX3RlbGVncmFtQgoKCF9kaXNjb3JkQg8KDV9sYXN0X3VwZGF0ZWRCFAoSX2p1cGl0ZXJfbGlzdGVkX2F0IjkKGEdldEF2YWlsYWJsZUNvaW5zUmVxdWVzdBINCgVsaW1pdBgBIAEoBRIOCgZvZmZzZXQYAiABKAUiUwoZR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZRIhCgVjb2lucxgBIAMoCzISLmRhbmtmb2xpby52MS5Db2luEhMKC3RvdGFsX2NvdW50GAIgASgFIiUKEkdldENvaW5CeUlEUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIikKFEdldENvaW5zQnlJRHNSZXF1ZXN0EhEKCWFkZHJlc3NlcxgBIAMoCSI6ChVHZXRDb2luc0J5SURzUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbiItChpTZWFyY2hDb2luQnlBZGRyZXNzUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIj8KG1NlYXJjaENvaW5CeUFkZHJlc3NSZXNwb25zZRIgCgRjb2luGAEgASgLMhIuZGFua2ZvbGlvLnYxLkNvaW4iFAoSR2V0QWxsQ29pbnNSZXF1ZXN0IjgKE0dldEFsbENvaW5zUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbiI9Cg1TZWFyY2hSZXF1ZXN0Eg0KBXF1ZXJ5GAEgASgJEg0KBWxpbWl0GAIgASgFEg4KBm9mZnNldBgDIAEoBSJICg5TZWFyY2hSZXNwb25zZRIhCgVjb2lucxgBIAMoCzISLmRhbmtmb2xpby52MS5Db2luEhMKC3RvdGFsX2NvdW50GAIgASgFIlIKEkdldE5ld0NvaW5zUmVxdWVzdBISCgVsaW1pdBgBIAEoBUgAiAEBEhMKBm9mZnNldBgCIAEoBUgBiAEBQggKBl9saW1pdEIJCgdfb2Zmc2V0IlcKF0dldFRyZW5kaW5nQ29pbnNSZXF1ZXN0EhIKBWxpbWl0GAEgASgFSACIAQESEwoGb2Zmc2V0GAIgASgFSAGIAQFCCAoGX2xpbWl0QgkKB19vZmZzZXQiWQoZR2V0VG9wR2FpbmVyc0NvaW5zUmVxdWVzdBISCgVsaW1pdBgBIAEoBUgAiAEBEhMKBm9mZnNldBgCIAEoBUgBiAEBQggKBl9saW1pdEIJCgdfb2Zmc2V0Mr0GCgtDb2luU2VydmljZRJkChFHZXRBdmFpbGFibGVDb2lucxImLmRhbmtmb2xpby52MS5HZXRBdmFpbGFibGVDb2luc1JlcXVlc3QaJy5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZRJDCgtHZXRDb2luQnlJRBIgLmRhbmtmb2xpby52MS5HZXRDb2luQnlJRFJlcXVlc3QaEi5kYW5rZm9saW8udjEuQ29pbhJYCg1HZXRDb2luc0J5SURzEiIuZGFua2ZvbGlvLnYxLkdldENvaW5zQnlJRHNSZXF1ZXN0GiMuZGFua2ZvbGlvLnYxLkdldENvaW5zQnlJRHNSZXNwb25zZRJqChNTZWFyY2hDb2luQnlBZGRyZXNzEiguZGFua2ZvbGlvLnYxLlNlYXJjaENvaW5CeUFkZHJlc3NSZXF1ZXN0GikuZGFua2ZvbGlvLnYxLlNlYXJjaENvaW5CeUFkZHJlc3NSZXNwb25zZRJSCgtHZXRBbGxDb2lucxIgLmRhbmtmb2xpby52MS5HZXRBbGxDb2luc1JlcXVlc3QaIS5kYW5rZm9saW8udjEuR2V0QWxsQ29pbnNSZXNwb25zZRJDCgZTZWFyY2gSGy5kYW5rZm9saW8udjEuU2VhcmNoUmVxdWVzdBocLmRhbmtmb2xpby52MS5TZWFyY2hSZXNwb25zZRJYCgtHZXROZXdDb2lucxIgLmRhbmtmb2xpby52MS5HZXROZXdDb2luc1JlcXVlc3QaJy5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZRJiChBHZXRUcmVuZGluZ0NvaW5zEiUuZGFua2ZvbGlvLnYxLkdldFRyZW5kaW5nQ29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USZgoSR2V0VG9wR2FpbmVyc0NvaW5zEicuZGFua2ZvbGlvLnYxLkdldFRvcEdhaW5lcnNDb2luc1JlcXVlc3QaJy5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZUK1AQoQY29tLmRhbmtmb2xpby52MUIJQ29pblByb3RvUAFaRWdpdGh1Yi5jb20vbmljb2xhcy1tYXJ0aW4vZGFua2ZvbGlvL2JhY2tlbmQvZ2VuL3Byb3RvL2dvL2Rhbmtmb2xpby92MaICA0RYWKoCDERhbmtmb2xpby5WMcoCDERhbmtmb2xpb1xWMeICGERhbmtmb2xpb1xWMVxHUEJNZXRhZGF0YeoCDURhbmtmb2xpbzo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
 
 /**
  * Coin represents a coin or currency (unified definition)
@@ -56,101 +56,94 @@ export type Coin = Message<"dankfolio.v1.Coin"> & {
   logoUri: string;
 
   /**
-   * Keep for our internal optimization
-   *
-   * @generated from field: optional string resolved_icon_url = 7;
-   */
-  resolvedIconUrl?: string;
-
-  /**
-   * @generated from field: repeated string tags = 8;
+   * @generated from field: repeated string tags = 7;
    */
   tags: string[];
 
   /**
-   * @generated from field: double price = 9;
+   * @generated from field: double price = 8;
    */
   price: number;
 
   /**
    * BirdEye standard (was: price_change_percentage_24h)
    *
-   * @generated from field: optional double price24h_change_percent = 10;
+   * @generated from field: optional double price24h_change_percent = 9;
    */
   price24hChangePercent?: number;
 
   /**
    * BirdEye uses lowercase (was: market_cap)
    *
-   * @generated from field: optional double marketcap = 11;
+   * @generated from field: optional double marketcap = 10;
    */
   marketcap?: number;
 
   /**
    * BirdEye standard (was: volume_24h_usd and daily_volume)
    *
-   * @generated from field: optional double volume24h_usd = 12;
+   * @generated from field: optional double volume24h_usd = 11;
    */
   volume24hUsd?: number;
 
   /**
    * BirdEye standard (was: volume_24h_change_percent)
    *
-   * @generated from field: optional double volume24h_change_percent = 13;
+   * @generated from field: optional double volume24h_change_percent = 12;
    */
   volume24hChangePercent?: number;
 
   /**
-   * @generated from field: optional double liquidity = 14;
+   * @generated from field: optional double liquidity = 13;
    */
   liquidity?: number;
 
   /**
    * BirdEye uses uppercase
    *
-   * @generated from field: optional double fdv = 15;
+   * @generated from field: optional double fdv = 14;
    */
   fdv?: number;
 
   /**
-   * @generated from field: optional int32 rank = 16;
+   * @generated from field: optional int32 rank = 15;
    */
   rank?: number;
 
   /**
-   * @generated from field: optional string website = 17;
+   * @generated from field: optional string website = 16;
    */
   website?: string;
 
   /**
-   * @generated from field: optional string twitter = 18;
+   * @generated from field: optional string twitter = 17;
    */
   twitter?: string;
 
   /**
-   * @generated from field: optional string telegram = 19;
+   * @generated from field: optional string telegram = 18;
    */
   telegram?: string;
 
   /**
    * Add discord field
    *
-   * @generated from field: optional string discord = 20;
+   * @generated from field: optional string discord = 19;
    */
   discord?: string;
 
   /**
-   * @generated from field: google.protobuf.Timestamp created_at = 21;
+   * @generated from field: google.protobuf.Timestamp created_at = 20;
    */
   createdAt?: Timestamp;
 
   /**
-   * @generated from field: optional google.protobuf.Timestamp last_updated = 22;
+   * @generated from field: optional google.protobuf.Timestamp last_updated = 21;
    */
   lastUpdated?: Timestamp;
 
   /**
-   * @generated from field: optional google.protobuf.Timestamp jupiter_listed_at = 23;
+   * @generated from field: optional google.protobuf.Timestamp jupiter_listed_at = 22;
    */
   jupiterListedAt?: Timestamp;
 };

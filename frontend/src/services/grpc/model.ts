@@ -5,7 +5,6 @@ export interface Coin {
 	decimals: number;
 	description: string;
 	logoURI: string;                    // Was: iconUrl (aligned with BirdEye)
-	resolvedIconUrl?: string;           // Keep for our internal optimization
 	tags: string[];
 	price: number;
 	price24hChangePercent?: number;     // BirdEye standard

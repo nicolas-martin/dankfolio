@@ -33,7 +33,7 @@ func main() {
 	solRPC := rpc.NewWithHeaders(solEndpoint, header)
 	// solanaClient := sgo.NewClient(solRPC)
 
-	k, err := solana.PublicKeyFromBase58("GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R")
+	k, err := solana.PublicKeyFromBase58("S7vYFFWH6BjJyEsdrPQpqpYTqLTrPRK6KW3VwsJuRaS")
 	if err != nil {
 		log.Fatalf("failed to parse public key: %v", err)
 	}

@@ -114,13 +114,8 @@ func (s *Service) EnrichCoinData(
 	enrichFromMetadata(&coin, offchainMeta) // Pass original offchainMeta
 	slog.Info("Coin metadata enriched from off-chain data", slog.Any("coin", coin))
 
-	// NOTE: Try without resolving IPFS URLs in this service.
-	// We removed cloudflare
-	coin.ResolvedIconUrl = coin.LogoURI
-	// coin.ResolvedIconUrl = util.StandardizeIpfsUrl(coin.IconUrl)
-	// if coin.ResolvedIconUrl != coin.IconUrl && coin.ResolvedIconUrl != "" {
-	// 	slog.Debug("Standardized IPFS URL", slog.String("original", coin.IconUrl), slog.String("resolved", coin.ResolvedIconUrl), slog.String("mintAddress", initialData.Address))
-	// }
+	// NOTE: IPFS URL resolution has been removed from this service.
+	// LogoURI is used directly without any transformation.
 
 	// Ensure LastUpdated is set
 	coin.LastUpdated = time.Now().Format(time.RFC3339)

@@ -34,7 +34,7 @@ const mockNewlyListedCoin: Coin = {
 	price: 1.1,
 	decimals: 6,
 	description: 'Desc for NEW1',
-	resolvedIconUrl: 'new1.png',
+	logoURI: 'new1.png',
 	tags: ['new'],
 	dailyVolume: 1000,
 	createdAt: new Date(),

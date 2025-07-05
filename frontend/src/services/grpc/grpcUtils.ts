@@ -14,7 +14,6 @@ export function mapGrpcCoinToFrontendCoin(grpcCoin: pbCoin): FrontendCoin {
 		decimals: grpcCoin.decimals,
 		description: grpcCoin.description,
 		logoURI: grpcCoin.logoUri,                                     // Map logoURI field
-		resolvedIconUrl: grpcCoin.resolvedIconUrl,                     // Keep for optimization
 		tags: grpcCoin.tags,
 		price: grpcCoin.price,
 		price24hChangePercent: grpcCoin.price24hChangePercent,         // BirdEye standard

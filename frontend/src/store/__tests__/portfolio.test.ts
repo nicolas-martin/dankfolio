@@ -27,7 +27,7 @@ jest.mock('react-native-keychain');
 let coinMap: Record<string, Coin>;
 const mockGetCoinByID = jest.fn();
 const mockSetCoin = jest.fn((coin: Coin) => {
-	coinMap[coin.mintAddress] = coin;
+	coinMap[coin.address] = coin;
 });
 
 const mockWalletData: RawWalletData = { // Changed type to RawWalletData
@@ -35,8 +35,8 @@ const mockWalletData: RawWalletData = { // Changed type to RawWalletData
 	privateKey: 'privKey' as Base58PrivateKey,
 	mnemonic: 'mnemonic'
 };
-const mockSolCoin: Coin = { mintAddress: 'solana', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: '', resolvedIconUrl: '', tags: [], dailyVolume: 0, createdAt: new Date() };
-const mockUsdcCoin: Coin = { mintAddress: 'usd-coin', symbol: 'USDC', name: 'USD Coin', price: 1, decimals: 6, description: '', resolvedIconUrl: '', tags: [], dailyVolume: 0, createdAt: new Date() };
+const mockSolCoin: Coin = { address: 'solana', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: '', logoURI: '', tags: [], dailyVolume: 0, createdAt: new Date() };
+const mockUsdcCoin: Coin = { address: 'usd-coin', symbol: 'USDC', name: 'USD Coin', price: 1, decimals: 6, description: '', logoURI: '', tags: [], dailyVolume: 0, createdAt: new Date() };
 
 const mockApiBalanceResponseSuccess = {
 	balances: [
@@ -171,14 +171,14 @@ describe('Zustand Portfolio Store', () => {
 			expect(state.tokens).toHaveLength(2);
 			expect(state.tokens).toEqual(expect.arrayContaining([
 				expect.objectContaining({
-					mintAddress: 'solana',
+					address: 'solana',
 					amount: expect.any(Number),
 					price: expect.any(Number),
 					value: expect.any(Number),
 					coin: mockSolCoin
 				}),
 				expect.objectContaining({
-					mintAddress: 'usd-coin',
+					address: 'usd-coin',
 					amount: expect.any(Number),
 					price: expect.any(Number),
 					value: expect.any(Number),
@@ -231,14 +231,14 @@ describe('Zustand Portfolio Store', () => {
 			expect(state.tokens).toHaveLength(2);
 			expect(state.tokens).toEqual(expect.arrayContaining([
 				expect.objectContaining({
-					mintAddress: 'solana',
+					address: 'solana',
 					amount: expect.any(Number),
 					price: expect.any(Number),
 					value: expect.any(Number),
 					coin: mockSolCoin
 				}),
 				expect.objectContaining({
-					mintAddress: 'usd-coin',
+					address: 'usd-coin',
 					amount: expect.any(Number),
 					price: expect.any(Number),
 					value: expect.any(Number),
