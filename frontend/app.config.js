@@ -12,7 +12,7 @@ if (isLocal) {
 
 module.exports = ({ config }) => ({
 	...config,
-	name: "dankfolio",
+	name: "Kaiju",
 	slug: "dankfolio-mobile",
 	version: "1.0.2",
 	orientation: "portrait",
