@@ -133,6 +133,7 @@ func (s *Service) updateCoinMarketData(ctx context.Context, coin *model.Coin) (*
 	coin.Rank = data.Rank
 	coin.LastUpdated = time.Now().Format(time.RFC3339)
 
+
 	// Update in database
 	if updateErr := s.store.Coins().Update(ctx, coin); updateErr != nil {
 		slog.WarnContext(ctx, "Failed to update coin market data in database", slog.String("address", coin.Address), slog.Any("error", updateErr))
@@ -212,6 +213,7 @@ func (s *Service) fetchNewCoin(ctx context.Context, address string) (*model.Coin
 		coin = enrichedCoin
 	}
 
+
 	// Final naughty word check after enrichment
 	if s.coinContainsNaughtyWord(coin.Name, coin.Description) {
 		return nil, fmt.Errorf("token contains inappropriate content after enrichment: %s", coin.Name)
@@ -276,6 +278,7 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, address string) (*model
 		return nil, fmt.Errorf("token name contains inappropriate content for address: %s after enrich", enrichedCoin.Address)
 	}
 
+
 	existingCoin, getErr := s.store.Coins().GetByField(ctx, "address", enrichedCoin.Address)
 	if getErr == nil && existingCoin != nil {
 		enrichedCoin.ID = existingCoin.ID
@@ -319,10 +322,6 @@ func (s *Service) updateCoin(ctx context.Context, coin *model.Coin) (*model.Coin
 		coin.LogoURI = data.LogoURI
 	}
 
-	// Ensure ResolvedIconUrl is populated from LogoURI if empty
-	if coin.ResolvedIconUrl == "" && coin.LogoURI != "" {
-		coin.ResolvedIconUrl = coin.LogoURI
-	}
 
 	// Update tags if available and we don't have any
 	// TODO: We might want to keep our OWN tags since we use them

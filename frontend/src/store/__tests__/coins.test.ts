@@ -8,10 +8,10 @@ import { Coin } from '@/types';
 jest.mock('@/services/grpcApi');
 
 // Mock Coin Data
-const mockSolCoin: Coin = { mintAddress: 'So11111111111111111111111111111111111111112', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: 'Solana', resolvedIconUrl: 'sol.png', tags: ['platform'], dailyVolume: 1000000, createdAt: new Date() };
-const mockWenCoin: Coin = { mintAddress: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI', symbol: 'WEN', name: 'Wen', price: 0.0001, decimals: 5, description: 'Wen WEN', resolvedIconUrl: 'wen.png', tags: ['meme'], dailyVolume: 50000, createdAt: new Date() };
-const mockOtherCoin: Coin = { mintAddress: 'otherCoinId', symbol: 'OTH', name: 'Other', price: 10, decimals: 6, description: 'Other coin', resolvedIconUrl: 'other.png', tags: [], dailyVolume: 10000, createdAt: new Date() };
-const mockNewlyListedCoin: Coin = { mintAddress: 'newCoinMint', symbol: 'NEW', name: 'New Coin', price: 1, decimals: 6, description: 'A new coin', resolvedIconUrl: 'new.png', tags: ['new'], dailyVolume: 500, createdAt: new Date() };
+const mockSolCoin: Coin = { address: 'So11111111111111111111111111111111111111112', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: 'Solana', logoURI: 'sol.png', tags: ['platform'], dailyVolume: 1000000, createdAt: new Date() };
+const mockWenCoin: Coin = { address: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI', symbol: 'WEN', name: 'Wen', price: 0.0001, decimals: 5, description: 'Wen WEN', logoURI: 'wen.png', tags: ['meme'], dailyVolume: 50000, createdAt: new Date() };
+const mockOtherCoin: Coin = { address: 'otherCoinId', symbol: 'OTH', name: 'Other', price: 10, decimals: 6, description: 'Other coin', logoURI: 'other.png', tags: [], dailyVolume: 10000, createdAt: new Date() };
+const mockNewlyListedCoin: Coin = { address: 'newCoinMint', symbol: 'NEW', name: 'New Coin', price: 1, decimals: 6, description: 'A new coin', logoURI: 'new.png', tags: ['new'], dailyVolume: 500, createdAt: new Date() };
 
 
 describe('Zustand Coin Store', () => {
@@ -185,8 +185,8 @@ describe('Zustand Coin Store', () => {
 				// Check newlyListedCoins
 				expect(state.newlyListedCoins.length).toBe(1);
 				expect(state.newlyListedCoins).toContainEqual(mockNewlyListedCoin);
-				expect(state.newlyListedCoins).not.toContainEqual(expect.objectContaining({ mintAddress: existingCoinInMap.mintAddress }));
-				expect(state.newlyListedCoins).not.toContainEqual(expect.objectContaining({ mintAddress: existingAvailableCoin.mintAddress }));
+				expect(state.newlyListedCoins).not.toContainEqual(expect.objectContaining({ address: existingCoinInMap.mintAddress }));
+				expect(state.newlyListedCoins).not.toContainEqual(expect.objectContaining({ address: existingAvailableCoin.mintAddress }));
 
 
 				// Check coinMap: should not overwrite existing more detailed coins with simpler fetched versions

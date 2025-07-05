@@ -26,7 +26,6 @@ type Coin struct {
 	Decimals               int            `gorm:"column:decimals;not null"`
 	Description            string         `gorm:"column:description"`
 	LogoURI                string         `gorm:"column:logo_uri"`          // Was: IconUrl (BirdEye uses logoURI)
-	ResolvedIconUrl        string         `gorm:"column:resolved_icon_url"` // Keep for our internal optimization
 	Tags                   pq.StringArray `gorm:"column:tags;type:text[];index:idx_coins_tags,type:gin"`
 	Price                  float64        `gorm:"column:price;default:0.0"`
 	Price24hChangePercent  float64        `gorm:"column:price_24h_change_percent;default:0.0;index:idx_coins_price_change_desc"` // Keep this one (BirdEye standard)

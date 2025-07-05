@@ -346,7 +346,6 @@ func (r *Repository[S, M]) toModel(s S) any {
 			Decimals:               v.Decimals,
 			Description:            v.Description,
 			LogoURI:                v.LogoURI, // Map LogoURI field
-			ResolvedIconUrl:        v.ResolvedIconUrl,
 			Tags:                   v.Tags,
 			Price:                  v.Price,
 			Price24hChangePercent:  v.Price24hChangePercent, // BirdEye standard
@@ -432,7 +431,6 @@ func (r *Repository[S, M]) fromModel(m M) any {
 			Decimals:               v.Decimals,
 			Description:            v.Description,
 			LogoURI:                v.LogoURI, // Map LogoURI field
-			ResolvedIconUrl:        v.ResolvedIconUrl,
 			Tags:                   v.Tags,
 			Price:                  v.Price,
 			Price24hChangePercent:  v.Price24hChangePercent, // BirdEye standard
@@ -516,7 +514,7 @@ func getColumnNames(data any) []string {
 	case *schema.Coin:
 		// Explicitly list columns to update, excluding PK 'id' and 'created_at'
 		return []string{
-			"address", "name", "symbol", "decimals", "description", "logo_uri", "resolved_icon_url", "tags",
+			"address", "name", "symbol", "decimals", "description", "logo_uri", "tags",
 			"price", "price_24h_change_percent", "marketcap", "volume_24h_usd", "volume_24h_change_percent",
 			"liquidity", "fdv", "rank", "website", "twitter", "telegram", "discord", "last_updated", "jupiter_created_at",
 		}

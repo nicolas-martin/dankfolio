@@ -31,24 +31,23 @@ type Coin struct {
 	Symbol                 string                 `protobuf:"bytes,3,opt,name=symbol,proto3" json:"symbol,omitempty"`
 	Decimals               int32                  `protobuf:"varint,4,opt,name=decimals,proto3" json:"decimals,omitempty"`
 	Description            string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
-	LogoUri                string                 `protobuf:"bytes,6,opt,name=logo_uri,json=logoUri,proto3" json:"logo_uri,omitempty"`                                 // Was: icon_url (BirdEye uses logoURI)
-	ResolvedIconUrl        *string                `protobuf:"bytes,7,opt,name=resolved_icon_url,json=resolvedIconUrl,proto3,oneof" json:"resolved_icon_url,omitempty"` // Keep for our internal optimization
-	Tags                   []string               `protobuf:"bytes,8,rep,name=tags,proto3" json:"tags,omitempty"`
-	Price                  float64                `protobuf:"fixed64,9,opt,name=price,proto3" json:"price,omitempty"`
-	Price24HChangePercent  *float64               `protobuf:"fixed64,10,opt,name=price24h_change_percent,json=price24hChangePercent,proto3,oneof" json:"price24h_change_percent,omitempty"`    // BirdEye standard (was: price_change_percentage_24h)
-	Marketcap              *float64               `protobuf:"fixed64,11,opt,name=marketcap,proto3,oneof" json:"marketcap,omitempty"`                                                           // BirdEye uses lowercase (was: market_cap)
-	Volume24HUsd           *float64               `protobuf:"fixed64,12,opt,name=volume24h_usd,json=volume24hUsd,proto3,oneof" json:"volume24h_usd,omitempty"`                                 // BirdEye standard (was: volume_24h_usd and daily_volume)
-	Volume24HChangePercent *float64               `protobuf:"fixed64,13,opt,name=volume24h_change_percent,json=volume24hChangePercent,proto3,oneof" json:"volume24h_change_percent,omitempty"` // BirdEye standard (was: volume_24h_change_percent)
-	Liquidity              *float64               `protobuf:"fixed64,14,opt,name=liquidity,proto3,oneof" json:"liquidity,omitempty"`
-	Fdv                    *float64               `protobuf:"fixed64,15,opt,name=fdv,proto3,oneof" json:"fdv,omitempty"` // BirdEye uses uppercase
-	Rank                   *int32                 `protobuf:"varint,16,opt,name=rank,proto3,oneof" json:"rank,omitempty"`
-	Website                *string                `protobuf:"bytes,17,opt,name=website,proto3,oneof" json:"website,omitempty"`
-	Twitter                *string                `protobuf:"bytes,18,opt,name=twitter,proto3,oneof" json:"twitter,omitempty"`
-	Telegram               *string                `protobuf:"bytes,19,opt,name=telegram,proto3,oneof" json:"telegram,omitempty"`
-	Discord                *string                `protobuf:"bytes,20,opt,name=discord,proto3,oneof" json:"discord,omitempty"` // Add discord field
-	CreatedAt              *timestamppb.Timestamp `protobuf:"bytes,21,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	LastUpdated            *timestamppb.Timestamp `protobuf:"bytes,22,opt,name=last_updated,json=lastUpdated,proto3,oneof" json:"last_updated,omitempty"`
-	JupiterListedAt        *timestamppb.Timestamp `protobuf:"bytes,23,opt,name=jupiter_listed_at,json=jupiterListedAt,proto3,oneof" json:"jupiter_listed_at,omitempty"`
+	LogoUri                string                 `protobuf:"bytes,6,opt,name=logo_uri,json=logoUri,proto3" json:"logo_uri,omitempty"` // Was: icon_url (BirdEye uses logoURI)
+	Tags                   []string               `protobuf:"bytes,7,rep,name=tags,proto3" json:"tags,omitempty"`
+	Price                  float64                `protobuf:"fixed64,8,opt,name=price,proto3" json:"price,omitempty"`
+	Price24HChangePercent  *float64               `protobuf:"fixed64,9,opt,name=price24h_change_percent,json=price24hChangePercent,proto3,oneof" json:"price24h_change_percent,omitempty"`     // BirdEye standard (was: price_change_percentage_24h)
+	Marketcap              *float64               `protobuf:"fixed64,10,opt,name=marketcap,proto3,oneof" json:"marketcap,omitempty"`                                                           // BirdEye uses lowercase (was: market_cap)
+	Volume24HUsd           *float64               `protobuf:"fixed64,11,opt,name=volume24h_usd,json=volume24hUsd,proto3,oneof" json:"volume24h_usd,omitempty"`                                 // BirdEye standard (was: volume_24h_usd and daily_volume)
+	Volume24HChangePercent *float64               `protobuf:"fixed64,12,opt,name=volume24h_change_percent,json=volume24hChangePercent,proto3,oneof" json:"volume24h_change_percent,omitempty"` // BirdEye standard (was: volume_24h_change_percent)
+	Liquidity              *float64               `protobuf:"fixed64,13,opt,name=liquidity,proto3,oneof" json:"liquidity,omitempty"`
+	Fdv                    *float64               `protobuf:"fixed64,14,opt,name=fdv,proto3,oneof" json:"fdv,omitempty"` // BirdEye uses uppercase
+	Rank                   *int32                 `protobuf:"varint,15,opt,name=rank,proto3,oneof" json:"rank,omitempty"`
+	Website                *string                `protobuf:"bytes,16,opt,name=website,proto3,oneof" json:"website,omitempty"`
+	Twitter                *string                `protobuf:"bytes,17,opt,name=twitter,proto3,oneof" json:"twitter,omitempty"`
+	Telegram               *string                `protobuf:"bytes,18,opt,name=telegram,proto3,oneof" json:"telegram,omitempty"`
+	Discord                *string                `protobuf:"bytes,19,opt,name=discord,proto3,oneof" json:"discord,omitempty"` // Add discord field
+	CreatedAt              *timestamppb.Timestamp `protobuf:"bytes,20,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	LastUpdated            *timestamppb.Timestamp `protobuf:"bytes,21,opt,name=last_updated,json=lastUpdated,proto3,oneof" json:"last_updated,omitempty"`
+	JupiterListedAt        *timestamppb.Timestamp `protobuf:"bytes,22,opt,name=jupiter_listed_at,json=jupiterListedAt,proto3,oneof" json:"jupiter_listed_at,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -121,13 +120,6 @@ func (x *Coin) GetDescription() string {
 func (x *Coin) GetLogoUri() string {
 	if x != nil {
 		return x.LogoUri
-	}
-	return ""
-}
-
-func (x *Coin) GetResolvedIconUrl() string {
-	if x != nil && x.ResolvedIconUrl != nil {
-		return *x.ResolvedIconUrl
 	}
 	return ""
 }
@@ -920,35 +912,33 @@ var File_dankfolio_v1_coin_proto protoreflect.FileDescriptor
 
 const file_dankfolio_v1_coin_proto_rawDesc = "" +
 	"\n" +
-	"\x17dankfolio/v1/coin.proto\x12\fdankfolio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xcc\b\n" +
+	"\x17dankfolio/v1/coin.proto\x12\fdankfolio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x85\b\n" +
 	"\x04Coin\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
 	"\x06symbol\x18\x03 \x01(\tR\x06symbol\x12\x1a\n" +
 	"\bdecimals\x18\x04 \x01(\x05R\bdecimals\x12 \n" +
 	"\vdescription\x18\x05 \x01(\tR\vdescription\x12\x19\n" +
-	"\blogo_uri\x18\x06 \x01(\tR\alogoUri\x12/\n" +
-	"\x11resolved_icon_url\x18\a \x01(\tH\x00R\x0fresolvedIconUrl\x88\x01\x01\x12\x12\n" +
-	"\x04tags\x18\b \x03(\tR\x04tags\x12\x14\n" +
-	"\x05price\x18\t \x01(\x01R\x05price\x12;\n" +
-	"\x17price24h_change_percent\x18\n" +
-	" \x01(\x01H\x01R\x15price24hChangePercent\x88\x01\x01\x12!\n" +
-	"\tmarketcap\x18\v \x01(\x01H\x02R\tmarketcap\x88\x01\x01\x12(\n" +
-	"\rvolume24h_usd\x18\f \x01(\x01H\x03R\fvolume24hUsd\x88\x01\x01\x12=\n" +
-	"\x18volume24h_change_percent\x18\r \x01(\x01H\x04R\x16volume24hChangePercent\x88\x01\x01\x12!\n" +
-	"\tliquidity\x18\x0e \x01(\x01H\x05R\tliquidity\x88\x01\x01\x12\x15\n" +
-	"\x03fdv\x18\x0f \x01(\x01H\x06R\x03fdv\x88\x01\x01\x12\x17\n" +
-	"\x04rank\x18\x10 \x01(\x05H\aR\x04rank\x88\x01\x01\x12\x1d\n" +
-	"\awebsite\x18\x11 \x01(\tH\bR\awebsite\x88\x01\x01\x12\x1d\n" +
-	"\atwitter\x18\x12 \x01(\tH\tR\atwitter\x88\x01\x01\x12\x1f\n" +
-	"\btelegram\x18\x13 \x01(\tH\n" +
-	"R\btelegram\x88\x01\x01\x12\x1d\n" +
-	"\adiscord\x18\x14 \x01(\tH\vR\adiscord\x88\x01\x01\x129\n" +
+	"\blogo_uri\x18\x06 \x01(\tR\alogoUri\x12\x12\n" +
+	"\x04tags\x18\a \x03(\tR\x04tags\x12\x14\n" +
+	"\x05price\x18\b \x01(\x01R\x05price\x12;\n" +
+	"\x17price24h_change_percent\x18\t \x01(\x01H\x00R\x15price24hChangePercent\x88\x01\x01\x12!\n" +
+	"\tmarketcap\x18\n" +
+	" \x01(\x01H\x01R\tmarketcap\x88\x01\x01\x12(\n" +
+	"\rvolume24h_usd\x18\v \x01(\x01H\x02R\fvolume24hUsd\x88\x01\x01\x12=\n" +
+	"\x18volume24h_change_percent\x18\f \x01(\x01H\x03R\x16volume24hChangePercent\x88\x01\x01\x12!\n" +
+	"\tliquidity\x18\r \x01(\x01H\x04R\tliquidity\x88\x01\x01\x12\x15\n" +
+	"\x03fdv\x18\x0e \x01(\x01H\x05R\x03fdv\x88\x01\x01\x12\x17\n" +
+	"\x04rank\x18\x0f \x01(\x05H\x06R\x04rank\x88\x01\x01\x12\x1d\n" +
+	"\awebsite\x18\x10 \x01(\tH\aR\awebsite\x88\x01\x01\x12\x1d\n" +
+	"\atwitter\x18\x11 \x01(\tH\bR\atwitter\x88\x01\x01\x12\x1f\n" +
+	"\btelegram\x18\x12 \x01(\tH\tR\btelegram\x88\x01\x01\x12\x1d\n" +
+	"\adiscord\x18\x13 \x01(\tH\n" +
+	"R\adiscord\x88\x01\x01\x129\n" +
 	"\n" +
-	"created_at\x18\x15 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12B\n" +
-	"\flast_updated\x18\x16 \x01(\v2\x1a.google.protobuf.TimestampH\fR\vlastUpdated\x88\x01\x01\x12K\n" +
-	"\x11jupiter_listed_at\x18\x17 \x01(\v2\x1a.google.protobuf.TimestampH\rR\x0fjupiterListedAt\x88\x01\x01B\x14\n" +
-	"\x12_resolved_icon_urlB\x1a\n" +
+	"created_at\x18\x14 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12B\n" +
+	"\flast_updated\x18\x15 \x01(\v2\x1a.google.protobuf.TimestampH\vR\vlastUpdated\x88\x01\x01\x12K\n" +
+	"\x11jupiter_listed_at\x18\x16 \x01(\v2\x1a.google.protobuf.TimestampH\fR\x0fjupiterListedAt\x88\x01\x01B\x1a\n" +
 	"\x18_price24h_change_percentB\f\n" +
 	"\n" +
 	"_marketcapB\x10\n" +

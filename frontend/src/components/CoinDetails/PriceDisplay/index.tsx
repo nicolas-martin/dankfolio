@@ -11,7 +11,7 @@ import Odometer from '@components/Odometer';
 import ImageZoomModal from '@/components/Common/ImageZoomModal'; // Updated import path
 
 const PriceDisplay: React.FC<PriceDisplayProps> = ({
-	price, periodChange, valueChange, period, resolvedIconUrl, name, symbol, address,
+	price, periodChange, valueChange, period, logoURI, name, symbol, address,
 }) => {
 	const styles = useStyles();
 	const [isZoomModalVisible, setIsZoomModalVisible] = useState(false); // Added state for modal
@@ -33,7 +33,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 				<View style={styles.headerRow}>
 					<TouchableOpacity onPress={() => setIsZoomModalVisible(true)} activeOpacity={0.8}>
 						<CachedImage
-							uri={resolvedIconUrl}
+							uri={logoURI}
 							size={40}
 							borderRadius={20}
 							showLoadingIndicator={true}
@@ -78,7 +78,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 			<View style={styles.headerRow}>
 				<TouchableOpacity onPress={() => setIsZoomModalVisible(true)} activeOpacity={0.8}>
 					<CachedImage
-						uri={resolvedIconUrl}
+						uri={logoURI}
 						size={40}
 						borderRadius={20}
 						showLoadingIndicator={true}
@@ -136,7 +136,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 			<ImageZoomModal
 				isVisible={isZoomModalVisible}
 				onClose={() => setIsZoomModalVisible(false)}
-				imageUri={resolvedIconUrl}
+				imageUri={logoURI}
 			/>
 		</View>
 	);

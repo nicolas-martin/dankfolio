@@ -349,14 +349,13 @@ func convertModelCoinToPbCoin(coin *model.Coin) *pb.Coin {
 
 	r := int32(coin.Rank) // Simplified as per instruction for numeric optionals
 
-	return &pb.Coin{
+	pbCoin := &pb.Coin{
 		Address:         coin.Address,
 		Symbol:          coin.Symbol,
 		Name:            coin.Name,
 		Decimals:        int32(coin.Decimals),
 		Description:     coin.Description,
 		LogoUri:         coin.LogoURI,
-		ResolvedIconUrl: &coin.ResolvedIconUrl,
 		Tags:            coin.Tags,
 		Price:           coin.Price,
 		Website:         &coin.Website,
@@ -375,4 +374,6 @@ func convertModelCoinToPbCoin(coin *model.Coin) *pb.Coin {
 		Marketcap:              &coin.Marketcap,
 		Rank:                   &r, // Mapped from coin.Rank (int) to *int32
 	}
+	
+	return pbCoin
 }

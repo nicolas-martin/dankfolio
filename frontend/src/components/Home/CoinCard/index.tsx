@@ -45,9 +45,9 @@ const CoinCard: React.FC<CoinCardProps> = ({
 		// Assuming horizontal layout remains as is for now, or could be a separate refactor.
 		const iconForHorizontal = (
 			<View style={styles.horizontalLogoContainer}>
-				{coin.resolvedIconUrl && (
+				{coin.logoURI && (
 					<CachedImage
-						uri={coin.resolvedIconUrl}
+						uri={coin.logoURI}
 						size={32} // Specific size for horizontal
 						testID={`${testIdPrefix}-icon-${coin.symbol.toLowerCase()}`}
 					/>
@@ -111,7 +111,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 			<View style={styles.content}>
 				<CoinInfoBlock
 					containerStyle={styles.leftSection}
-					iconUri={coin.resolvedIconUrl}
+					iconUri={coin.logoURI}
 					iconSize={36} // Default vertical size
 					primaryText={coin.symbol}
 					secondaryText={coin.balance !== undefined ? formatTokenBalance(coin.balance) : coin.name}
@@ -177,7 +177,7 @@ export default React.memo(CoinCard, (prevProps, nextProps) => {
 		prevProps.coin.address === nextProps.coin.address &&
 		prevProps.coin.price === nextProps.coin.price &&
 		prevProps.coin.price24hChangePercent === nextProps.coin.price24hChangePercent &&
-		prevProps.coin.resolvedIconUrl === nextProps.coin.resolvedIconUrl &&
+		prevProps.coin.logoURI === nextProps.coin.logoURI &&
 		prevProps.coin.symbol === nextProps.coin.symbol &&
 		prevProps.coin.name === nextProps.coin.name &&
 		prevProps.coin.balance === nextProps.coin.balance &&

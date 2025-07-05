@@ -32,7 +32,7 @@ const SearchResultsList: React.FC<SearchResultsListProps> = ({
 				>
 					<View style={styles.tokenInfo}>
 						<CoinInfoBlock
-							iconUri={item.resolvedIconUrl}
+							iconUri={item.logoURI}
 							iconSize={36}
 							primaryText={item.symbol}
 							secondaryText={item.name}

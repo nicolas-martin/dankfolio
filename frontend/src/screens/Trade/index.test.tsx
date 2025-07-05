@@ -160,7 +160,7 @@ const SOL = {
   symbol: 'SOL', 
   decimals: 9, 
   price: 150, 
-  resolvedIconUrl: '',
+  logoURI: '',
   description: 'Solana native token',
   tags: ['native'],
   dailyVolume: 1000000
@@ -171,7 +171,7 @@ const USDC = {
   symbol: 'USDC', 
   decimals: 6, 
   price: 1, 
-  resolvedIconUrl: '',
+  logoURI: '',
   description: 'USD Coin stablecoin',
   tags: ['stablecoin'],
   dailyVolume: 500000
