@@ -338,7 +338,7 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
 	const config = STRUCTURE_CONFIGS[projectType];
 	const seenPairs = new Set<string>();
 
-	// Get the project root by going up from frontend/scripts to dankfolio root
+	// Get the project root by going up from frontend/scripts to kaiju root
 	const scriptDir = process.cwd();
 	const projectRoot = path.resolve(scriptDir, '..');
 

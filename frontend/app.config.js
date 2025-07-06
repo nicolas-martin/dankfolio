@@ -13,7 +13,7 @@ if (isLocal) {
 module.exports = ({ config }) => ({
 	...config,
 	name: "Kaiju",
-	slug: "dankfolio-mobile",
+	slug: "kaiju-mobile",
 	version: "1.0.2",
 	orientation: "portrait",
 	icon: "./assets/icon.png",
@@ -43,7 +43,7 @@ module.exports = ({ config }) => ({
 			"@sentry/react-native/expo",
 			{
 				"organization": "corsair",
-				"project": "dankfolio",
+				"project": "kaiju",
 				"url": "https://sentry.io/"
 			}
 		],
@@ -56,7 +56,7 @@ module.exports = ({ config }) => ({
 	],
 	ios: {
 		supportsTablet: true,
-		bundleIdentifier: "com.nicolasmartin.dankfolio",
+		bundleIdentifier: "com.nicolasmartin.kaiju",
 		googleServicesFile: "./GoogleService-Info.plist",
 		infoPlist: {
 			ITSAppUsesNonExemptEncryption: false
@@ -67,7 +67,7 @@ module.exports = ({ config }) => ({
 			foregroundImage: "./assets/adaptive-icon.png",
 			backgroundColor: "#ffffff"
 		},
-		package: "com.nicolasmartin.dankfolio",
+		package: "com.nicolasmartin.kaiju",
 		googleServicesFile: "./google-services.json"
 	},
 	web: {

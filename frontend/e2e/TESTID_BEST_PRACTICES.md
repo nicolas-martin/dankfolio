@@ -56,7 +56,7 @@ Based on the [Theodo article](https://blog.theodo.com/2024/03/three-hacks-level-
 Our test `home-coincard-working.yaml` achieved **100% success**:
 
 ```
-✅ Launch app "com.nicolasmartin.dankfolio"
+✅ Launch app "com.nicolasmartin.kaiju"
 ✅ Assert that "Trending Coins" is visible
 ✅ Assert that id: coin-card-So11111111111111111111111111111111111111112 is visible
 ✅ Assert that id: coin-card-DankCoin1111111111111111111111111111111 is visible

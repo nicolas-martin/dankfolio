@@ -112,7 +112,7 @@ export const handleImportWallet = async (mnemonic: string): Promise<Keypair> => 
 // For the purpose of this refactor, we will assume KEYCHAIN_SERVICE needs to be
 // accessible here if this function is to remain functional.
 // We can redefine it here or import it if made available from keychainService.ts
-// const KEYCHAIN_SERVICE_LOCAL = 'com.dankfolio.wallet'; // Remove local definition
+// const KEYCHAIN_SERVICE_LOCAL = 'com.kaiju.wallet'; // Remove local definition
 
 export const retrieveMnemonicFromStorage = async (): Promise<string | null> => {
 	try {
@@ -138,8 +138,8 @@ export const retrieveMnemonicFromStorage = async (): Promise<string | null> => {
 	}
 };
 
-// --- Dankfolio WalletSetup Business Logic ---
-export const WELCOME_TITLE = 'Welcome to DankFolio';
+// --- Kaiju WalletSetup Business Logic ---
+export const WELCOME_TITLE = 'Welcome to Kaiju';
 export const WELCOME_DESC = 'Your gateway to the meme economy. Trade, hodl, and laugh your way to the moon with the dankest portfolio in crypto.';
 export const CREATE_WALLET_TITLE = 'Create a new wallet';
 export const CREATE_WALLET_DESC = 'This will be your new wallet. You can use it to store, send, and receive digital assets.';

@@ -6,8 +6,8 @@ export interface TermsSection {
 }
 
 export const STORAGE_KEYS = {
-  TERMS_ACCEPTED: "@dankfolio/terms_accepted",
-  TERMS_ACCEPTED_DATE: "@dankfolio/terms_accepted_date",
+  TERMS_ACCEPTED: "@kaiju/terms_accepted",
+  TERMS_ACCEPTED_DATE: "@kaiju/terms_accepted_date",
 };
 
 export const handleAcceptTerms = async (onSuccess: () => void) => {
@@ -44,12 +44,12 @@ export const TERMS_CONTENT: TermsSection[] = [
   {
     title: "1. Acceptance of Terms",
     content:
-      "By accessing or using Dankfolio, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our application.",
+      "By accessing or using Kaiju, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our application.",
   },
   {
     title: "2. Description of Service",
     content:
-      "Dankfolio is a decentralized application that provides a non-custodial wallet interface for trading meme coins on the Solana blockchain. We do not hold, control, or have access to your private keys or funds.",
+      "Kaiju is a decentralized application that provides a non-custodial wallet interface for trading meme coins on the Solana blockchain. We do not hold, control, or have access to your private keys or funds.",
   },
   {
     title: "3. Wallet Security",
@@ -69,7 +69,7 @@ export const TERMS_CONTENT: TermsSection[] = [
   {
     title: "6. Third-Party Services",
     content:
-      "Dankfolio integrates with third-party services including Jupiter aggregator and Birdeye for market data. We are not responsible for the availability, accuracy, or security of these services.",
+      "Kaiju integrates with third-party services including Jupiter aggregator and Birdeye for market data. We are not responsible for the availability, accuracy, or security of these services.",
   },
   {
     title: "7. Fees",
@@ -89,7 +89,7 @@ export const TERMS_CONTENT: TermsSection[] = [
   {
     title: "10. Indemnification",
     content:
-      "You agree to indemnify and hold harmless Dankfolio and its affiliates from any claims, losses, or damages arising from your use of the application or violation of these terms.",
+      "You agree to indemnify and hold harmless Kaiju and its affiliates from any claims, losses, or damages arising from your use of the application or violation of these terms.",
   },
   {
     title: "11. Changes to Terms",
