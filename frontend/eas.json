@@ -14,7 +14,6 @@
         "buildConfiguration": "Debug"
       },
       "environment": "development",
-      "channel": "development",
       "env": {
         "SENTRY_ALLOW_FAILURE": "true",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",
@@ -23,21 +22,21 @@
     },
     "production": {
       "environment": "production",
-      "autoIncrement": true,
-      "channel": "production"
+      "autoIncrement": true
     },
     "simulator-release": {
       "extends": "production",
       "distribution": "internal",
       "autoIncrement": true,
       "env": {
-        "APP_ENV": "production-simulator"
+        "APP_ENV": "production-simulator",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "SENTRY_ALLOW_FAILURE": "true"
       },
       "ios": {
         "simulator": true,
         "buildConfiguration": "Release"
-      },
-      "channel": "simulator-release"
+      }
     }
   },
   "submit": {

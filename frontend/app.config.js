@@ -13,8 +13,9 @@ if (isLocal) {
 module.exports = ({ config }) => ({
 	...config,
 	name: "Kaiju",
-	slug: "kaiju-mobile",
-	version: "1.0.2",
+	slug: "kaiju",
+	owner: "martinni39",
+	version: "1.0.0",
 	orientation: "portrait",
 	icon: "./assets/icon.png",
 	userInterfaceStyle: "dark",
@@ -86,10 +87,10 @@ module.exports = ({ config }) => ({
 		E2E_MOCKING_ENABLED: process.env.E2E_MOCKING_ENABLED,
 		DEV_APP_CHECK_TOKEN: process.env.DEV_APP_CHECK_TOKEN,
 		eas: {
-			projectId: "efd2922e-0415-49a7-bae1-fd28bc35805d"
+			projectId: "eb2b8734-d3c5-4fe6-8115-e393ffad825f"
 		}
 	},
 	runtimeVersion: {
-		policy: "appVersion"
+		policy: "sdkVersion"
 	}
 }); 
