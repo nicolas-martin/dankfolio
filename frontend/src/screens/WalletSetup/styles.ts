@@ -34,7 +34,7 @@ export const useStyles = () => {
 				fontWeight: '400',
 			},
 			buttonContainer: { // For welcome screen
-				marginTop: 24,
+				marginTop: 32,
 				width: '100%',
 			},
 			buttonRow: {
@@ -175,7 +175,7 @@ export const useStyles = () => {
 				width: '100%',
 			},
 			neonBarImageContainer: {
-				height: 400,
+				flex: 1,
 				overflow: 'hidden',
 				width: '100%',
 			},
@@ -279,9 +279,18 @@ export const useStyles = () => {
 				borderTopLeftRadius: 24,
 				borderTopRightRadius: 24,
 				marginTop: -20,
-				paddingBottom: 32,
+				paddingBottom: 40,
 				paddingHorizontal: 24,
-				paddingTop: 24,
+				paddingTop: 32,
+			},
+			welcomeTextContainer: {
+				alignItems: 'center',
+				marginBottom: 32,
+			},
+			welcomeTextWrapper: {
+				flex: 1,
+				justifyContent: 'space-between',
+				width: '100%',
 			},
 			wordNumber: {
 				color: theme.colors.primary,

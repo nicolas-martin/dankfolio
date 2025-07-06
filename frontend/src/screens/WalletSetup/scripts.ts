@@ -139,8 +139,8 @@ export const retrieveMnemonicFromStorage = async (): Promise<string | null> => {
 };
 
 // --- Kaiju WalletSetup Business Logic ---
-export const WELCOME_TITLE = 'Welcome to Kaiju';
-export const WELCOME_DESC = 'Your gateway to the meme economy. Trade, hodl, and laugh your way to the moon with the dankest portfolio in crypto.';
+export const WELCOME_TITLE = 'Welcome';
+export const WELCOME_DESC = 'Your gateway to the meme economy';
 export const CREATE_WALLET_TITLE = 'Create a new wallet';
 export const CREATE_WALLET_DESC = 'This will be your new wallet. You can use it to store, send, and receive digital assets.';
 export const IMPORT_WALLET_TITLE = 'Recovery phrase';
@@ -170,7 +170,7 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 	const goToCreate = () => setStep('create');
 	const goToImport = () => setStep('import');
 	const goToWelcome = () => setStep('welcome');
-	
+
 	const handleTermsAccepted = () => {
 		if (nextAction === 'create') {
 			setStep('create');
