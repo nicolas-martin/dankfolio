@@ -18,11 +18,6 @@ module.exports = ({ config }) => ({
 	orientation: "portrait",
 	icon: "./assets/icon.png",
 	userInterfaceStyle: "dark",
-	splash: {
-		image: "./assets/splashscreen.png",
-		resizeMode: "contain",
-		backgroundColor: "#1A1A2E"
-	},
 	plugins: [
 		[
 			"expo-dev-client",
