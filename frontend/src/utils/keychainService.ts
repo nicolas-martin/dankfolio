@@ -6,7 +6,7 @@ import bs58 from 'bs58';
 import { Keypair } from '@solana/web3.js';
 import { Base58PrivateKey } from './cryptoUtils'; // Import the branded type
 
-export const KEYCHAIN_SERVICE = 'com.dankfolio.wallet';
+export const KEYCHAIN_SERVICE = 'com.kaiju.wallet';
 
 // Helper to store credentials safely
 export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: string): Promise<void> => {
@@ -36,7 +36,7 @@ export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: s
 		logger.info(`Using keychain accessibility: ${isSimulator ? 'WHEN_UNLOCKED_THIS_DEVICE_ONLY (simulator)' : 'WHEN_UNLOCKED (device)'}`);
 		// Note: This logs once per storeCredentials call
 
-		await Keychain.setGenericPassword('dankfolio_wallet', credentials, {
+		await Keychain.setGenericPassword('kaiju_wallet', credentials, {
 			service: KEYCHAIN_SERVICE,
 			accessible: accessibilityOption
 		});

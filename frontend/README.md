@@ -1,6 +1,6 @@
-# DankFolio Mobile Frontend
+# Kaiju Mobile Frontend
 
-This is the frontend application for DankFolio, a mobile app for tracking cryptocurrency portfolios.
+This is the frontend application for Kaiju, a mobile app for tracking cryptocurrency portfolios.
 
 ## Getting Started
 
@@ -48,7 +48,7 @@ To ensure stable and predictable E2E tests, this project uses Mock Service Worke
         import { http, HttpResponse } from 'msw';
 
         // Inside the `export const handlers = [...]` array:
-        http.post('https://api.dankfolio.com/your.service.v1/YourMethod', async ({ request }) => {
+        http.post('https://api.kaiju.com/your.service.v1/YourMethod', async ({ request }) => {
           // You can inspect `request` if needed (e.g., request.json() for REST, or specific parsing for gRPC)
           console.log('[MSW] Intercepted YourMethod');
           return HttpResponse.json({ your_mock_data: 'value' });
@@ -58,4 +58,4 @@ To ensure stable and predictable E2E tests, this project uses Mock Service Worke
     4.  Make sure the `API_BASE_URL` in `handlers.ts` matches the application's configured API URL.
     5.  Update or add E2E tests to assert UI changes based on your new mock data.
 
--   **Important**: The mock server currently uses `https://api.dankfolio.com` as the base URL for API calls. If the actual application's `REACT_APP_API_URL` environment variable points to a different base URL, you will need to update `API_BASE_URL` in `frontend/e2e/mocks/handlers.ts` for the mocks to work correctly.
+-   **Important**: The mock server currently uses `https://api.kaiju.com` as the base URL for API calls. If the actual application's `REACT_APP_API_URL` environment variable points to a different base URL, you will need to update `API_BASE_URL` in `frontend/e2e/mocks/handlers.ts` for the mocks to work correctly.

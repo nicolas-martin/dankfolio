@@ -84,7 +84,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 					</View>
 
 					<View style={styles.welcomeContent}>
-						<Text style={styles.title}>Welcome to DankFolio</Text>
+						<Text style={styles.title}>Welcome to Kaiju</Text>
 						<Text style={styles.subtitle}>Your gateway to the meme economy. Trade, hodl, and laugh your way to the moon with the dankest portfolio in crypto.</Text>
 
 						<View style={styles.buttonContainer}>
