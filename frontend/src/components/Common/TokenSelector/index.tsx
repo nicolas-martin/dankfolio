@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { View, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
-import { Card, Text, Searchbar, IconButton } from 'react-native-paper'; // Added IconButton
+import { Card, Text, Searchbar } from 'react-native-paper'; // Added IconButton
 import { BottomSheetModal, BottomSheetFlatList, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import { BlurView } from 'expo-blur';
-import { ChevronDownIcon } from '@components/Common/Icons';
+import { ChevronDownIcon, DollarIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
 import { useStyles } from './styles';
 import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
@@ -511,13 +511,9 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 												{...textInputProps}
 											/>
 											{enableUsdToggle && selectedToken && (
-												<IconButton
-													icon="currency-usd"
+												<DollarIcon
 													size={16}
-													iconColor={styles.colors.onSurfaceVariant}
-													onPress={handleUnitToggle}
-													style={styles.swapButton}
-													testID={`${testID}-swap-button`}
+													color={styles.colors.onSurfaceVariant}
 												/>
 											)}
 										</View>

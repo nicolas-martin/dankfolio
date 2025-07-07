@@ -39,7 +39,7 @@ func AppCheckMiddleware(appCheckClient *appcheck.Client, env string, devAppCheck
 				return nil, authn.Errorf("invalid auth header for environment")
 			}
 
-			slog.Info("Bypassing App Check verification due to environment setting (using DEV_APP_CHECK_TOKEN)", "env", env)
+			slog.Debug("Bypassing App Check verification due to environment setting (using DEV_APP_CHECK_TOKEN)", "env", env)
 			return &AppCheckAuthenticatedUser{
 				AppID:   "test-" + env,
 				Subject: "test-subject-" + env,
