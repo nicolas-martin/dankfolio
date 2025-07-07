@@ -40,6 +40,12 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "martinni39@gmail.com",
+        "ascAppId": "6748287508",
+        "appleTeamId": "6TMXGVMW8Y"
+      }
+    }
   }
 }
