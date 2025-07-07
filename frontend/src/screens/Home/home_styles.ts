@@ -6,17 +6,6 @@ import { useMemo } from 'react';
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	return useMemo(() => {
-		const cardContainerStyle = {
-			marginBottom: theme.spacing.md,
-			paddingHorizontal: theme.spacing.lg,
-		};
-		const placeholderCoinCardContainerMargin = {
-			marginBottom: theme.spacing.md,
-		};
-		const placeholderCoinCardInternalStyle = {
-			flexDirection: 'row' as const,
-			alignItems: 'center' as const
-		};
 		const refreshControlColors = [theme.colors.primary];
 		// const colors = theme.colors; // This variable was unused
 		const styles = StyleSheet.create({
@@ -27,8 +16,6 @@ export const useStyles = () => {
 				alignItems: 'center',
 				justifyContent: 'center',
 			},
-			coinCardContainerStyle: cardContainerStyle,
-
 			coinsList: {
 				paddingBottom: 100,
 			},
@@ -170,24 +157,6 @@ export const useStyles = () => {
 				marginBottom: theme.spacing.sm,
 				textAlign: 'center',
 			},
-			placeholderCoinCardContainerMargin: placeholderCoinCardContainerMargin,
-			placeholderCoinCardContainerStyle: {
-				...cardContainerStyle,
-				...placeholderCoinCardContainerMargin,
-			},
-			placeholderCoinCardContent: {
-				alignItems: 'center',
-				backgroundColor: theme.colors.surface,
-				borderRadius: theme.borderRadius.md,
-				elevation: 2,
-				flexDirection: 'row',
-				padding: theme.spacing.lg,
-				shadowColor: theme.colors.shadow,
-				shadowOffset: theme.shadows.sm.shadowOffset,
-				shadowOpacity: 0.1,
-				shadowRadius: 2,
-			},
-			placeholderCoinCardInternalStyle: placeholderCoinCardInternalStyle,
 			placeholderCoinIconShimmer: {
 				marginRight: theme.spacing.md,
 			},
@@ -196,6 +165,100 @@ export const useStyles = () => {
 			},
 			placeholderTextMarginBottomS: {
 				marginBottom: theme.spacing.xs,
+			},
+			// New placeholder styles to match TokenListCard layout
+			placeholderTrendingContainer: {
+				backgroundColor: theme.colors.surface,
+				borderRadius: theme.borderRadius.lg,
+				elevation: 2,
+				marginBottom: theme.spacing.lg,
+				marginHorizontal: theme.spacing.lg,
+				shadowColor: theme.shadows.sm.shadowColor,
+				shadowOffset: theme.shadows.sm.shadowOffset,
+				shadowOpacity: 0.08,
+				shadowRadius: theme.spacing.xs,
+			},
+			placeholderTrendingHeader: {
+				paddingBottom: theme.spacing.sm,
+				paddingHorizontal: theme.spacing.lg,
+				paddingTop: theme.spacing.lg,
+			},
+			placeholderTrendingColumnHeader: {
+				alignItems: 'center',
+				flexDirection: 'row',
+				justifyContent: 'space-between',
+				paddingBottom: theme.spacing.sm,
+				paddingHorizontal: theme.spacing.lg,
+			},
+			placeholderColumnHeaderText: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: 12,
+				fontWeight: '500',
+				letterSpacing: 0.5,
+				textAlign: 'center',
+				textTransform: 'uppercase',
+			},
+			placeholderTrendingListContainer: {
+				paddingBottom: theme.spacing.sm,
+			},
+			placeholderItemContainer: {
+				paddingHorizontal: theme.spacing.lg,
+				paddingVertical: theme.spacing.lg,
+			},
+			placeholderItemContent: {
+				alignItems: 'center',
+				flexDirection: 'row',
+				justifyContent: 'space-between',
+			},
+			placeholderLeftSection: {
+				alignItems: 'center',
+				flex: 0.5,
+				flexDirection: 'row',
+				minWidth: 0,
+				paddingRight: theme.spacing.sm,
+			},
+			placeholderNameSection: {
+				flex: 1,
+				justifyContent: 'center',
+				minWidth: 0,
+			},
+			placeholderSparklineContainer: {
+				alignItems: 'center',
+				flex: 0.3,
+				height: 40,
+				justifyContent: 'center',
+				paddingHorizontal: theme.spacing.sm,
+			},
+			placeholderRightSection: {
+				alignItems: 'flex-end',
+				flex: 0.3,
+				justifyContent: 'center',
+				minWidth: 0,
+			},
+			placeholderTrendingLeftSection: {
+				alignItems: 'center',
+				flex: 0.5,
+				flexDirection: 'row',
+				minWidth: 0,
+				paddingRight: theme.spacing.sm,
+			},
+			placeholderTrendingSparklineSection: {
+				alignItems: 'center',
+				flex: 0.3,
+				height: 40,
+				justifyContent: 'center',
+				paddingHorizontal: theme.spacing.sm,
+			},
+			placeholderTrendingRightSection: {
+				alignItems: 'flex-end',
+				flex: 0.3,
+				justifyContent: 'center',
+				minWidth: 0,
+			},
+			placeholderDivider: {
+				backgroundColor: theme.colors.surfaceVariant,
+				height: 0.5,
+				marginHorizontal: theme.spacing.lg,
 			},
 			sectionHeader: {
 				marginBottom: theme.spacing.lg,
