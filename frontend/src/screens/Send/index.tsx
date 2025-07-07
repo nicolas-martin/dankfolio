@@ -428,29 +428,13 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 
 				{/* Verification Info Card */}
 				{verificationInfo && (
-					<View>
+					<View style={styles.verificationContainer}>
 						<VerificationCard
 							status={mapVerificationCodeToStatus(verificationInfo.code)}
 							title="Address Verification"
 							message={verificationInfo.message}
+							onDismiss={handleCancelVerification}
 						/>
-						{/* Buttons for verification card need to be handled separately if VerificationCard doesn't include them */}
-						<View style={styles.verificationActions}>
-							<TouchableOpacity
-								style={styles.getVerificationCancelButtonStyle()}
-								onPress={handleCancelVerification}
-								testID="verification-cancel-button"
-							>
-								<Text style={styles.verificationButtonCancelText}>Cancel</Text>
-							</TouchableOpacity>
-							<TouchableOpacity
-								style={styles.getVerificationContinueButtonStyle()}
-								onPress={handleConfirmVerificationAndProceed}
-								testID="verification-continue-button"
-							>
-								<Text style={styles.verificationButtonContinueText}>Continue</Text>
-							</TouchableOpacity>
-						</View>
 					</View>
 				)}
 

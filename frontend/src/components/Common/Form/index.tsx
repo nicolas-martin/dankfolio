@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'; // Add useMemo
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Text, Icon } from 'react-native-paper';
 import { useStyles, VerificationStatus } from './VerificationCard.styles';
 
@@ -7,12 +7,14 @@ interface VerificationCardProps {
 	status: VerificationStatus;
 	message?: string;
 	title?: string;
+	onDismiss?: () => void;
 }
 
 const VerificationCard: React.FC<VerificationCardProps> = ({
 	status,
 	message,
 	title,
+	onDismiss,
 }) => {
 	const styles = useStyles();
 
@@ -83,9 +85,18 @@ const VerificationCard: React.FC<VerificationCardProps> = ({
 						<Icon source={iconInfo.name} size={24} color={iconInfo.color} />
 					</View>
 				) : null}
-				<Text style={titleTextStyle}>
+				<Text style={[titleTextStyle, styles.titleWithDismiss]}>
 					{title || defaultTitle}
 				</Text>
+				{onDismiss && (
+					<TouchableOpacity
+						style={styles.dismissButton}
+						onPress={onDismiss}
+						testID="verification-card-dismiss"
+					>
+						<Icon source="close" size={18} color={styles.textValid.color || styles.title.color} />
+					</TouchableOpacity>
+				)}
 			</View>
 			{message && (
 				<Text style={messageTextStyle}>

@@ -49,7 +49,8 @@ export const useStyles = () => {
 			message: {
 				color: theme.colors.onSurfaceVariant,
 				fontSize: theme.typography.fontSize.sm,
-				lineHeight: theme.typography.fontSize.base * 1.4,
+				lineHeight: theme.typography.fontSize.base * 1.5,
+				marginBottom: theme.spacing.xs,
 			},
 			textChecking: { color: theme.colors.tertiary },
 			textInvalid: { color: theme.colors.error },
@@ -59,6 +60,16 @@ export const useStyles = () => {
 				color: theme.colors.onSurface,
 				fontSize: theme.typography.fontSize.base,
 				fontWeight: '600',
+			},
+			titleWithDismiss: {
+				flex: 1,
+			},
+			dismissButton: {
+				alignItems: 'center',
+				borderRadius: theme.borderRadius.full,
+				height: 32,
+				justifyContent: 'center',
+				width: 32,
 			},
 		});
 	}, [theme]);

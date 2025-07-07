@@ -347,9 +347,13 @@ export const useStyle = () => {
 				fontSize: theme.typography.fontSize.lg, // 18
 				fontWeight: '600',
 			},
+			verificationContainer: {
+				marginBottom: theme.spacing['2xl'], // 24
+			},
 			verificationActions: {
 				flexDirection: 'row',
 				gap: theme.spacing.md, // 12
+				marginTop: theme.spacing.lg, // 16
 			},
 			verificationButton: {
 				alignItems: 'center',
@@ -374,6 +378,14 @@ export const useStyle = () => {
 				color: theme.colors.onPrimary,
 				fontSize: theme.typography.fontSize.sm, // 14
 				fontWeight: '600',
+			},
+			verificationDismissButton: {
+				alignItems: 'center',
+				backgroundColor: theme.colors.surfaceVariant,
+				borderRadius: theme.borderRadius.full,
+				height: 40,
+				justifyContent: 'center',
+				width: 40,
 			},
 			verificationCard: {
 				backgroundColor: theme.colors.surface,
