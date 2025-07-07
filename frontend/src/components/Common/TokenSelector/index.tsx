@@ -3,7 +3,7 @@ import { View, TouchableOpacity, TextInput, ActivityIndicator } from 'react-nati
 import { Card, Text, Searchbar } from 'react-native-paper'; // Added IconButton
 import { BottomSheetModal, BottomSheetFlatList, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import { BlurView } from 'expo-blur';
-import { ChevronDownIcon, DollarIcon } from '@components/Common/Icons';
+import { ChevronDownIcon, WifiIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
 import { useStyles } from './styles';
 import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
@@ -527,7 +527,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 												accessibilityRole="button"
 												accessibilityLabel="Toggle between crypto and USD input"
 											>
-												<DollarIcon
+												<WifiIcon
 													size={16}
 													color={styles.colors.onSurfaceVariant}
 												/>

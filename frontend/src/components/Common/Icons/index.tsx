@@ -1,5 +1,6 @@
 import React from 'react';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import Feather from 'react-native-vector-icons/Feather';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -49,7 +50,7 @@ export const WarningIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase 
 export const ChevronDownIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="chevron-down" {...props} />;
 
 // Currency icons
-export const DollarIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="dollar-sign" {...props} />;
+export const WifiIcon: React.FC<IconBaseProps> = (props) => <MaterialIcons name="wifi-protected-setup" {...props} />;
 
 // Trend icons
 export const TrendUpIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="trending-up" {...props} />;
