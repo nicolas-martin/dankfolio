@@ -84,9 +84,64 @@ func (s *Service) getOrCreateATA(ctx context.Context, payer, owner, mint solana.
 			return solana.PublicKey{}, nil, fmt.Errorf("failed to create ATA instruction: %w", err)
 		}
 		instructions = append(instructions, createATAIx)
+	} else {
+		// Account exists and is not owned by system program - validate it's a proper token account
+		if err := s.validateTokenAccount(ctx, ata, owner, mint); err != nil {
+			return solana.PublicKey{}, nil, fmt.Errorf("invalid token account %s: %w", ata.String(), err)
+		}
 	}
 
 	return ata, instructions, nil
+}
+
+// validateTokenAccount validates that a token account has correct data structure and ownership
+func (s *Service) validateTokenAccount(ctx context.Context, ata, expectedOwner, expectedMint solana.PublicKey) error {
+	// Get account info with full data
+	accInfo, err := s.chainClient.GetAccountInfo(ctx, bmodel.Address(ata.String()))
+	if err != nil {
+		return fmt.Errorf("failed to get account info: %w", err)
+	}
+	
+	// Check if account data exists
+	if accInfo.Data == nil || len(accInfo.Data) == 0 {
+		return fmt.Errorf("account has no data")
+	}
+	
+	// Token accounts should be exactly 165 bytes
+	if len(accInfo.Data) < 165 {
+		return fmt.Errorf("invalid token account data size: %d bytes (expected 165)", len(accInfo.Data))
+	}
+	
+	// Verify it's owned by the token program
+	tokenProgramID := bmodel.Address(token.ProgramID.String())
+	if accInfo.Owner != tokenProgramID {
+		return fmt.Errorf("account not owned by token program: owned by %s", accInfo.Owner)
+	}
+	
+	// Parse and validate token account data
+	var tokenAccount token.Account
+	decoder := bin.NewBinDecoder(accInfo.Data)
+	if err := tokenAccount.UnmarshalWithDecoder(decoder); err != nil {
+		return fmt.Errorf("failed to decode token account data: %w", err)
+	}
+	
+	// Validate mint matches
+	if tokenAccount.Mint != expectedMint {
+		return fmt.Errorf("mint mismatch: expected %s, got %s", expectedMint, tokenAccount.Mint)
+	}
+	
+	// Validate owner matches
+	if tokenAccount.Owner != expectedOwner {
+		return fmt.Errorf("owner mismatch: expected %s, got %s", expectedOwner, tokenAccount.Owner)
+	}
+	
+	slog.Debug("Token account validated successfully",
+		"ata", ata.String(),
+		"owner", tokenAccount.Owner.String(),
+		"mint", tokenAccount.Mint.String(),
+		"amount", tokenAccount.Amount)
+	
+	return nil
 }
 
 // getTokenAccount gets or creates a token account for a given mint and owner
