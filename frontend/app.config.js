@@ -18,6 +18,10 @@ module.exports = ({ config }) => ({
 	version: "1.0.0",
 	orientation: "portrait",
 	icon: "./assets/icon.png",
+	ios: {
+		...config.ios,
+		icon: "./assets/icon.png",
+	},
 	userInterfaceStyle: "dark",
 	splash: {
 		image: "./assets/splash.png",
@@ -70,9 +74,6 @@ module.exports = ({ config }) => ({
 		},
 		package: "com.nicolasmartin.kaiju",
 		googleServicesFile: "./google-services.json"
-	},
-	web: {
-		favicon: "./assets/favicon.png"
 	},
 	extra: {
 		// Environment variables will be available here
