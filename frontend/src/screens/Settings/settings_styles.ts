@@ -37,21 +37,21 @@ export const useStyles = () => {
 				flexDirection: 'row',
 				gap: theme.spacing.xs,
 			},
+			privateKeyContainer: {
+				justifyContent: 'center',
+				minHeight: 60, // Fixed height to prevent layout shift
+			},
 			privateKeyError: {
 				color: theme.colors.error,
 				fontStyle: 'italic',
 			},
 			privateKeyVisible: {
 				color: theme.colors.onSurface,
+				flexShrink: 1,
+				flexWrap: 'wrap',
 				fontFamily: 'monospace',
 				fontSize: theme.typography.fontSize.xs,
 				lineHeight: theme.typography.fontSize.xs * 1.4,
-				flexShrink: 1,
-				flexWrap: 'wrap',
-			},
-			privateKeyContainer: {
-				minHeight: 60, // Fixed height to prevent layout shift
-				justifyContent: 'center',
 			},
 			safeArea: {
 				backgroundColor: theme.colors.background,

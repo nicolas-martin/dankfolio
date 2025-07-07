@@ -199,10 +199,11 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			<View style={styles.transactionSection}>
 				<Button
 					icon="open-in-new"
-					mode="outlined"
+					mode="contained"
 					onPress={() => openSolscanUrl(txHash)}
 					style={styles.linkButton}
-					textColor="#2196F3"
+					buttonColor={styles.colors.primaryContainer}
+					textColor={styles.colors.onPrimaryContainer}
 					testID="trade-status-solscan-button"
 					accessible={true}
 					accessibilityRole="button"

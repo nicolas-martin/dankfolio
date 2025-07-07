@@ -167,6 +167,13 @@ export const useStyles = () => {
 				marginBottom: theme.spacing.xs,
 			},
 			// New placeholder styles to match TokenListCard layout
+			placeholderTrendingColumnHeader: {
+				alignItems: 'center',
+				flexDirection: 'row',
+				justifyContent: 'space-between',
+				paddingBottom: theme.spacing.sm,
+				paddingHorizontal: theme.spacing.lg,
+			},
 			placeholderTrendingContainer: {
 				backgroundColor: theme.colors.surface,
 				borderRadius: theme.borderRadius.lg,
@@ -182,13 +189,6 @@ export const useStyles = () => {
 				paddingBottom: theme.spacing.sm,
 				paddingHorizontal: theme.spacing.lg,
 				paddingTop: theme.spacing.lg,
-			},
-			placeholderTrendingColumnHeader: {
-				alignItems: 'center',
-				flexDirection: 'row',
-				justifyContent: 'space-between',
-				paddingBottom: theme.spacing.sm,
-				paddingHorizontal: theme.spacing.lg,
 			},
 			placeholderColumnHeaderText: {
 				color: theme.colors.onSurfaceVariant,

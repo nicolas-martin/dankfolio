@@ -38,6 +38,13 @@ export const useStyles = () => {
 				...baseCardStyle,
 				borderLeftColor: theme.warning, // Assuming theme has a warning color
 			},
+			dismissButton: {
+				alignItems: 'center',
+				borderRadius: theme.borderRadius.full,
+				height: 32,
+				justifyContent: 'center',
+				width: 32,
+			},
 			header: {
 				alignItems: 'center',
 				flexDirection: 'row',
@@ -63,13 +70,6 @@ export const useStyles = () => {
 			},
 			titleWithDismiss: {
 				flex: 1,
-			},
-			dismissButton: {
-				alignItems: 'center',
-				borderRadius: theme.borderRadius.full,
-				height: 32,
-				justifyContent: 'center',
-				width: 32,
 			},
 		});
 	}, [theme]);
