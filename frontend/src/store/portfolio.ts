@@ -5,7 +5,7 @@ import { grpcApi } from '@/services/grpcApi';
 import { logger as log } from '@/utils/logger';
 import * as Keychain from 'react-native-keychain';
 import { getKeypairFromPrivateKey } from '@/services/solana';
-const KEYCHAIN_SERVICE = 'com.dankfolio.wallet';
+import { KEYCHAIN_SERVICE } from '@/utils/keychainService';
 
 export interface PortfolioToken {
 	mintAddress: string;
