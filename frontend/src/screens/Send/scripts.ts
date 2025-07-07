@@ -26,6 +26,80 @@ export interface AddressValidationResult {
 	balanceInfo?: string;
 }
 
+export const validateAddressRealTime = async (
+	address: string,
+	selectedToken?: PortfolioToken,
+	setIsValidatingAddress?: (loading: boolean) => void,
+	setVerificationInfo?: (info: { message: string; code?: string } | null) => void,
+	setValidationError?: (error: string | null) => void
+): Promise<void> => {
+	if (!address || address.length < 32 || address.length > 44) {
+		return; // Skip validation for addresses that are too short or too long
+	}
+
+	try {
+		setIsValidatingAddress?.(true);
+		setValidationError?.(null);
+		setVerificationInfo?.(null);
+
+		// First check if it's a valid Solana address format
+		const isValidSolanaAddress = await validateSolanaAddress(address);
+		if (!isValidSolanaAddress) {
+			setValidationError?.('Invalid Solana address');
+			return;
+		}
+
+		// Check recipient address balance and provide helpful feedback
+		const recipientBalance = await grpcApi.getWalletBalance(address);
+		const hasAnyBalance = recipientBalance.balances.length > 0 && recipientBalance.balances.some(b => b.amount > 0);
+
+		if (hasAnyBalance) {
+			// Address has balance - show confirmation with balance info
+			const totalBalances = recipientBalance.balances.length;
+			setVerificationInfo?.({
+				message: `Recipient address is active with ${totalBalances} token${totalBalances > 1 ? 's' : ''}`,
+				code: "ADDRESS_HAS_BALANCE"
+			});
+		} else {
+			// Address is valid but has no balance - show warning
+			setVerificationInfo?.({
+				message: "Recipient address is valid but appears to be unused",
+				code: "ADDRESS_NO_BALANCE"
+			});
+		}
+	} catch (error) {
+		// Handle specific error types from the backend
+		if (error instanceof Error) {
+			const errorMessage = error.message.toLowerCase();
+
+			// Handle invalid address errors
+			if (errorMessage.includes('invalid wallet address') || errorMessage.includes('invalid argument')) {
+				setValidationError?.('Invalid Solana address format');
+				return;
+			}
+
+			// Handle network errors
+			if (errorMessage.includes('network error') || errorMessage.includes('unavailable')) {
+				logger.warn('[validateAddressRealTime] Network error checking recipient balance:', error);
+				setVerificationInfo?.({
+					message: "Unable to verify recipient address status",
+					code: "ADDRESS_BALANCE_CHECK_FAILED"
+				});
+				return;
+			}
+		}
+
+		// For other errors, log and show generic message
+		logger.warn('[validateAddressRealTime] Failed to check recipient balance:', error);
+		setVerificationInfo?.({
+			message: "Unable to verify recipient address status",
+			code: "ADDRESS_BALANCE_CHECK_FAILED"
+		});
+	} finally {
+		setIsValidatingAddress?.(false);
+	}
+};
+
 export const validateForm = async (
 	formData: TokenTransferFormData,
 	selectedToken?: PortfolioToken
