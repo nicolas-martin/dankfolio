@@ -160,13 +160,60 @@ export const useStyles = () => {
 			placeholderCoinIconShimmer: {
 				marginRight: theme.spacing.md,
 			},
+			// New placeholder styles to match TokenListCard layout
+			placeholderColumnHeaderText: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: 12,
+				fontWeight: '500',
+				letterSpacing: 0.5,
+				textAlign: 'center',
+				textTransform: 'uppercase',
+			},
+			placeholderDivider: {
+				backgroundColor: theme.colors.surfaceVariant,
+				height: 0.5,
+				marginHorizontal: theme.spacing.lg,
+			},
+			placeholderItemContainer: {
+				paddingHorizontal: theme.spacing.lg,
+				paddingVertical: theme.spacing.lg,
+			},
+			placeholderItemContent: {
+				alignItems: 'center',
+				flexDirection: 'row',
+				justifyContent: 'space-between',
+			},
+			placeholderLeftSection: {
+				alignItems: 'center',
+				flex: 0.5,
+				flexDirection: 'row',
+				minWidth: 0,
+				paddingRight: theme.spacing.sm,
+			},
+			placeholderNameSection: {
+				flex: 1,
+				justifyContent: 'center',
+				minWidth: 0,
+			},
+			placeholderRightSection: {
+				alignItems: 'flex-end',
+				flex: 0.3,
+				justifyContent: 'center',
+				minWidth: 0,
+			},
+			placeholderSparklineContainer: {
+				alignItems: 'center',
+				flex: 0.3,
+				height: 40,
+				justifyContent: 'center',
+				paddingHorizontal: theme.spacing.sm,
+			},
 			placeholderSparklineShimmer: {
 				marginHorizontal: theme.spacing.md,
 			},
 			placeholderTextMarginBottomS: {
 				marginBottom: theme.spacing.xs,
 			},
-			// New placeholder styles to match TokenListCard layout
 			placeholderTrendingColumnHeader: {
 				alignItems: 'center',
 				flexDirection: 'row',
@@ -190,51 +237,6 @@ export const useStyles = () => {
 				paddingHorizontal: theme.spacing.lg,
 				paddingTop: theme.spacing.lg,
 			},
-			placeholderColumnHeaderText: {
-				color: theme.colors.onSurfaceVariant,
-				fontSize: 12,
-				fontWeight: '500',
-				letterSpacing: 0.5,
-				textAlign: 'center',
-				textTransform: 'uppercase',
-			},
-			placeholderTrendingListContainer: {
-				paddingBottom: theme.spacing.sm,
-			},
-			placeholderItemContainer: {
-				paddingHorizontal: theme.spacing.lg,
-				paddingVertical: theme.spacing.lg,
-			},
-			placeholderItemContent: {
-				alignItems: 'center',
-				flexDirection: 'row',
-				justifyContent: 'space-between',
-			},
-			placeholderLeftSection: {
-				alignItems: 'center',
-				flex: 0.5,
-				flexDirection: 'row',
-				minWidth: 0,
-				paddingRight: theme.spacing.sm,
-			},
-			placeholderNameSection: {
-				flex: 1,
-				justifyContent: 'center',
-				minWidth: 0,
-			},
-			placeholderSparklineContainer: {
-				alignItems: 'center',
-				flex: 0.3,
-				height: 40,
-				justifyContent: 'center',
-				paddingHorizontal: theme.spacing.sm,
-			},
-			placeholderRightSection: {
-				alignItems: 'flex-end',
-				flex: 0.3,
-				justifyContent: 'center',
-				minWidth: 0,
-			},
 			placeholderTrendingLeftSection: {
 				alignItems: 'center',
 				flex: 0.5,
@@ -242,12 +244,8 @@ export const useStyles = () => {
 				minWidth: 0,
 				paddingRight: theme.spacing.sm,
 			},
-			placeholderTrendingSparklineSection: {
-				alignItems: 'center',
-				flex: 0.3,
-				height: 40,
-				justifyContent: 'center',
-				paddingHorizontal: theme.spacing.sm,
+			placeholderTrendingListContainer: {
+				paddingBottom: theme.spacing.sm,
 			},
 			placeholderTrendingRightSection: {
 				alignItems: 'flex-end',
@@ -255,10 +253,12 @@ export const useStyles = () => {
 				justifyContent: 'center',
 				minWidth: 0,
 			},
-			placeholderDivider: {
-				backgroundColor: theme.colors.surfaceVariant,
-				height: 0.5,
-				marginHorizontal: theme.spacing.lg,
+			placeholderTrendingSparklineSection: {
+				alignItems: 'center',
+				flex: 0.3,
+				height: 40,
+				justifyContent: 'center',
+				paddingHorizontal: theme.spacing.sm,
 			},
 			sectionHeader: {
 				marginBottom: theme.spacing.lg,

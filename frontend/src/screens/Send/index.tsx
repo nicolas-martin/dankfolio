@@ -254,8 +254,14 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		setAmount('');
 		setRecipientAddress('');
 
-		// Go back to the previous screen (Profile tab)
-		navigation.goBack();
+		// Navigate back to previous screen if possible, otherwise go to Profile tab
+		if (navigation.canGoBack()) {
+			navigation.goBack();
+		} else {
+			// Fallback to Profile tab if no navigation history
+			// @ts-expect-error - Navigation type issue with nested navigators
+			navigation.navigate('MainTabs', { screen: 'Profile' });
+		}
 
 		// Reset navigation flag after navigation completes
 		setTimeout(() => {
