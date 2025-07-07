@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	SolMint = "So11111111111111111111111111111111111111112"
+	SolMint        = "So11111111111111111111111111111111111111112" // Wrapped SOL mint address
+	NativeSolMint  = "11111111111111111111111111111111"            // Native SOL identifier
 
 	// Trade status constants - matching blockchain status strings
 	TradeStatusPending   = "pending"

@@ -210,7 +210,7 @@ const TokenListCard: React.FC<TokenListCardProps> = ({
 			<View style={styles.listContainer}>
 				<FlatList
 					data={coins}
-					keyExtractor={(item, index) => `${testIdPrefix}-${item.address || item.symbol || index}`}
+					keyExtractor={(item, index) => `${testIdPrefix}-${item.address || item.symbol || 'unknown'}-${index}`}
 					renderItem={renderItem}
 					scrollEnabled={false}
 					maxToRenderPerBatch={5}

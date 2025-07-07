@@ -4,6 +4,24 @@ import { grpcApi } from '@services/grpcApi';
 // Using the Coin type from grpc model instead of redefining it
 import type { Coin } from '@services/grpc/model';
 
+// Constants for SOL identification
+export const NATIVE_SOL_MINT = '11111111111111111111111111111111';
+export const WRAPPED_SOL_MINT = 'So11111111111111111111111111111111111111112';
+
+// Helper function to create SOL coin objects
+const createSolCoin = (isNative: boolean): Coin => ({
+	address: isNative ? NATIVE_SOL_MINT : WRAPPED_SOL_MINT,
+	name: isNative ? 'Solana' : 'Wrapped SOL',
+	symbol: isNative ? 'SOL' : 'wSOL',
+	decimals: 9,
+	description: isNative ? 'Native Solana token' : 'Wrapped Solana token',
+	logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
+	price: 0, // Will be populated from market data
+	tags: isNative ? ['native'] : ['wrapped'],
+	website: 'https://solana.com',
+	twitter: 'https://twitter.com/solana',
+});
+
 interface CoinState {
 	availableCoins: Coin[];
 	newCoins: Coin[];
