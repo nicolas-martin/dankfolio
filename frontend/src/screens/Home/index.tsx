@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { View, SafeAreaView, FlatList, RefreshControl, ScrollView } from 'react-native';
+import { View, SafeAreaView, FlatList, RefreshControl, ScrollView, Dimensions } from 'react-native';
 import { Text } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 import ShimmerPlaceholder from '@components/Common/ShimmerPlaceholder';
@@ -19,6 +19,8 @@ import { logger } from '@/utils/logger';
 import { useThemeStore } from '@/store/theme';
 import { env } from '@/utils/env';
 import { grpcApi } from '@/services/grpcApi';
+
+const screenWidth = Dimensions.get('window').width;
 
 const fetchPriceHistory = async (coin: Coin, timeframeKey: string): Promise<{ data: PriceData[], error: Error | null }> => {
 	if (!coin || !coin.address) {
@@ -200,51 +202,45 @@ const HomeScreen = () => {
 
 	// Placeholder components for loading states
 	const renderPlaceholderCoinCard = () => (
-		<View style={styles.placeholderCoinCardContainerStyle}>
-			<View style={styles.placeholderCoinCardContent}>
+		<View style={styles.placeholderItemContainer}>
+			<View style={styles.placeholderItemContent}>
 				{/* Left section - Icon and name */}
-				<View style={styles.placeholderCoinCardInternalStyle}>
-					{/* Note: flexDirection and alignItems specific to this combination, kept inline for clarity or could be another specific style */}
+				<View style={styles.placeholderLeftSection}>
 					<ShimmerPlaceholder
 						width={36}
 						height={36}
 						borderRadius={18}
 						style={styles.placeholderCoinIconShimmer}
 					/>
-					<View style={styles.flex1}>
+					<View style={styles.placeholderNameSection}>
 						<ShimmerPlaceholder
-							width="60%"
-							height={16}
+							width={60}
+							height={17}
 							borderRadius={4}
 							style={styles.placeholderTextMarginBottomS}
 						/>
 						<ShimmerPlaceholder
-							width="80%"
-							height={12}
+							width={80}
+							height={13}
 							borderRadius={4}
 						/>
 					</View>
 				</View>
 
 				{/* Middle section - Sparkline placeholder */}
-				<ShimmerPlaceholder
-					width={80}
-					height={20}
-					borderRadius={4}
-					style={styles.placeholderSparklineShimmer}
-				/>
-
-				{/* Right section - Price and change */}
-				<View style={styles.alignFlexEnd}>
+				<View style={styles.placeholderSparklineContainer}>
 					<ShimmerPlaceholder
-						width={60}
-						height={16}
+						width={screenWidth * 0.28}
+						height={30}
 						borderRadius={4}
-						style={styles.placeholderTextMarginBottomS}
 					/>
+				</View>
+
+				{/* Right section - 24h change */}
+				<View style={styles.placeholderRightSection}>
 					<ShimmerPlaceholder
-						width={40}
-						height={12}
+						width={50}
+						height={17}
 						borderRadius={4}
 					/>
 				</View>
@@ -295,15 +291,31 @@ const HomeScreen = () => {
 	);
 
 	const renderPlaceholderTrendingSection = () => (
-		<View>
-			<View style={styles.sectionHeader}>
+		<View style={styles.placeholderTrendingContainer}>
+			<View style={styles.placeholderTrendingHeader}>
 				<Text style={styles.sectionTitle}>Trending Coins</Text>
 			</View>
-			{placeholderTrendingIndices.map((index) => (
-				<View key={`placeholder-trending-${index}`}>
-					{renderPlaceholderCoinCard()}
+			<View style={styles.placeholderTrendingColumnHeader}>
+				<View style={styles.placeholderTrendingLeftSection}>
+					<Text style={styles.placeholderColumnHeaderText}>Token</Text>
 				</View>
-			))}
+				<View style={styles.placeholderTrendingSparklineSection}>
+					<Text style={styles.placeholderColumnHeaderText}>4H Chart</Text>
+				</View>
+				<View style={styles.placeholderTrendingRightSection}>
+					<Text style={styles.placeholderColumnHeaderText}>24h Change</Text>
+				</View>
+			</View>
+			<View style={styles.placeholderTrendingListContainer}>
+				{placeholderTrendingIndices.map((index, arrayIndex) => (
+					<View key={`placeholder-trending-${index}`}>
+						{renderPlaceholderCoinCard()}
+						{arrayIndex < placeholderTrendingIndices.length - 1 && (
+							<View style={styles.placeholderDivider} />
+						)}
+					</View>
+				))}
+			</View>
 		</View>
 	);
 
