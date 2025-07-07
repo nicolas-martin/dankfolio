@@ -25,13 +25,10 @@ export const useStyles = () => {
 			flexShrink: 0,
 			minWidth: '45%', // Ensure minimum space for input
 		},
-		// New: Balance row container (separate from main row)
-		balanceRow: {
+		// New: Balance container for left side of secondary row
+		balanceContainer: {
+			flex: 1,
 			alignItems: 'flex-start',
-			flexDirection: 'row',
-			justifyContent: 'flex-start',
-			marginTop: theme.spacing.xs / 2, // Reduced from xs to xs/2
-			width: '100%',
 		},
 		blurView: {
 			flex: 1,
@@ -134,10 +131,20 @@ export const useStyles = () => {
 			paddingHorizontal: theme.spacing.md, // Reduced from lg to md
 			paddingTop: theme.spacing.md, // Reduced from lg to md
 		},
+		secondaryRow: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center',
+			marginTop: theme.spacing.xs / 2,
+			width: '100%',
+		},
+		secondaryValueContainer: {
+			flex: 1,
+			alignItems: 'flex-end',
+		},
 		secondaryValueText: {
 			color: theme.colors.onSurfaceVariant,
 			fontSize: theme.typography.fontSize.xs,
-			marginTop: 2,
 			textAlign: 'right',
 		},
 		selectedTokenDetails: {
@@ -150,11 +157,6 @@ export const useStyles = () => {
 			flexDirection: 'row',
 			justifyContent: 'space-between',
 			marginRight: theme.spacing.md, // Space between button and input area
-		},
-		stackedValuesContainer: {
-			alignItems: 'flex-end',
-			minWidth: 100,
-			width: '100%',
 		},
 		swapButton: {
 			margin: 0,

@@ -348,6 +348,31 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		}
 	}, [amountValue, liveExchangeRate, enableUsdToggle]);
 
+	const handleUnitToggle = useCallback(() => {
+		setCurrentInputUnit(prevUnit => {
+			const nextUnit = prevUnit === 'CRYPTO' ? 'USD' : 'CRYPTO';
+			const rate = liveExchangeRate;
+
+			if (rate && rate > 0) {
+				if (prevUnit === 'CRYPTO' && amountValue) {
+					// Switching from CRYPTO to USD - convert crypto amount to USD and preserve it
+					const crypto = parseFloat(amountValue);
+					if (!isNaN(crypto)) {
+						const usdValue = formatPrice(crypto * rate, false);
+						setInternalUsdAmount(usdValue);
+						// Don't clear crypto amount - keep it for display as secondary value
+					}
+				} else if (prevUnit === 'USD' && internalUsdAmount) {
+					// Switching from USD to CRYPTO - just preserve the original crypto input
+					// Don't convert, just switch back to showing the original crypto amount
+					// The crypto amount (amountValue) is already preserved from before
+				}
+			}
+
+			return nextUnit;
+		});
+	}, [liveExchangeRate, amountValue, internalUsdAmount]);
+
 	const handleCryptoAmountChange = useCallback((text: string) => {
 		// Use validation function to ensure proper input formatting
 		handleAmountInputChange(text, (validatedText: string) => {
@@ -421,7 +446,9 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 
 	// Calculate display values for stacked layout
 	const cryptoDisplayValue = useMemo(() => {
-		if (!amountValue || parseFloat(amountValue) === 0) return '';
+		if (!amountValue || parseFloat(amountValue) === 0) {
+			return '0.0000'; // Show placeholder instead of empty string
+		}
 		const formattedAmount = formatTokenBalance(parseFloat(amountValue), 6);
 		return formattedAmount;
 	}, [amountValue]);
@@ -438,10 +465,10 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 			} else if (rate === undefined) {
 				return '$...';
 			} else {
-				return '$0.00'; // Show $0.00 instead of hiding
+				return '$0.00';
 			}
 		}
-		return '$0.00'; // Always show value estimate, even if $0.00
+		return '$0.00'; // Always show placeholder value
 	}, [enableUsdToggle, currentInputUnit, amountValue, internalUsdAmount, liveExchangeRate, selectedToken]);
 
 	return (
@@ -479,33 +506,32 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 								{isAmountLoading ? (
 									<ActivityIndicator size="small" color={styles.colors.primary} style={activityIndicatorStyle} testID={`${testID}-loading-indicator`} />
 								) : (
-									<View style={styles.stackedValuesContainer}>
-										{/* Primary value (editable) */}
-										<View style={styles.primaryValueContainer}>
-											<TextInput
-												testID={`${testID}-amount-input`}
-												style={styles.primaryAmountInput}
-												value={displayAmount || ''}
-												onChangeText={currentAmountHandler}
-												placeholder={placeholder}
-												placeholderTextColor={styles.colors.onTertiaryContainer}
-												keyboardType="decimal-pad"
-												editable={isAmountEditable}
-												{...textInputProps}
-											/>
-											{enableUsdToggle && selectedToken && (
+									<View style={styles.primaryValueContainer}>
+										<TextInput
+											testID={`${testID}-amount-input`}
+											style={styles.primaryAmountInput}
+											value={displayAmount || ''}
+											onChangeText={currentAmountHandler}
+											placeholder={placeholder}
+											placeholderTextColor={styles.colors.onTertiaryContainer}
+											keyboardType="decimal-pad"
+											editable={isAmountEditable}
+											{...textInputProps}
+										/>
+										{enableUsdToggle && selectedToken && (
+											<TouchableOpacity
+												onPress={handleUnitToggle}
+												style={styles.swapButton}
+												testID={`${testID}-swap-button`}
+												accessible={true}
+												accessibilityRole="button"
+												accessibilityLabel="Toggle between crypto and USD input"
+											>
 												<DollarIcon
 													size={16}
 													color={styles.colors.onSurfaceVariant}
 												/>
-											)}
-										</View>
-
-										{/* Secondary value (display only) */}
-										{enableUsdToggle && selectedToken && (
-											<Text style={styles.secondaryValueText} testID={`${testID}-secondary-value`}>
-												{currentInputUnit === 'CRYPTO' ? usdDisplayValue : cryptoDisplayValue}
-											</Text>
+											</TouchableOpacity>
 										)}
 									</View>
 								)}
@@ -513,14 +539,26 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 						)}
 					</View>
 
-					{/* Balance row (separate from main row) */}
-					{selectedToken && _portfolioToken && (
-						<View style={styles.balanceRow}>
-							<Text style={styles.tokenBalance} testID={`${testID}-balance`}>
-								{formatTokenBalance(_portfolioToken.amount, 4)}
-							</Text>
-						</View>
-					)}
+					{/* Secondary row: Balance and USD/amount */}
+					<View style={styles.secondaryRow}>
+						{/* Balance section (left side) */}
+						{selectedToken && _portfolioToken && (
+							<View style={styles.balanceContainer}>
+								<Text style={styles.tokenBalance} testID={`${testID}-balance`}>
+									{formatTokenBalance(_portfolioToken.amount, 4)}
+								</Text>
+							</View>
+						)}
+
+						{/* USD/amount section (right side) */}
+						{enableUsdToggle && selectedToken && onAmountChange && (
+							<View style={styles.secondaryValueContainer}>
+								<Text style={styles.secondaryValueText} testID={`${testID}-secondary-value`}>
+									{currentInputUnit === 'CRYPTO' ? usdDisplayValue : cryptoDisplayValue}
+								</Text>
+							</View>
+						)}
+					</View>
 				</Card.Content>
 			</Card>
 
