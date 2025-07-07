@@ -348,31 +348,6 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		}
 	}, [amountValue, liveExchangeRate, enableUsdToggle]);
 
-	const handleUnitToggle = useCallback(() => {
-		setCurrentInputUnit(prevUnit => {
-			const nextUnit = prevUnit === 'CRYPTO' ? 'USD' : 'CRYPTO';
-			const rate = liveExchangeRate;
-
-			if (rate && rate > 0) {
-				if (prevUnit === 'CRYPTO' && amountValue) {
-					// Switching from CRYPTO to USD - convert crypto amount to USD and preserve it
-					const crypto = parseFloat(amountValue);
-					if (!isNaN(crypto)) {
-						const usdValue = formatPrice(crypto * rate, false);
-						setInternalUsdAmount(usdValue);
-						// Don't clear crypto amount - keep it for display as secondary value
-					}
-				} else if (prevUnit === 'USD' && internalUsdAmount) {
-					// Switching from USD to CRYPTO - just preserve the original crypto input
-					// Don't convert, just switch back to showing the original crypto amount
-					// The crypto amount (amountValue) is already preserved from before
-				}
-			}
-
-			return nextUnit;
-		});
-	}, [liveExchangeRate, amountValue, internalUsdAmount]);
-
 	const handleCryptoAmountChange = useCallback((text: string) => {
 		// Use validation function to ensure proper input formatting
 		handleAmountInputChange(text, (validatedText: string) => {
@@ -418,7 +393,16 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		});
 	}, [onAmountChange, enableUsdToggle, liveExchangeRate]);
 
-	const displayAmount = enableUsdToggle && currentInputUnit === 'USD' ? internalUsdAmount : amountValue;
+	const displayAmount = useMemo(() => {
+		if (enableUsdToggle && currentInputUnit === 'USD') {
+			return internalUsdAmount;
+		}
+		// Format the crypto amount using our formatting utility
+		if (amountValue && parseFloat(amountValue) > 0) {
+			return formatTokenBalance(parseFloat(amountValue), 6);
+		}
+		return amountValue;
+	}, [enableUsdToggle, currentInputUnit, internalUsdAmount, amountValue]);
 	const currentAmountHandler = enableUsdToggle && currentInputUnit === 'USD' ? handleUsdAmountChange : handleCryptoAmountChange;
 
 	const placeholder = useMemo(() => (enableUsdToggle && currentInputUnit === 'USD'
@@ -438,9 +422,8 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	// Calculate display values for stacked layout
 	const cryptoDisplayValue = useMemo(() => {
 		if (!amountValue || parseFloat(amountValue) === 0) return '';
-		// Use formatTokenBalance utility for consistent formatting - removed symbol
 		const formattedAmount = formatTokenBalance(parseFloat(amountValue), 6);
-		return formattedAmount; // Removed symbol to save horizontal space
+		return formattedAmount;
 	}, [amountValue]);
 
 	const usdDisplayValue = useMemo(() => {
