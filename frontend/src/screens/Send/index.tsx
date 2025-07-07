@@ -147,35 +147,16 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				return;
 			}
 
-			if (validationResult && validationResult.code === "ADDRESS_HAS_BALANCE") {
-				// Address has balance - show verification info card
+			// Show verification info if available (but don't block)
+			if (validationResult && validationResult.code) {
 				setVerificationInfo({
 					message: validationResult.balanceInfo || validationResult.message,
 					code: validationResult.code
 				});
-				return;
 			}
 
-			if (validationResult && validationResult.code === "ADDRESS_NO_BALANCE") {
-				// Address is valid but unused - show warning info card
-				setVerificationInfo({
-					message: validationResult.balanceInfo || validationResult.message,
-					code: validationResult.code
-				});
-				return;
-			}
-
-			if (validationResult && validationResult.code === "ADDRESS_BALANCE_CHECK_FAILED") {
-				// Could not check balance - show warning info card
-				setVerificationInfo({
-					message: validationResult.balanceInfo || validationResult.message,
-					code: validationResult.code
-				});
-				return;
-			}
-
-			// If no validation result or validation passed without special codes, proceed directly
-			logger.breadcrumb({ category: 'ui', message: 'User proceeded without address verification', data: { toAddress: recipientAddress, amount, token: selectedToken?.coin.symbol } });
+			// Always proceed to confirmation
+			logger.breadcrumb({ category: 'ui', message: 'User proceeding to confirmation', data: { toAddress: recipientAddress, amount, token: selectedToken?.coin.symbol } });
 			setIsConfirmationVisible(true);
 
 		} catch (error) {
@@ -184,15 +165,9 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		}
 	};
 
-	const handleConfirmVerificationAndProceed = () => {
-		setVerificationInfo(null);
-		logger.breadcrumb({ category: 'ui', message: 'User proceeded after address verification', data: { toAddress: recipientAddress, amount, token: selectedToken?.coin.symbol } });
-		setIsConfirmationVisible(true);
-	};
-
 	const handleCancelVerification = () => {
 		setVerificationInfo(null);
-		logger.breadcrumb({ category: 'ui', message: 'User cancelled address verification', data: { toAddress: recipientAddress } });
+		logger.breadcrumb({ category: 'ui', message: 'User dismissed address verification', data: { toAddress: recipientAddress } });
 	};
 
 	// Clear validation errors when user starts typing
@@ -451,6 +426,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				onClose={() => {
 					logger.breadcrumb({ category: 'ui', message: 'Send confirmation modal closed' });
 					setIsConfirmationVisible(false);
+					setVerificationInfo(null); // Clear verification info when closing confirmation
 				}}
 				onConfirm={handleConfirmSubmit}
 				fromToken={selectedToken?.coin}
