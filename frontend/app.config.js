@@ -11,8 +11,8 @@ if (isLocal) {
 
 module.exports = ({ config }) => ({
 	...config,
-	name: "Kaiju",
-	slug: "kaiju",
+	name: "Kaiju Swap",
+	slug: "kaijuSwap",
 	owner: "martinni39",
 	version: "1.0.0",
 	orientation: "portrait",

@@ -577,3 +577,19 @@ func (s *Service) GetTopGainersCoins(ctx context.Context, limit, offset int32) (
 		offset,
 	)
 }
+
+func (s *Service) GetXStocksCoins(ctx context.Context, limit, offset int32) ([]model.Coin, int32, error) {
+	// For xStocks, we'll query directly from the database without caching
+	// since these are relatively stable tokens that don't need frequent updates
+	
+	// Query coins with xstocks tag
+	coins, err := s.store.SearchCoins(ctx, "", []string{"xstocks"}, 0, limit, offset, "marketcap", true)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get xStocks coins: %w", err)
+	}
+	
+	// Calculate total count - SearchCoins doesn't return it, so we'll use the length for now
+	totalCount := int32(len(coins))
+	
+	return coins, totalCount, nil
+}

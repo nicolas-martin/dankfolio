@@ -17,9 +17,9 @@ export const useStyles = () => {
 				marginVertical: theme.spacing.xs,
 			},
 			headerTitle: {
-				color: theme.colors.onBackground,
-				fontSize: 28, // No exact match
-				fontWeight: 'bold',
+				color: theme.colors.onSurface,
+				fontSize: theme.typography.fontSize['2xl'],
+				fontWeight: '700',
 				marginBottom: theme.spacing['2xl'],
 				marginTop: theme.spacing['2xl'],
 				textAlign: 'left',

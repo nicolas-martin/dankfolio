@@ -209,6 +209,7 @@ export interface API {
 	getNewCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
 	getTrendingCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
 	getTopGainersCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
+	getXStocksCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
 }
 
 export interface GetProxiedImageResponse {

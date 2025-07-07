@@ -73,6 +73,20 @@ func NewService(
 		}
 	}()
 
+	// Initialize xStocks tokens during startup
+	go func() {
+		backgroundCtx := context.Background()
+		if err := service.initializeXStocks(backgroundCtx); err != nil {
+			slog.ErrorContext(backgroundCtx, "Failed to initialize xStocks tokens", slog.Any("error", err))
+		} else {
+			slog.InfoContext(backgroundCtx, "xStocks tokens initialized successfully")
+			// Optionally enrich xStocks data in background
+			if err := service.EnrichXStocksData(backgroundCtx); err != nil {
+				slog.WarnContext(backgroundCtx, "Failed to enrich xStocks data", slog.Any("error", err))
+			}
+		}
+	}()
+
 	if service.config != nil {
 		if service.config.TrendingFetchInterval > 0 {
 			slog.Info("Starting trending token fetcher with configured interval", slog.Duration("interval", service.config.TrendingFetchInterval))

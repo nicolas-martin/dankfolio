@@ -1,0 +1,188 @@
+# xStocks tokens - tokenized stocks on Solana
+# Mint authority: S7vYFFWH6BjJyEsdrPQpqpYTqLTrPRK6KW3VwsJuRaS
+# Data source: https://solscan.io/account/S7vYFFWH6BjJyEsdrPQpqpYTqLTrPRK6KW3VwsJuRaS
+
+tokens:
+  - symbol: SPYx
+    address: XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/SPYx/metadata.json
+  - symbol: CRWDx
+    address: Xs7xXqkcK7K8urEqGg52SECi79dRp2cEKKuYjUePYDw
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/CRWDx/metadata.json
+  - symbol: TSLAx
+    address: XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/TSLAx/metadata.json
+  - symbol: MCDx
+    address: XsqE9cRRpzxcGKDXj1BJ7Xmg4GRhZoyY1KpmGSxAWT2
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/MCDx/metadata.json
+  - symbol: GOOGLx
+    address: XsCPL9dNWBMvFtTmwcCA5v3xWPSMEBCszbQdiLLq6aN
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/GOOGLx/metadata.json
+  - symbol: VTIx
+    address: XsssYEQjzxBCFgvYFFNuhJFBeHNdLWYeUSP8F45cDr9
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/VTIx/metadata.json
+  - symbol: Vx
+    address: XsqgsbXwWogGJsNcVZ3TyVouy2MbTkfCFhCGGGcQZ2p
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/Vx/metadata.json
+  - symbol: ORCLx
+    address: XsjFwUPiLofddX5cWFHW35GCbXcSu1BCUGfxoQAQjeL
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/ORCLx/metadata.json
+  - symbol: WMTx
+    address: Xs151QeqTCiuKtinzfRATnUESM2xTU6V9Wy8Vy538ci
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/WMTx/metadata.json
+  - symbol: JPMx
+    address: XsMAqkcKsUewDrzVkait4e5u4y8REgtyS7jWgCpLV2C
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/JPMx/metadata.json
+  - symbol: MDTx
+    address: XsDgw22qRLTv5Uwuzn6T63cW69exG41T6gwQhEK22u2
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/MDTx/metadata.json
+  - symbol: MRVLx
+    address: XsuxRGDzbLjnJ72v74b7p9VY6N66uYgTCyfwwRjVCJA
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/MRVLx/metadata.json
+  - symbol: QQQx
+    address: Xs8S1uUs1zvS2p7iwtsG3b6fkhpvmwz4GYU3gWAmWHZ
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/QQQx/metadata.json
+  - symbol: AMZNx
+    address: Xs3eBt7uRfJX8QUs4suhyU8p2M6DoUDrJyWBa8LLZsg
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/AMZNx/metadata.json
+  - symbol: AZNx
+    address: Xs3ZFkPYT2BN7qBMqf1j1bfTeTm1rFzEFSsQ1z3wAKU
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/AZNx/metadata.json
+  - symbol: HONx
+    address: XsRbLZthfABAPAfumWNEJhPyiKDW6TvDVeAeW7oKqA2
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/HONx/metadata.json
+  - symbol: ACNx
+    address: Xs5UJzmCRQ8DWZjskExdSQDnbE6iLkRu2jjrRAB1JSU
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/ACNx/metadata.json
+  - symbol: HDx
+    address: XszjVtyhowGjSC5odCqBpW1CtXXwXjYokymrk7fGKD3
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/HDx/metadata.json
+  - symbol: GMEx
+    address: Xsf9mBktVB9BSU5kf4nHxPq5hCBJ2j2ui3ecFGxPRGc
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/GMEx/metadata.json
+  - symbol: HOODx
+    address: XsvNBAYkrDRNhA7wPHQfX3ZUXZyZLdnCQDfHZ56bzpg
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/HOODx/metadata.json
+  - symbol: INTCx
+    address: XshPgPdXFRWB8tP1j82rebb2Q9rPgGX37RuqzohmArM
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/INTCx/metadata.json
+  - symbol: DFDVx
+    address: Xs2yquAgsHByNzx68WJC55WHjHBvG9JsMB7CWjTLyPy
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/DFDVx/metadata.json
+  - symbol: BRK.Bx
+    address: Xs6B6zawENwAbWVi7w92rjazLuAr5Az59qgWKcNb45x
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/BRK.Bx/metadata.json
+  - symbol: COINx
+    address: Xs7ZdzSHLU9ftNJsii5fCeJhoRWSC32SQGzGQtePxNu
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/COINx/metadata.json
+  - symbol: BACx
+    address: XswsQk4duEQmCbGzfqUUWYmi7pV7xpJ9eEmLHXCaEQP
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/BACx/metadata.json
+  - symbol: CVXx
+    address: XsNNMt7WTNA2sV3jrb1NNfNgapxRF5i4i6GcnTRRHts
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/CVXx/metadata.json
+  - symbol: CSCOx
+    address: Xsr3pdLQyXvDJBFgpR5nexCEZwXvigb8wbPYp4YoNFf
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/CSCOx/metadata.json
+  - symbol: PGx
+    address: XsYdjDjNUygZ7yGKfQaB6TxLh2gC6RRjzLtLAGJrhzV
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/PGx/metadata.json
+  - symbol: CMCSAx
+    address: XsvKCaNsxg2GN8jjUmq71qukMJr7Q1c5R2Mk9P8kcS8
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/CMCSAx/metadata.json
+  - symbol: CRCLx
+    address: XsueG8BtpquVJX9LVLLEGuViXUungE6WmK5YZ3p3bd1
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/CRCLx/metadata.json
+  - symbol: METAx
+    address: Xsa62P5mvPszXL1krVUnU5ar38bBSVcWAB6fmPCo5Zu
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/METAx/metadata.json
+  - symbol: LINx
+    address: XsSr8anD1hkvNMu8XQiVcmiaTP7XGvYu7Q58LdmtE8Z
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/LINx/metadata.json
+  - symbol: UNHx
+    address: XszvaiXGPwvk2nwb3o9C1CX4K6zH8sez11E6uyup6fe
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/UNHx/metadata.json
+  - symbol: PEPx
+    address: Xsv99frTRUeornyvCfvhnDesQDWuvns1M852Pez91vF
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/PEPx/metadata.json
+  - symbol: AMBRx
+    address: XsaQTCgebC2KPbf27KUhdv5JFvHhQ4GDAPURwrEhAzb
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/AMBRx/metadata.json
+  - symbol: MSFTx
+    address: XspzcW1PRtgf6Wj92HCiZdjzKCyFekVD8P5Ueh3dRMX
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/MSFTx/metadata.json
+  - symbol: MAx
+    address: XsApJFV9MAktqnAc6jqzsHVujxkGm9xcSUffaBoYLKC
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/MAx/metadata.json
+  - symbol: NVOx
+    address: XsfAzPzYrYjd4Dpa9BU3cusBsvWfVB9gBcyGC87S57n
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/NVOx/metadata.json
+  - symbol: PMx
+    address: Xsba6tUnSjDae2VcopDB6FGGDaxRrewFCDa5hKn5vT3
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/PMx/metadata.json
+  - symbol: MSTRx
+    address: XsP7xzNPvEHS1m6qfanPUGjNmdnmsLKEoNAnHjdxxyZ
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/MSTRx/metadata.json
+  - symbol: XOMx
+    address: XsaHND8sHyfMfsWPj6kSdd5VwvCayZvjYgKmmcNL5qh
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/XOMx/metadata.json
+  - symbol: PFEx
+    address: XsAtbqkAP1HJxy7hFDeq7ok6yM43DQ9mQ1Rh861X8rw
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/PFEx/metadata.json
+  - symbol: GLDx
+    address: Xsv9hRk1z5ystj9MhnA7Lq4vjSsLwzL2nxrwmwtD3re
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/GLDx/metadata.json
+  - symbol: NVDAx
+    address: Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/NVDAx/metadata.json
+  - symbol: DHRx
+    address: Xseo8tgCZfkHxWS9xbFYeKFyMSbWEvZGFV1Gh53GtCV
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/DHRx/metadata.json
+  - symbol: GSx
+    address: XsgaUyp4jd1fNBCxgtTKkW64xnnhQcvgaxzsbAq5ZD1
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/GSx/metadata.json
+  - symbol: TMOx
+    address: Xs8drBWy3Sd5QY3aifG9kt9KFs2K3PGZmx7jWrsrk57
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/TMOx/metadata.json
+  - symbol: MRKx
+    address: XsnQnU7AdbRZYe2akqqpibDdXjkieGFfSkbkjX1Sd1X
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/MRKx/metadata.json
+  - symbol: ABTx
+    address: XsHtf5RpxsQ7jeJ9ivNewouZKJHbPxhPoEy6yYvULr7
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/ABTx/metadata.json
+  - symbol: CRMx
+    address: XsczbcQ3zfcgAEt9qHQES8pxKAVG5rujPSHQEXi4kaN
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/CRMx/metadata.json
+  - symbol: TQQQx
+    address: XsjQP3iMAaQ3kQScQKthQpx9ALRbjKAjQtHg6TFomoc
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/TQQQx/metadata.json
+  - symbol: JNJx
+    address: XsGVi5eo1Dh2zUpic4qACcjuWGjNv8GCt3dm5XcX6Dn
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/JNJx/metadata.json
+  - symbol: ABBVx
+    address: XswbinNKyPmzTa5CskMbCPvMW6G5CMnZXZEeQSSQoie
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/ABBVx/metadata.json
+  - symbol: APPx
+    address: XsPdAVBi8Zc1xvv53k4JcMrQaEDTgkGqKYeh7AYgPHV
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/APPx/metadata.json
+  - symbol: NFLXx
+    address: XsEH7wWfJJu2ZT3UCFeVfALnVA6CP5ur7Ee11KmzVpL
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/NFLXx/metadata.json
+  - symbol: PLTRx
+    address: XsoBhf2ufR8fTyNSjqfU71DYGaE6Z3SUGAidpzriAA4
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/PLTRx/metadata.json
+  - symbol: LLYx
+    address: Xsnuv4omNoHozR6EEW5mXkw8Nrny5rB3jVfLqi6gKMH
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/LLYx/metadata.json
+  - symbol: AVGOx
+    address: XsgSaSvNSqLTtFuyWPBhK9196Xb9Bbdyjj4fH3cPJGo
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/AVGOx/metadata.json
+  - symbol: KOx
+    address: XsaBXg8dU5cPM6ehmVctMkVqoiRG2ZjMo1cyBJ3AykQ
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/KOx/metadata.json
+  - symbol: IBMx
+    address: XspwhyYPdWVM8XBHZnpS9hgyag9MKjLRyE3tVfmCbSr
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/IBMx/metadata.json
+  - symbol: AAPLx
+    address: XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp
+    metadata_uri: https://xstocks-metadata.backed.fi/tokens/Solana/AAPLx/metadata.json

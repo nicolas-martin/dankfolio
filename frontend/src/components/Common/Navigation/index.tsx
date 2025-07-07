@@ -4,12 +4,13 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { RootStackParamList } from '@/types/navigation';
 import { navigationMiddleware } from './middleware';
 import CustomHeader from './CustomHeader';
-import { HomeIcon, SearchIcon, ProfileIcon } from '@components/Common/Icons';
+import { HomeIcon, SearchIcon, ProfileIcon, XStocksIcon } from '@components/Common/Icons';
 import { BottomNavigation } from 'react-native-paper';
 import { useMemo } from 'react';
 import Home from '@screens/Home';
 import Profile from '@screens/Profile';
 import Search from '@screens/Search';
+import XStocks from '@screens/XStocks';
 import CoinDetail from '@screens/CoinDetail';
 import Trade from '@screens/Trade';
 import Send from '@screens/Send';
@@ -56,6 +57,8 @@ const TabNavigator = () => {
 								return <HomeIcon color={color} size={iconSize} testID="bottom-nav-home" />;
 							case 'Search':
 								return <SearchIcon color={color} size={iconSize} testID="bottom-nav-search" />;
+							case 'XStocks':
+								return <XStocksIcon color={color} size={iconSize} testID="bottom-nav-xstocks" />;
 							case 'Profile':
 								return <ProfileIcon color={color} size={iconSize} testID="bottom-nav-profile" />;
 							default:
@@ -68,6 +71,8 @@ const TabNavigator = () => {
 								return 'Home';
 							case 'Search':
 								return 'Explore';
+							case 'XStocks':
+								return 'xStocks';
 							case 'Profile':
 								return 'Portfolio';
 							default:
@@ -85,6 +90,10 @@ const TabNavigator = () => {
 			<Tab.Screen
 				name="Search"
 				component={Search}
+			/>
+			<Tab.Screen
+				name="XStocks"
+				component={XStocks}
 			/>
 			<Tab.Screen
 				name="Profile"
