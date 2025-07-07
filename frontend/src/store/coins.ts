@@ -117,12 +117,39 @@ export const useCoinStore = create<CoinState>((set, get) => {
 
 		getCoinByID: async (address: string, forceRefresh: boolean = false) => {
 			const state = get();
+			
+			// Handle native SOL
+			if (address === NATIVE_SOL_MINT) {
+				if (!forceRefresh && state.coinMap[address]) {
+					return state.coinMap[address];
+				}
+				// Create native SOL coin and fetch price from wrapped SOL
+				const nativeSolCoin = createSolCoin(true);
+				try {
+					const wrappedSolCoin = await grpcApi.getCoinByID(WRAPPED_SOL_MINT);
+					nativeSolCoin.price = wrappedSolCoin.price;
+					nativeSolCoin.price24hChangePercent = wrappedSolCoin.price24hChangePercent;
+					nativeSolCoin.marketcap = wrappedSolCoin.marketcap;
+					nativeSolCoin.volume24hUSD = wrappedSolCoin.volume24hUSD;
+				} catch (error) {
+					console.warn(`⚠️ [CoinStore] Could not fetch price for native SOL:`, error);
+				}
+				get().setCoin(nativeSolCoin);
+				return nativeSolCoin;
+			}
+			
+			// Handle wrapped SOL and other tokens
 			if (!forceRefresh && state.coinMap[address]) {
 				return state.coinMap[address];
 			}
 
 			try {
 				const coin = await grpcApi.getCoinByID(address);
+				// If it's wrapped SOL, ensure proper naming
+				if (address === WRAPPED_SOL_MINT) {
+					coin.symbol = 'wSOL';
+					coin.name = 'Wrapped SOL';
+				}
 				get().setCoin(coin);
 				return coin;
 			} catch (error) {
