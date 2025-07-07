@@ -57,7 +57,7 @@ module.exports = ({ config }) => ({
 	ios: {
 		...config.ios,
 		icon: "./assets/icon.png",
-		supportsTablet: true,
+		supportsTablet: false,
 		bundleIdentifier: "com.nicolasmartin.kaiju",
 		googleServicesFile: "./GoogleService-Info.plist",
 		infoPlist: {
