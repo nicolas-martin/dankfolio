@@ -45,13 +45,13 @@ var populateNaughtyWords = flag.Bool("populate-naughty-words", false, "If set, f
 
 func main() {
 	flag.Parse()
-	logLevel := slog.LevelDebug
+	logLevel := slog.LevelInfo
 	var handler slog.Handler
 
 	config := loadConfig()
 
 	if config.Env != "development" {
-		logLevel = slog.LevelDebug
+		logLevel = slog.LevelInfo
 		handler = slog.NewJSONHandler(os.Stdout, nil)
 	} else {
 		handler = logger.NewColorHandler(logLevel, os.Stdout, os.Stderr)
