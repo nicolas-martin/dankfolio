@@ -143,6 +143,11 @@ const App: React.FC = () => {
 					logger.info("Debug wallet initialized successfully via App.tsx. Finalizing setup...");
 					await handleWalletSetupComplete(debugKeypair);
 					logger.info("Debug wallet setup complete. App will proceed to main content.");
+					
+					// Early return to prevent double wallet setting
+					logger.breadcrumb({ message: 'App: Ready (debug wallet)', category: 'app_lifecycle' });
+					setAppIsReady(true);
+					return;
 				} else {
 					logger.error("Failed to initialize debug wallet. Proceeding with normal wallet check/setup flow.");
 				}

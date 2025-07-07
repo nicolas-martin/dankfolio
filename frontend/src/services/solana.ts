@@ -10,7 +10,6 @@ import { Buffer } from 'buffer';
 // Ensure Buffer is available globally
 global.Buffer = Buffer;
 
-const _KEYCHAIN_SERVICE = 'com.dankfolio.wallet'; // Prefixed unused variable
 
 // Log the environment variable for debugging
 log.log('🔧 SOLANA_RPC_ENDPOINT from environment:', env.solanaRpcEndpoint);
