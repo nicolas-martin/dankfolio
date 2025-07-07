@@ -59,12 +59,12 @@ export const handleAmountInputChange = (text: string, onAmountChange: (value: st
 	// If there's more than one decimal point, keep only the first one
 	if (decimalParts.length > 2) {
 		const integerPart = decimalParts[0];
-		const fractionalPart = decimalParts.slice(1).join('').substring(0, 9);
+		const fractionalPart = decimalParts.slice(1).join('').substring(0, 6);
 		value = integerPart + '.' + fractionalPart;
 	} else if (decimalParts.length === 2) {
 		// Exactly one decimal point
 		const integerPart = decimalParts[0];
-		const fractionalPart = decimalParts[1].substring(0, 9); // Limit to 9 decimal places
+		const fractionalPart = decimalParts[1].substring(0, 6); // Limit to 6 decimal places
 		value = integerPart + '.' + fractionalPart;
 	}
 	// If decimalParts.length === 1, no decimal point, keep as is
