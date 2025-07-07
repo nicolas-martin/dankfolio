@@ -5,7 +5,6 @@ import 'dotenv/config';
 const appEnv = process.env.APP_ENV || 'development';
 const isLocal = process.argv.includes('--local');
 
-
 if (isLocal) {
 	console.log('📱 Loading environment variables from .env file');
 }
@@ -18,10 +17,6 @@ module.exports = ({ config }) => ({
 	version: "1.0.0",
 	orientation: "portrait",
 	icon: "./assets/icon.png",
-	ios: {
-		...config.ios,
-		icon: "./assets/icon.png",
-	},
 	userInterfaceStyle: "dark",
 	splash: {
 		image: "./assets/splash.png",
@@ -60,6 +55,8 @@ module.exports = ({ config }) => ({
 		"**/*"
 	],
 	ios: {
+		...config.ios,
+		icon: "./assets/icon.png",
 		supportsTablet: true,
 		bundleIdentifier: "com.nicolasmartin.kaiju",
 		googleServicesFile: "./GoogleService-Info.plist",
@@ -68,10 +65,6 @@ module.exports = ({ config }) => ({
 		}
 	},
 	android: {
-		adaptiveIcon: {
-			foregroundImage: "./assets/adaptive-icon.png",
-			backgroundColor: "#ffffff"
-		},
 		package: "com.nicolasmartin.kaiju",
 		googleServicesFile: "./google-services.json"
 	},
