@@ -46,6 +46,9 @@ export const handleGenerateWallet = async (): Promise<{ keypair: Keypair; wallet
 		// Store securely in Base58 format
 		await storeCredentials(base58PrivateKeyOutput, newWalletData.mnemonic);
 
+		// Small delay to ensure keychain write has propagated before portfolio store reads
+		await new Promise(resolve => setTimeout(resolve, 150));
+
 		// Verify public key matches
 		if (keypair.publicKey.toBase58() !== newWalletData.public_key) {
 			logger.warn('Public key mismatch detected during wallet generation.', { generatedPubKey: keypair.publicKey.toBase58(), expectedPubKey: newWalletData.public_key });
@@ -88,6 +91,9 @@ export const handleImportWallet = async (mnemonic: string): Promise<Keypair> => 
 
 		// Store securely
 		await storeCredentials(base58PrivateKeyOutput, mnemonic);
+
+		// Small delay to ensure keychain write has propagated before portfolio store reads
+		await new Promise(resolve => setTimeout(resolve, 150));
 
 		// Store in portfolio store
 		await usePortfolioStore.getState().setWallet(keypair.publicKey.toBase58());

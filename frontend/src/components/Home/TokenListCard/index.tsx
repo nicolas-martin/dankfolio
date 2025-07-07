@@ -57,21 +57,21 @@ const TokenListItem: React.FC<TokenListItemProps> = React.memo(({
 						<View style={styles.sparklineContainer}>
 							{isPriceHistoryLoading ? (
 								<ShimmerPlaceholder
-									width={screenWidth * 0.35}
+									width={screenWidth * 0.28}
 									height={30}
 									borderRadius={4}
 								/>
 							) : priceHistory && priceHistory.length > 1 ? (
 								<SparklineChart
 									data={priceHistory}
-									width={screenWidth * 0.35}
+									width={screenWidth * 0.28}
 									height={30}
 									isLoading={isPriceHistoryLoading}
 									testID={`${testIdPrefix}-sparkline-${coin.symbol.toLowerCase()}`}
 								/>
 							) : (
 								<ShimmerPlaceholder
-									width={screenWidth * 0.35}
+									width={screenWidth * 0.28}
 									height={30}
 									borderRadius={4}
 								/>
