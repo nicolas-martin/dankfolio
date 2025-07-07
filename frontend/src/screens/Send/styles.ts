@@ -130,6 +130,7 @@ export const useStyle = () => {
 			},
 			inputContainer: { // Legacy
 				marginBottom: theme.spacing.xl, // 20
+				position: 'relative',
 			},
 			label: { // Legacy
 				color: theme.colors.onSurface,
@@ -346,6 +347,13 @@ export const useStyle = () => {
 				flex: 1,
 				fontSize: theme.typography.fontSize.lg, // 18
 				fontWeight: '600',
+			},
+			validationLoadingContainer: {
+				alignItems: 'center',
+				justifyContent: 'center',
+				position: 'absolute',
+				right: theme.spacing.lg, // 16
+				top: theme.spacing.lg, // 16
 			},
 			verificationActions: {
 				flexDirection: 'row',

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Text, Icon } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
@@ -12,7 +12,8 @@ import {
 	validateForm,
 	handleTokenTransfer,
 	handleTokenSelect,
-	getDefaultSolanaToken
+	getDefaultSolanaToken,
+	validateAddressRealTime
 } from './scripts';
 import { useStyle } from './styles';
 import { Coin } from '@/types'; // Added Wallet
@@ -20,6 +21,7 @@ import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal';
 // import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import { logger } from '@/utils/logger';
+import { formatTokenBalance as formatBalance } from '@/utils/numberFormat';
 import { useTransactionPolling, PollingStatus as HookPollingStatus } from '@/hooks/useTransactionPolling';
 import { grpcApi } from '@/services/grpcApi';
 import VerificationCard from '@components/Common/Form';
@@ -82,6 +84,9 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		code?: string;
 	} | null>(null);
 
+	// State for real-time address validation
+	const [isValidatingAddress, setIsValidatingAddress] = useState(false);
+
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed SendTokensScreen' });
 	}, []);
@@ -135,24 +140,40 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				return;
 			}
 
-			const validationResult = await validateForm({
-				toAddress: recipientAddress,
-				amount,
-				selectedTokenMint: selectedToken.mintAddress
-			}, selectedToken);
+			// Skip address validation if we already have verification info from real-time validation
+			if (!verificationInfo) {
+				const validationResult = await validateForm({
+					toAddress: recipientAddress,
+					amount,
+					selectedTokenMint: selectedToken.mintAddress
+				}, selectedToken);
 
-			if (validationResult && !validationResult.isValid) {
-				// Show validation error
-				setValidationError(validationResult.message);
-				return;
-			}
+				if (validationResult && !validationResult.isValid) {
+					// Show validation error
+					setValidationError(validationResult.message);
+					return;
+				}
 
-			// Show verification info if available (but don't block)
-			if (validationResult && validationResult.code) {
-				setVerificationInfo({
-					message: validationResult.balanceInfo || validationResult.message,
-					code: validationResult.code
-				});
+				// Don't show verification info during submit - proceed directly to confirmation
+			} else {
+				// We already have verification info, just validate other fields
+				if (!recipientAddress) {
+					setValidationError('Recipient address is required');
+					return;
+				}
+
+				if (!amount || parseFloat(amount) <= 0) {
+					setValidationError('Please enter a valid amount');
+					return;
+				}
+
+				if (selectedToken) {
+					const amountNum = parseFloat(amount);
+					if (amountNum > selectedToken.amount) {
+						setValidationError(`Insufficient balance. Maximum available: ${formatBalance(selectedToken.amount)} ${selectedToken.coin.symbol}`);
+						return;
+					}
+				}
 			}
 
 			// Always proceed to confirmation
@@ -181,6 +202,17 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		}
 	};
 
+	// Debounced validation function
+	const debouncedValidateAddress = useCallback(() => {
+		let timeoutId: ReturnType<typeof setTimeout>;
+		return (address: string) => {
+			clearTimeout(timeoutId);
+			timeoutId = setTimeout(() => {
+				validateAddressRealTime(address, selectedToken, setIsValidatingAddress, setVerificationInfo, setValidationError);
+			}, 500); // 500ms delay
+		};
+	}, [selectedToken])();
+
 	const handleRecipientChange = (newAddress: string) => {
 		setRecipientAddress(newAddress);
 		if (validationError) {
@@ -188,6 +220,11 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		}
 		if (verificationInfo) {
 			setVerificationInfo(null);
+		}
+
+		// Trigger real-time validation only for addresses that are likely complete (43-44 chars)
+		if (newAddress.length >= 43 && newAddress.length <= 44) {
+			debouncedValidateAddress(newAddress);
 		}
 	};
 
@@ -328,16 +365,23 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				<Icon source="account" size={20} color={styles.colors.onTertiaryContainer} />
 				<Text style={styles.recipientTitle}>To</Text>
 			</View>
-			<TextInput
-				testID="recipient-address-input"
-				style={styles.input}
-				value={recipientAddress}
-				onChangeText={handleRecipientChange}
-				placeholder="Wallet address"
-				placeholderTextColor={styles.colors.onSurfaceVariant}
-				multiline={true}
-				numberOfLines={2}
-			/>
+			<View style={styles.inputContainer}>
+				<TextInput
+					testID="recipient-address-input"
+					style={styles.input}
+					value={recipientAddress}
+					onChangeText={handleRecipientChange}
+					placeholder="Wallet address"
+					placeholderTextColor={styles.colors.onSurfaceVariant}
+					multiline={true}
+					numberOfLines={2}
+				/>
+				{isValidatingAddress && (
+					<View style={styles.validationLoadingContainer}>
+						<Icon source="loading" size={16} color={styles.colors.primary} />
+					</View>
+				)}
+			</View>
 		</View>
 	);
 

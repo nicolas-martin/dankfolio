@@ -14,6 +14,8 @@ import {
 import {
 	GetPriceHistoryResponseSchema,
 	PriceHistoryDataSchema,
+	GetPriceHistoriesByIDsResponseSchema,
+	PriceHistoryResultSchema,
 } from '@/gen/dankfolio/v1/price_pb';
 import {
 	GetSwapQuoteResponseSchema,
@@ -293,6 +295,57 @@ async function handleGetCoinPrices(options?: FetchInit) {
 	return { prices: mockPrices }; // This endpoint returns a plain object
 }
 
+async function handleGetPriceHistoriesByIDs(options?: FetchInit) {
+	const requestData = parseRequestBody(options);
+	const items = requestData.items || [];
+
+	if (!items || items.length === 0) {
+		// Return empty response for no items
+		return create(GetPriceHistoriesByIDsResponseSchema, {
+			results: {},
+			failedAddresses: [],
+		});
+	}
+
+	// Process each price history request
+	const results: { [key: string]: unknown } = {};
+	const failedAddresses: string[] = [];
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	items.forEach((item: any) => {
+		const coinAddress = item.address;
+		if (!coinAddress) {
+			failedAddresses.push(coinAddress || 'unknown');
+			return;
+		}
+
+		const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
+			c.address.toLowerCase() === coinAddress.toLowerCase()
+		);
+
+		if (!coin) {
+			failedAddresses.push(coinAddress);
+			return;
+		}
+
+		const isStablecoin = coin.tags.includes('stablecoin');
+		const priceHistoryData = create(PriceHistoryDataSchema, {
+			items: generatePriceHistory(coin.price, isStablecoin),
+		});
+
+		results[coinAddress] = create(PriceHistoryResultSchema, {
+			data: priceHistoryData,
+			success: true,
+			errorMessage: '',
+		});
+	});
+
+	return create(GetPriceHistoriesByIDsResponseSchema, {
+		results,
+		failedAddresses,
+	});
+}
+
 async function handleGetSwapQuote(options?: FetchInit) {
 	const requestData = parseRequestBody(options);
 	const { fromCoinId, toCoinId, amount } = requestData;
@@ -379,7 +432,7 @@ async function handlePrepareSwap(options?: FetchInit) {
 	const fromCoin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
 		c.address.toLowerCase() === (fromCoinId || '').toLowerCase()
 	);
-	const toCoin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
+	const _toCoin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
 		c.address.toLowerCase() === (toCoinId || '').toLowerCase()
 	);
 
@@ -553,6 +606,7 @@ const endpointHandlers: { [key: string]: (options?: FetchInit) => Promise<any> }
 	// Price endpoints
 	'/dankfolio.v1.priceservice/getpricehistory': handleGetPriceHistory,
 	'/dankfolio.v1.priceservice/getcoinprices': handleGetCoinPrices,
+	'/dankfolio.v1.priceservice/getpricehistoriesbyids': handleGetPriceHistoriesByIDs,
 	
 	// Trade endpoints
 	'/dankfolio.v1.tradeservice/getswapquote': handleGetSwapQuote,
