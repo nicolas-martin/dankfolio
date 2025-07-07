@@ -593,7 +593,7 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 		PlatformFeeBps:      s.platformFeeBps, // Re-enabled: use proper ATA as fee account
 		SwapMode:            "ExactIn",
 		OnlyDirectRoutes:    true, // Keep simple routing for now
-		AsLegacyTransaction: true, // Additional safety measure
+		// AsLegacyTransaction removed - was preventing trades with newer DEXes like Meteora DLMM
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Jupiter quote: %w", err)
