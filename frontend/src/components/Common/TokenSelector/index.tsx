@@ -3,22 +3,18 @@ import { View, TouchableOpacity, TextInput, ActivityIndicator } from 'react-nati
 import { Card, Text, Searchbar } from 'react-native-paper'; // Added IconButton
 import { BottomSheetModal, BottomSheetFlatList, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import { BlurView } from 'expo-blur';
-import { ChevronDownIcon, WifiIcon } from '@components/Common/Icons';
+import { ChevronDownIcon, ChangeIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
 import { useStyles } from './styles';
 import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
 import { useCoinStore } from '@store/coins'; // Already here, good.
 import type { Coin } from '@/types';
 import type { InputUnit } from '@/screens/Trade/types';
-// calculateUsdValue might be removed if equivalentValueDisplay handles all formatting
-import { findPortfolioToken, handleAmountInputChange } from './scripts'; // calculateUsdValue might be removed
+import { findPortfolioToken, handleAmountInputChange } from './scripts';
 import CachedImage from '@/components/Common/CachedImage';
 import { logger } from '@/utils/logger';
 import { useNamedDepsDebug } from '@/utils/debugHooks';
-import { formatTokenBalance, formatPrice } from '@/utils/numberFormat'; // Added formatPrice import
-// grpcApi import removed (no longer calling getUsdPrice directly)
-
-// Memoized icon component to prevent unnecessary re-renders
+import { formatTokenBalance, formatPrice } from '@/utils/numberFormat';
 const RenderIcon = React.memo<{ iconUrl: string; styles: ReturnType<typeof useStyles> }>(({ iconUrl, styles }) => (
 	<CachedImage
 		uri={iconUrl}
@@ -527,7 +523,8 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 												accessibilityRole="button"
 												accessibilityLabel="Toggle between crypto and USD input"
 											>
-												<WifiIcon
+												<ChangeIcon
+													style={styles.swapIcon}
 													size={16}
 													color={styles.colors.onSurfaceVariant}
 												/>
