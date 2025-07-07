@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"strings"
 	"time"
 
@@ -107,8 +108,14 @@ func (s *Service) validateTokenAccount(ctx context.Context, ata, expectedOwner, 
 		return fmt.Errorf("account has no data")
 	}
 	
-	// Token accounts should be exactly 165 bytes
-	if len(accInfo.Data) < 165 {
+	// Token accounts should be exactly 165 bytes for standard SPL tokens
+	// Note: Token-2022 accounts might be larger
+	if len(accInfo.Data) != 165 {
+		slog.Error("Invalid token account data size",
+			"account", ata.String(),
+			"size", len(accInfo.Data),
+			"expected", 165,
+			"owner", accInfo.Owner)
 		return fmt.Errorf("invalid token account data size: %d bytes (expected 165)", len(accInfo.Data))
 	}
 	
@@ -421,9 +428,10 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 
 // createTokenTransfer creates a token transfer transaction
 func (s *Service) createTokenTransfer(ctx context.Context, from, to solana.PublicKey, tokenMint string, amount float64) (*solana.Transaction, error) {
-	// Handle native SOL transfer
-	if tokenMint == "" {
-		slog.Debug("Creating SOL transfer transaction")
+	// Handle native SOL transfer (including Wrapped SOL)
+	// Wrapped SOL mint: So11111111111111111111111111111111111111112
+	if tokenMint == "" || tokenMint == "So11111111111111111111111111111111111111112" {
+		slog.Debug("Creating SOL transfer transaction (native or wrapped)", "tokenMint", tokenMint)
 		lamports := uint64(amount * float64(solana.LAMPORTS_PER_SOL))
 		slog.Debug("Amount in lamports", "lamports", lamports)
 
@@ -443,9 +451,16 @@ func (s *Service) createTokenTransfer(ctx context.Context, from, to solana.Publi
 	}
 
 	// Get source and destination ATAs
-	fromATA, _, err := s.getOrCreateATA(ctx, from, from, mint)
+	// For source account, we need to ensure it exists and has valid data
+	// The third parameter should be the payer (from) for creating if needed
+	fromATA, fromATAInstructions, err := s.getOrCreateATA(ctx, from, from, mint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get source token account: %w", err)
+	}
+	
+	// If source ATA needs to be created, we can't transfer from it in the same transaction
+	if len(fromATAInstructions) > 0 {
+		return nil, fmt.Errorf("source token account does not exist or is not initialized - user must have tokens before sending")
 	}
 
 	toATA, createInstructions, err := s.getOrCreateATA(ctx, from, to, mint)
@@ -460,8 +475,20 @@ func (s *Service) createTokenTransfer(ctx context.Context, from, to solana.Publi
 	}
 
 	// Convert amount to raw units
-	rawAmount := uint64(amount * float64(uint64(1)<<decimals))
+	// Use math.Pow to avoid bit shifting issues with large decimals
+	multiplier := math.Pow(10, float64(decimals))
+	rawAmount := uint64(amount * multiplier)
 
+	// Log transfer details before building instruction
+	slog.Info("Building TransferChecked instruction",
+		"amount", amount,
+		"rawAmount", rawAmount,
+		"decimals", decimals,
+		"fromATA", fromATA.String(),
+		"toATA", toATA.String(),
+		"mint", mint.String(),
+		"from", from.String())
+	
 	// Build transfer instruction with explicit signer
 	transferIx := token.NewTransferCheckedInstruction(
 		rawAmount,
