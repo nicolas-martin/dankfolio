@@ -631,11 +631,11 @@ func (s *Service) GetWalletBalances(ctx context.Context, address string) (*Walle
 
 	var allBalances []Balance
 	if solValue > 0 {
-		solBalance := Balance{ // This is wallet.Balance, not bmodel.Balance
-			ID:     model.SolMint, // Assuming model.SolMint is the string "SOL" or its mint address
+		nativeSolBalance := Balance{ // This is wallet.Balance, not bmodel.Balance
+			ID:     model.NativeSolMint, // Use distinct identifier for native SOL
 			Amount: solValue,
 		}
-		allBalances = append([]Balance{solBalance}, tokenBalances...)
+		allBalances = append([]Balance{nativeSolBalance}, tokenBalances...)
 	} else {
 		allBalances = tokenBalances
 	}
