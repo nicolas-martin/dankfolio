@@ -155,6 +155,8 @@ export const TERMS_TEXT = 'By proceeding, you agree to our Terms & Conditions';
 export const DEFAULT_SOL_AMOUNT = 0.000000001;
 export const CREATING_WALLET_TITLE = 'Creating your wallet';
 export const CREATING_WALLET_DESC = 'Please wait while we set up your wallet...';
+export const IMPORTING_WALLET_TITLE = 'Importing your wallet';
+export const IMPORTING_WALLET_DESC = 'Please wait while we import your wallet...';
 export const WALLET_CREATED_TITLE = 'Wallet successfully created!';
 export const WALLET_CREATED_DESC = 'Your wallet has been created. Here is your recovery phrase. Make sure to save it in a secure place.';
 
@@ -162,6 +164,7 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 	const [step, setStep] = useState<WalletSetupStep>('welcome');
 	const [recoveryPhrase, setRecoveryPhrase] = useState('');
 	const [nextAction, setNextAction] = useState<'create' | 'import' | null>(null);
+	const [isImporting, setIsImporting] = useState(false);
 	const [walletInfo, setWalletInfo] = useState<WalletInfo>({
 		publicKey: '',
 		privateKey: '',
@@ -187,6 +190,7 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 
 	const handleCreateWallet = async () => {
 		logger.breadcrumb({ category: 'wallet_setup', message: 'Create wallet process started' });
+		setIsImporting(false);
 		setStep('creating');
 		setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: true }));
 
@@ -210,11 +214,12 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 	const handleImportWalletClick = async () => {
 		if (!isRecoveryPhraseValid()) return;
 		logger.breadcrumb({ category: 'wallet_setup', message: 'Import wallet process started' });
+		setIsImporting(true);
 		setStep('creating');
 		setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: true }));
 
 		try {
-			const keypair = await handleImportWallet(recoveryPhrase); // This now uses the imported storeCredentials
+			const keypair = await handleImportWallet(recoveryPhrase.trim()); // This now uses the imported storeCredentials
 			props.onWalletSetupComplete(keypair);
 		} catch (error) {
 			// The error from handleImportWallet (e.g. invalid mnemonic) is already potentially logged there
@@ -229,7 +234,7 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 	};
 
 	const handleRecoveryPhraseChange = (value: string) => {
-		setRecoveryPhrase(value);
+		setRecoveryPhrase(value.trim());
 	};
 
 	const isRecoveryPhraseValid = () => {
@@ -268,5 +273,6 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		isRecoveryPhraseValid,
 		walletInfo,
 		confirmWalletSaved,
+		isImporting,
 	};
 } 
