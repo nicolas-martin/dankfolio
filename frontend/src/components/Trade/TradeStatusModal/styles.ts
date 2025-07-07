@@ -336,11 +336,12 @@ export const useStyles = () => {
 			color: theme.colors.onSurfaceVariant,
 		},
 		linkButton: {
-			backgroundColor: 'transparent',
-			borderColor: theme.colors.primary,
-			borderRadius: theme.borderRadius.md,
-			borderWidth: 1,
+			backgroundColor: theme.colors.primaryContainer,
+			borderRadius: theme.borderRadius.lg,
+			elevation: 0,
 			marginHorizontal: 0,
+			paddingVertical: theme.spacing.sm,
+			shadowOpacity: 0,
 		},
 		loadingContainer: {
 			alignItems: 'center',

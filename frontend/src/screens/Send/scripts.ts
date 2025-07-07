@@ -15,7 +15,7 @@ export const handleTokenSelect = (
 	coin: Coin,
 	tokens: PortfolioToken[]
 ): PortfolioToken | undefined => {
-	return tokens.find(t => t.coin.mintAddress === coin.mintAddress);
+	return tokens.find(t => t.coin.address === coin.address);
 };
 
 export interface AddressValidationResult {

@@ -61,7 +61,6 @@ import Navigation from '@components/Common/Navigation';
 import { themes, extendedThemeProperties, AppTheme } from '@utils/theme';
 import { ToastProvider } from '@components/Common/Toast';
 import { usePortfolioStore } from '@store/portfolio';
-import { useCoinStore } from '@store/coins';
 import WalletSetupScreen from '@screens/WalletSetup';
 import { Keypair } from '@solana/web3.js';
 import { initializeDebugWallet } from '@/utils/debugWallet'; // Import for debug wallet
