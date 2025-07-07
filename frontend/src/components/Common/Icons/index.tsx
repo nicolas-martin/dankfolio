@@ -35,6 +35,7 @@ export const ProfileIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase 
 export const SettingsIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="settings" {...props} />;
 export const CoinsIcon: React.FC<IconBaseProps> = (props) => <FontAwesome6IconBase name="coins" {...props} />;
 export const WalletIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="credit-card" {...props} />;
+export const XStocksIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="trending-up" {...props} />;
 
 // Link icons
 export const WebsiteIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="globe" {...props} />;

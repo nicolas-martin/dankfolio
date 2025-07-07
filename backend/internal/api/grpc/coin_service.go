@@ -320,6 +320,41 @@ func (s *coinServiceHandler) GetTopGainersCoins(
 	return connect.NewResponse(resp), nil
 }
 
+// GetXStocksCoins returns xStocks tokens
+func (s *coinServiceHandler) GetXStocksCoins(ctx context.Context, req *connect.Request[pb.GetXStocksCoinsRequest]) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
+	// Default values
+	limit := int32(20)
+	offset := int32(0)
+
+	// Override with request values if provided
+	if req.Msg.Limit != nil {
+		limit = *req.Msg.Limit
+	}
+	if req.Msg.Offset != nil {
+		offset = *req.Msg.Offset
+	}
+
+	// Call service with domain types
+	modelCoins, totalCount, err := s.coinService.GetXStocksCoins(ctx, limit, offset)
+	if err != nil {
+		slog.ErrorContext(ctx, "GetXStocksCoins service call failed", "error", err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get xStocks coins: %w", err))
+	}
+
+	// Convert domain models to protobuf
+	pbCoins := make([]*pb.Coin, len(modelCoins))
+	for i, coinModel := range modelCoins {
+		pbCoins[i] = convertModelCoinToPbCoin(&coinModel)
+	}
+
+	resp := &pb.GetAvailableCoinsResponse{
+		Coins:      pbCoins,
+		TotalCount: totalCount,
+	}
+
+	return connect.NewResponse(resp), nil
+}
+
 // pint is a helper function to get a pointer to an int.
 func pint(i int) *int {
 	return &i

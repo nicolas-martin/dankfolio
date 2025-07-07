@@ -829,4 +829,32 @@ export const grpcApi: grpcModel.API = {
 			}
 		}
 	},
+
+	getXStocksCoins: async (limit?: number, offset?: number): Promise<grpcModel.Coin[]> => {
+		const serviceName = 'CoinService';
+		const methodName = 'getXStocksCoins';
+		try {
+			grpcUtils.logRequest(serviceName, methodName, { limit, offset });
+
+			const response = await coinClient.getXStocksCoins(
+				{
+					limit: limit || undefined,
+					offset: offset || undefined
+				},
+				{ headers: grpcUtils.getRequestHeaders() }
+			);
+
+			grpcUtils.logResponse(serviceName, methodName, response);
+
+			// Convert the response to match our frontend model
+			return response.coins.map(mapGrpcCoinToFrontendCoin);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in getXStocksCoins");
+			}
+		}
+	},
 };

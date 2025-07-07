@@ -56,6 +56,9 @@ const (
 	// CoinServiceGetTopGainersCoinsProcedure is the fully-qualified name of the CoinService's
 	// GetTopGainersCoins RPC.
 	CoinServiceGetTopGainersCoinsProcedure = "/dankfolio.v1.CoinService/GetTopGainersCoins"
+	// CoinServiceGetXStocksCoinsProcedure is the fully-qualified name of the CoinService's
+	// GetXStocksCoins RPC.
+	CoinServiceGetXStocksCoinsProcedure = "/dankfolio.v1.CoinService/GetXStocksCoins"
 )
 
 // CoinServiceClient is a client for the dankfolio.v1.CoinService service.
@@ -75,6 +78,7 @@ type CoinServiceClient interface {
 	GetNewCoins(context.Context, *connect.Request[v1.GetNewCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error)
 	GetTrendingCoins(context.Context, *connect.Request[v1.GetTrendingCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error)
 	GetTopGainersCoins(context.Context, *connect.Request[v1.GetTopGainersCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error)
+	GetXStocksCoins(context.Context, *connect.Request[v1.GetXStocksCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error)
 }
 
 // NewCoinServiceClient constructs a client for the dankfolio.v1.CoinService service. By default, it
@@ -142,6 +146,12 @@ func NewCoinServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(coinServiceMethods.ByName("GetTopGainersCoins")),
 			connect.WithClientOptions(opts...),
 		),
+		getXStocksCoins: connect.NewClient[v1.GetXStocksCoinsRequest, v1.GetAvailableCoinsResponse](
+			httpClient,
+			baseURL+CoinServiceGetXStocksCoinsProcedure,
+			connect.WithSchema(coinServiceMethods.ByName("GetXStocksCoins")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -156,6 +166,7 @@ type coinServiceClient struct {
 	getNewCoins         *connect.Client[v1.GetNewCoinsRequest, v1.GetAvailableCoinsResponse]
 	getTrendingCoins    *connect.Client[v1.GetTrendingCoinsRequest, v1.GetAvailableCoinsResponse]
 	getTopGainersCoins  *connect.Client[v1.GetTopGainersCoinsRequest, v1.GetAvailableCoinsResponse]
+	getXStocksCoins     *connect.Client[v1.GetXStocksCoinsRequest, v1.GetAvailableCoinsResponse]
 }
 
 // GetAvailableCoins calls dankfolio.v1.CoinService.GetAvailableCoins.
@@ -203,6 +214,11 @@ func (c *coinServiceClient) GetTopGainersCoins(ctx context.Context, req *connect
 	return c.getTopGainersCoins.CallUnary(ctx, req)
 }
 
+// GetXStocksCoins calls dankfolio.v1.CoinService.GetXStocksCoins.
+func (c *coinServiceClient) GetXStocksCoins(ctx context.Context, req *connect.Request[v1.GetXStocksCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error) {
+	return c.getXStocksCoins.CallUnary(ctx, req)
+}
+
 // CoinServiceHandler is an implementation of the dankfolio.v1.CoinService service.
 type CoinServiceHandler interface {
 	// GetAvailableCoins returns a list of available coins
@@ -220,6 +236,7 @@ type CoinServiceHandler interface {
 	GetNewCoins(context.Context, *connect.Request[v1.GetNewCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error)
 	GetTrendingCoins(context.Context, *connect.Request[v1.GetTrendingCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error)
 	GetTopGainersCoins(context.Context, *connect.Request[v1.GetTopGainersCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error)
+	GetXStocksCoins(context.Context, *connect.Request[v1.GetXStocksCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error)
 }
 
 // NewCoinServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -283,6 +300,12 @@ func NewCoinServiceHandler(svc CoinServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(coinServiceMethods.ByName("GetTopGainersCoins")),
 		connect.WithHandlerOptions(opts...),
 	)
+	coinServiceGetXStocksCoinsHandler := connect.NewUnaryHandler(
+		CoinServiceGetXStocksCoinsProcedure,
+		svc.GetXStocksCoins,
+		connect.WithSchema(coinServiceMethods.ByName("GetXStocksCoins")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/dankfolio.v1.CoinService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case CoinServiceGetAvailableCoinsProcedure:
@@ -303,6 +326,8 @@ func NewCoinServiceHandler(svc CoinServiceHandler, opts ...connect.HandlerOption
 			coinServiceGetTrendingCoinsHandler.ServeHTTP(w, r)
 		case CoinServiceGetTopGainersCoinsProcedure:
 			coinServiceGetTopGainersCoinsHandler.ServeHTTP(w, r)
+		case CoinServiceGetXStocksCoinsProcedure:
+			coinServiceGetXStocksCoinsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -346,4 +371,8 @@ func (UnimplementedCoinServiceHandler) GetTrendingCoins(context.Context, *connec
 
 func (UnimplementedCoinServiceHandler) GetTopGainersCoins(context.Context, *connect.Request[v1.GetTopGainersCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.CoinService.GetTopGainersCoins is not implemented"))
+}
+
+func (UnimplementedCoinServiceHandler) GetXStocksCoins(context.Context, *connect.Request[v1.GetXStocksCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.CoinService.GetXStocksCoins is not implemented"))
 }
