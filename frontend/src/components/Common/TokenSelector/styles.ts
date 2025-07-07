@@ -27,8 +27,8 @@ export const useStyles = () => {
 		},
 		// New: Balance container for left side of secondary row
 		balanceContainer: {
-			flex: 1,
 			alignItems: 'flex-start',
+			flex: 1,
 		},
 		blurView: {
 			flex: 1,
@@ -132,15 +132,15 @@ export const useStyles = () => {
 			paddingTop: theme.spacing.md, // Reduced from lg to md
 		},
 		secondaryRow: {
+			alignItems: 'center',
 			flexDirection: 'row',
 			justifyContent: 'space-between',
-			alignItems: 'center',
 			marginTop: theme.spacing.xs / 2,
 			width: '100%',
 		},
 		secondaryValueContainer: {
-			flex: 1,
 			alignItems: 'flex-end',
+			flex: 1,
 		},
 		secondaryValueText: {
 			color: theme.colors.onSurfaceVariant,
@@ -163,6 +163,9 @@ export const useStyles = () => {
 			marginLeft: theme.spacing.xs / 2,
 			minWidth: 28,
 			width: 28,
+		},
+		swapIcon: {
+			padding: theme.spacing.xs,
 		},
 		switchContainer: {
 			alignItems: 'center',

@@ -49,8 +49,7 @@ export const DiscordIcon: React.FC<IconBaseProps> = (props) => <MaterialIconBase
 export const WarningIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="alert-circle" {...props} />;
 export const ChevronDownIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="chevron-down" {...props} />;
 
-// Currency icons
-export const WifiIcon: React.FC<IconBaseProps> = (props) => <MaterialIcons name="wifi-protected-setup" {...props} />;
+export const ChangeIcon: React.FC<IconBaseProps> = (props) => <MaterialIcons name="currency-exchange" {...props} />;
 
 // Trend icons
 export const TrendUpIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="trending-up" {...props} />;
