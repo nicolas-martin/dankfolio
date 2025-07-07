@@ -3,7 +3,7 @@ import { View, Text, TextInput, ActivityIndicator, ScrollView, TouchableOpacity,
 import { WalletSetupScreenProps } from './types';
 import { useToast } from '@/components/Common/Toast';
 import { usePortfolioStore } from '@store/portfolio';
-import { useWalletSetupLogic, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_DESC, CREATING_WALLET_TITLE, CREATING_WALLET_DESC, WALLET_CREATED_TITLE, WALLET_CREATED_DESC } from './scripts';
+import { useWalletSetupLogic, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_DESC, CREATING_WALLET_TITLE, CREATING_WALLET_DESC, IMPORTING_WALLET_TITLE, IMPORTING_WALLET_DESC, WALLET_CREATED_TITLE, WALLET_CREATED_DESC } from './scripts';
 import { logger } from '@/utils/logger';
 import CopyToClipboard from '@/components/Common/CopyToClipboard';
 import { env } from '@utils/env';
@@ -38,7 +38,8 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 		handleRecoveryPhraseChange,
 		isRecoveryPhraseValid,
 		walletInfo,
-		confirmWalletSaved
+		confirmWalletSaved,
+		isImporting
 	} = useWalletSetupLogic(props);
 
 	const importButtonStyle = useMemo(() => [
@@ -204,8 +205,8 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 							<View style={styles.spinnerContainer}>
 								<ActivityIndicator size="large" color="#F5C754" />
 							</View>
-							<Text style={styles.title}>{CREATING_WALLET_TITLE}</Text>
-							<Text style={styles.subtitle}>{CREATING_WALLET_DESC}</Text>
+							<Text style={styles.title}>{isImporting ? IMPORTING_WALLET_TITLE : CREATING_WALLET_TITLE}</Text>
+							<Text style={styles.subtitle}>{isImporting ? IMPORTING_WALLET_DESC : CREATING_WALLET_DESC}</Text>
 						</>
 					) : (
 						<ScrollView showsVerticalScrollIndicator={false}>
