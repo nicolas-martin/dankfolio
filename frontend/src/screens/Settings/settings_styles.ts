@@ -32,6 +32,27 @@ export const useStyles = () => {
 				color: theme.colors.onSurface,
 				fontSize: theme.typography.fontSize.base,
 			},
+			privateKeyActions: {
+				alignItems: 'center',
+				flexDirection: 'row',
+				gap: theme.spacing.xs,
+			},
+			privateKeyError: {
+				color: theme.colors.error,
+				fontStyle: 'italic',
+			},
+			privateKeyVisible: {
+				color: theme.colors.onSurface,
+				fontFamily: 'monospace',
+				fontSize: theme.typography.fontSize.xs,
+				lineHeight: theme.typography.fontSize.xs * 1.4,
+				flexShrink: 1,
+				flexWrap: 'wrap',
+			},
+			privateKeyContainer: {
+				minHeight: 60, // Fixed height to prevent layout shift
+				justifyContent: 'center',
+			},
 			safeArea: {
 				backgroundColor: theme.colors.background,
 				flex: 1,

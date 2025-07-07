@@ -88,7 +88,17 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 	const [searchQuery, setSearchQuery] = useState('');
 	const { tokens: portfolioTokens } = usePortfolioStore();
-	const { availableCoins } = useCoinStore();
+	const { availableCoins, fetchAvailableCoins } = useCoinStore();
+
+	// Lazy load available coins when modal opens and we need them
+	useEffect(() => {
+		if (visible && !showOnlyPortfolioTokens && availableCoins.length === 0) {
+			logger.info('[TokenSelector] Lazy loading available coins for token selection');
+			fetchAvailableCoins().catch(err => {
+				logger.error('[TokenSelector] Failed to fetch available coins:', err);
+			});
+		}
+	}, [visible, showOnlyPortfolioTokens, availableCoins.length, fetchAvailableCoins]);
 
 	// Handle BottomSheetModal presentation
 	useEffect(() => {

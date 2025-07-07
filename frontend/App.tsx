@@ -163,15 +163,9 @@ const App: React.FC = () => {
 				// Decide if this error should block app startup or be handled gracefully
 			}
 
-			// Load available coins for token selectors
-			logger.breadcrumb({ message: 'App: Preparing - Loading available coins', category: 'app_lifecycle' });
-			try {
-				await useCoinStore.getState().fetchAvailableCoins();
-				logger.info("✅ Available coins loaded successfully.");
-			} catch (e) {
-				logger.error('❌ Failed to load available coins', { error: e?.message });
-				// Don't block app startup - token selectors will handle empty state
-			}
+			// Skip loading available coins on startup - will be loaded lazily when needed
+			// This reduces initial app load time and unnecessary API calls
+			logger.breadcrumb({ message: 'App: Skipping available coins preload for faster startup', category: 'app_lifecycle' });
 
 			logger.breadcrumb({ message: 'App: Preparing - Checking wallet storage', category: 'app_lifecycle' });
 			try {

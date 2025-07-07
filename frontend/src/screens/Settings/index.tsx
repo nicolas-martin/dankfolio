@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, ScrollView, SafeAreaView } from 'react-native';
-import { Text, List, Switch, Divider } from 'react-native-paper';
+import { Text, List, Switch, Divider, IconButton, ActivityIndicator } from 'react-native-paper';
 import Constants from 'expo-constants';
-import { useNavigation } from '@react-navigation/native';
+// import { useNavigation } from '@react-navigation/native';
 import { useThemeStore } from '@/store/theme';
 import { usePortfolioStore } from '@/store/portfolio';
 import { useStyles } from './settings_styles';
 import CopyToClipboard from '@/components/Common/CopyToClipboard';
+import { usePrivateKeyVisibility } from './settings_scripts';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -14,16 +15,21 @@ type SettingsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Set
 
 const Settings: React.FC = () => {
 	const styles = useStyles();
-	const navigation = useNavigation<SettingsNavigationProp>();
+	// const navigation = useNavigation<SettingsNavigationProp>();
 
 	const { themeType, toggleTheme, isLoading: isThemeLoading } = useThemeStore();
 	const isDarkTheme = themeType === 'neon';
 
 	const { wallet } = usePortfolioStore();
+	const { privateKeyState, togglePrivateKeyVisibility, getPrivateKeyDisplay, getEyeIconName } = usePrivateKeyVisibility();
 
 	const appVersion = Constants.expoConfig?.version || 'N/A';
-	// In a real app, this would come from a secure source and be handled with extreme care.
-	const privateKeyPlaceholder = '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
+
+	const privateKeyDescriptionStyle = useMemo(() => [
+		styles.listItemDescription,
+		privateKeyState.isVisible && styles.privateKeyVisible,
+		privateKeyState.error && styles.privateKeyError
+	], [styles.listItemDescription, styles.privateKeyVisible, styles.privateKeyError, privateKeyState.isVisible, privateKeyState.error]);
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
@@ -48,13 +54,36 @@ const Settings: React.FC = () => {
 							}
 						/>
 						<Divider style={styles.divider} />
-						<List.Item
-							title="Private Key"
-							description={privateKeyPlaceholder} // Placeholder
-							titleStyle={styles.listItemTitle}
-							descriptionStyle={styles.listItemDescription}
-							left={props => <List.Icon {...props} icon="key-variant" />}
-						/>
+						<View style={styles.privateKeyContainer}>
+							<List.Item
+								title="Private Key"
+								description={getPrivateKeyDisplay()}
+								titleStyle={styles.listItemTitle}
+								descriptionStyle={privateKeyDescriptionStyle}
+								descriptionNumberOfLines={0}
+								left={props => <List.Icon {...props} icon="key-variant" />}
+								right={() => (
+									<View style={styles.privateKeyActions}>
+										{privateKeyState.isVisible && privateKeyState.privateKey && (
+											<CopyToClipboard
+												text={privateKeyState.privateKey}
+												testID="copy-private-key-button"
+											/>
+										)}
+										{privateKeyState.isLoading ? (
+											<ActivityIndicator size="small" color={styles.colors.primary} />
+										) : (
+											<IconButton
+												icon={getEyeIconName()}
+												onPress={togglePrivateKeyVisibility}
+												testID="toggle-private-key-visibility"
+												size={20}
+											/>
+										)}
+									</View>
+								)}
+							/>
+						</View>
 						<Text style={styles.warningText}>
 							Warning: Your private key is highly sensitive. Never share it with anyone.
 						</Text>
