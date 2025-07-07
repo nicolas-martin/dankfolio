@@ -134,6 +134,13 @@ export const logError = (serviceName: string, methodName: string, error: unknown
 
 export const handleGrpcError = (error: unknown, serviceName: string, methodName: string): never => { // Changed error type to unknown
 	logError(serviceName, methodName, error); // logError now accepts unknown
+	
+	// For trade-related services, always provide user-friendly error messages
+	if (serviceName === 'TradeService') {
+		const userFriendlyMessage = getUserFriendlyTradeError(error);
+		throw new Error(userFriendlyMessage);
+	}
+	
 	if (error instanceof ConnectError) {
 		// Add specific handling for authentication errors (code 16 is UNAUTHENTICATED in gRPC)
 		if (error.code === 16) {
@@ -146,15 +153,16 @@ export const handleGrpcError = (error: unknown, serviceName: string, methodName:
 			// No special handling needed for App Check tokens as they're obtained on each request
 		}
 
-		// For trade-related services, provide user-friendly error messages
-		if (serviceName === 'TradeService') {
-			const userFriendlyMessage = getUserFriendlyTradeError(error);
-			throw new Error(userFriendlyMessage);
-		}
-
 		throw new Error(`${error.code}: ${error.message}`);
 	}
-	throw error;
+	
+	// Handle non-Error objects
+	if (typeof error === 'string') {
+		throw new Error(error);
+	}
+	
+	// For unknown error types, throw a generic error
+	throw new Error('An unexpected error occurred. Please try again.');
 };
 // Helper to convert timestamp strings to Timestamp objects
 export const convertToTimestamp = (dateStr: string): Timestamp => {

@@ -37,14 +37,8 @@ export const grpcApi: grpcModel.API = {
 				tradeId: response.tradeId
 			};
 		} catch (error: unknown) {
-			if (error instanceof Error) {
-				return grpcUtils.handleGrpcError(error, serviceName, methodName);
-			} else {
-				// Handle cases where the thrown value is not an Error object
-				console.error("An unknown error occurred:", error);
-				// You might want to throw a generic error or handle it differently
-				throw new Error("An unknown error occurred in submitSwap");
-			}
+			// Always use handleGrpcError which internally uses getUserFriendlyTradeError for TradeService
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 
@@ -70,12 +64,8 @@ export const grpcApi: grpcModel.API = {
 				error: response.error
 			};
 		} catch (error: unknown) {
-			if (error instanceof Error) {
-				return grpcUtils.handleGrpcError(error, serviceName, methodName);
-			} else {
-				console.error("An unknown error occurred:", error);
-				throw new Error("An unknown error occurred in getSwapStatus");
-			}
+			// Always use handleGrpcError which internally uses getUserFriendlyTradeError for TradeService
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 
@@ -147,12 +137,8 @@ export const grpcApi: grpcModel.API = {
 				tradingFeeSol: response.tradingFeeSol || "0",
 			};
 		} catch (error: unknown) {
-			if (error instanceof Error) {
-				return grpcUtils.handleGrpcError(error, serviceName, methodName);
-			} else {
-				console.error("An unknown error occurred:", error);
-				throw new Error("An unknown error occurred in getSwapQuote");
-			}
+			// Always use handleGrpcError which internally uses getUserFriendlyTradeError for TradeService
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 
@@ -635,12 +621,8 @@ export const grpcApi: grpcModel.API = {
 				tradingFeeSol: response.tradingFeeSol
 			};
 		} catch (error: unknown) {
-			if (error instanceof Error) {
-				return grpcUtils.handleGrpcError(error, serviceName, methodName);
-			} else {
-				console.error("An unknown error occurred:", error);
-				throw new Error("An unknown error occurred in prepareSwap");
-			}
+			// Always use handleGrpcError which internally uses getUserFriendlyTradeError for TradeService
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 

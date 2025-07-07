@@ -207,9 +207,12 @@ const Trade: React.FC = () => {
 				const userFriendlyMessage = getUserFriendlyTradeError(error);
 				const isRetryable = isRetryableTradeError(error);
 
-				// Show appropriate toast with retry suggestion if applicable
+				// Check if this is a "no route found" error by checking the friendly message
+				const isNoRouteError = userFriendlyMessage.includes('No trading route available');
+
+				// Show appropriate toast - warning for routing issues, error for other issues
 				showToast({
-					type: 'error',
+					type: isNoRouteError ? 'warning' : 'error',
 					message: isRetryable ? `${userFriendlyMessage} Tap to retry.` : userFriendlyMessage
 				});
 
