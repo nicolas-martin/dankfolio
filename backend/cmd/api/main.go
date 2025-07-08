@@ -156,6 +156,7 @@ func main() {
 		NewCoinsFetchInterval:   config.NewCoinsFetchInterval,
 		TrendingFetchInterval:   config.TrendingCoinsFetchInterval,
 		TopGainersFetchInterval: config.TopGainersFetchInterval,
+		InitializeXStocksOnStartup: config.InitializeXStocksOnStartup,
 	}
 
 	coinCache, err := coin.NewCoinCache()
@@ -421,6 +422,7 @@ type Config struct {
 	PlatformFeeAccountAddress  string        `envconfig:"PLATFORM_FEE_ACCOUNT_ADDRESS" required:"true"` // Conditionally required, handled in validation
 	PlatformPrivateKey         string        `envconfig:"PLATFORM_PRIVATE_KEY"`                         // Base64 encoded private key for platform account
 	DevAppCheckToken           string        `envconfig:"DEV_APP_CHECK_TOKEN"`
+	InitializeXStocksOnStartup bool          `envconfig:"INITIALIZE_XSTOCKS_ON_STARTUP" default:"false"`
 }
 
 func loadConfig() *Config {

@@ -14,6 +14,7 @@ type Config struct {
 	NewCoinsFetchInterval   time.Duration
 	TrendingFetchInterval   time.Duration
 	TopGainersFetchInterval time.Duration
+	InitializeXStocksOnStartup bool
 }
 
 // --- Structs for Trending Tokens Output ---

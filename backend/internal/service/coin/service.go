@@ -32,6 +32,7 @@ type Service struct {
 	apiTracker     telemetry.TelemetryAPI
 	cache          CoinCache
 	naughtyWordSet map[string]struct{}
+	xstocksConfig  *XStocksConfig
 
 	// Mutexes to prevent duplicate API calls
 	trendingMutex   sync.Mutex
@@ -73,19 +74,23 @@ func NewService(
 		}
 	}()
 
-	// Initialize xStocks tokens during startup
-	go func() {
-		backgroundCtx := context.Background()
-		if err := service.initializeXStocks(backgroundCtx); err != nil {
-			slog.ErrorContext(backgroundCtx, "Failed to initialize xStocks tokens", slog.Any("error", err))
-		} else {
-			slog.InfoContext(backgroundCtx, "xStocks tokens initialized successfully")
-			// Optionally enrich xStocks data in background
-			if err := service.EnrichXStocksData(backgroundCtx); err != nil {
-				slog.WarnContext(backgroundCtx, "Failed to enrich xStocks data", slog.Any("error", err))
+	// Initialize xStocks tokens during startup if enabled
+	if service.config != nil && service.config.InitializeXStocksOnStartup {
+		go func() {
+			backgroundCtx := context.Background()
+			if err := service.initializeXStocks(backgroundCtx); err != nil {
+				slog.ErrorContext(backgroundCtx, "Failed to initialize xStocks tokens", slog.Any("error", err))
+			} else {
+				slog.InfoContext(backgroundCtx, "xStocks tokens initialized successfully")
+				// Optionally enrich xStocks data in background
+				if err := service.EnrichXStocksData(backgroundCtx); err != nil {
+					slog.WarnContext(backgroundCtx, "Failed to enrich xStocks data", slog.Any("error", err))
+				}
 			}
-		}
-	}()
+		}()
+	} else {
+		slog.Info("xStocks initialization on startup is disabled")
+	}
 
 	if service.config != nil {
 		if service.config.TrendingFetchInterval > 0 {
