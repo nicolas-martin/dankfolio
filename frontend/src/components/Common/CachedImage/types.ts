@@ -12,4 +12,8 @@ export interface CachedImageProps extends Omit<ImageProps, 'source' | 'style'> {
 	blurhash?: string;
 	placeholder?: ImageProps['placeholder'];
 	expiresIn?: number;
+	priority?: 'low' | 'normal' | 'high';
+	onLoadStart?: () => void;
+	onLoadEnd?: () => void;
+	onError?: (error: unknown) => void;
 } 
