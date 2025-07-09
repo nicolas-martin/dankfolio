@@ -109,6 +109,24 @@ export const formatPrice = (
 };
 
 /**
+ * Formats a USD amount with exactly 2 decimal places for input fields
+ * @param amount - The USD amount to format
+ * @param includeDollarSign - Whether to include $ prefix
+ * @returns Formatted USD amount string with 2 decimal places
+ */
+export const formatUsdAmount = (
+	amount: number | null | undefined,
+	includeDollarSign: boolean = false
+): string => {
+	if (amount === null || amount === undefined || isNaN(amount)) return includeDollarSign ? '$0.00' : '0.00';
+
+	const prefix = includeDollarSign ? '$' : '';
+
+	// Always use exactly 2 decimals for USD
+	return `${prefix}${amount.toFixed(2)}`;
+};
+
+/**
  * Formats a percentage with sign and decimal places
  * @param value - The percentage value
  * @param decimals - Number of decimal places
@@ -231,5 +249,6 @@ export const formatAddress = (
 	if (!address) return '';
 	return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
 };
+
 
 

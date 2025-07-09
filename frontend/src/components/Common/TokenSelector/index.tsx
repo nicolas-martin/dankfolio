@@ -14,7 +14,7 @@ import { findPortfolioToken, handleAmountInputChange } from './scripts';
 import CachedImage from '@/components/Common/CachedImage';
 import { logger } from '@/utils/logger';
 import { useNamedDepsDebug } from '@/utils/debugHooks';
-import { formatTokenBalance, formatPrice } from '@/utils/numberFormat';
+import { formatTokenBalance, formatUsdAmount } from '@/utils/numberFormat';
 const RenderIcon = React.memo<{ iconUrl: string; styles: ReturnType<typeof useStyles> }>(({ iconUrl, styles }) => (
 	<CachedImage
 		uri={iconUrl}
@@ -331,8 +331,10 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 			if (rate && rate > 0) {
 				const crypto = parseFloat(amountValue);
 				if (!isNaN(crypto)) {
-					const newUsdVal = formatPrice(crypto * rate, false);
-					setInternalUsdAmount(newUsdVal);
+					// Format USD value with 2 decimal places
+					const usdValue = crypto * rate;
+					const formattedUsdVal = formatUsdAmount(usdValue, false);
+					setInternalUsdAmount(formattedUsdVal);
 				} else {
 					setInternalUsdAmount('');
 				}
@@ -342,7 +344,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		} else if (enableUsdToggle && !amountValue) {
 			setInternalUsdAmount('');
 		}
-	}, [amountValue, liveExchangeRate, enableUsdToggle]);
+	}, [amountValue, liveExchangeRate, enableUsdToggle, currentInputUnit]);
 
 	const handleUnitToggle = useCallback(() => {
 		setCurrentInputUnit(prevUnit => {
@@ -354,8 +356,10 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 					// Switching from CRYPTO to USD - convert crypto amount to USD and preserve it
 					const crypto = parseFloat(amountValue);
 					if (!isNaN(crypto)) {
-						const usdValue = formatPrice(crypto * rate, false);
-						setInternalUsdAmount(usdValue);
+						// Format USD value with 2 decimal places when switching
+						const usdValue = crypto * rate;
+						const formattedUsdValue = formatUsdAmount(usdValue, false);
+						setInternalUsdAmount(formattedUsdValue);
 						// Don't clear crypto amount - keep it for display as secondary value
 					}
 				} else if (prevUnit === 'USD' && internalUsdAmount) {
@@ -379,7 +383,10 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 				if (validatedText && validatedText !== '.' && !validatedText.endsWith('.') && rate && rate > 0) {
 					const crypto = parseFloat(validatedText);
 					if (!isNaN(crypto)) {
-						setInternalUsdAmount(formatPrice(crypto * rate, false));
+						// Format USD value with 2 decimal places when crypto amount changes
+						const usdValue = crypto * rate;
+						const formattedUsdValue = formatUsdAmount(usdValue, false);
+						setInternalUsdAmount(formattedUsdValue);
 					} else {
 						setInternalUsdAmount('');
 					}
@@ -393,23 +400,32 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	const handleUsdAmountChange = useCallback((text: string) => {
 		// Use validation function to ensure proper input formatting, just like crypto handler
 		handleAmountInputChange(text, (validatedText: string) => {
-			setInternalUsdAmount(validatedText); // Update internal USD amount - display exactly what user types
-
-			// Convert USD to crypto for parent component, but don't format it
-			if (enableUsdToggle && onAmountChange) {
-				const rate = liveExchangeRate;
-				if (validatedText && validatedText !== '.' && !validatedText.endsWith('.') && rate && rate > 0) {
-					const usd = parseFloat(validatedText);
-					if (!isNaN(usd)) {
-						const cryptoValue = usd / rate;
-						// Pass the converted crypto value to parent (this becomes the new amountValue)
-						onAmountChange(cryptoValue.toString());
-					} else {
-						onAmountChange('');
+			// Parse and format the USD amount to limit to 2 decimal places
+			if (validatedText && validatedText !== '.' && !validatedText.endsWith('.')) {
+				const usdValue = parseFloat(validatedText);
+				if (!isNaN(usdValue)) {
+					// Format USD value with 2 decimal places for input
+					const formattedValue = formatUsdAmount(usdValue, false);
+					setInternalUsdAmount(formattedValue);
+					
+					// Convert USD to crypto for parent component
+					if (enableUsdToggle && onAmountChange) {
+						const rate = liveExchangeRate;
+						if (rate && rate > 0) {
+							const cryptoValue = usdValue / rate;
+							onAmountChange(cryptoValue.toString());
+						} else {
+							onAmountChange('');
+						}
 					}
 				} else {
-					onAmountChange('');
+					setInternalUsdAmount('');
+					if (onAmountChange) onAmountChange('');
 				}
+			} else {
+				// Allow intermediate states like empty string or trailing dot
+				setInternalUsdAmount(validatedText);
+				if (onAmountChange) onAmountChange('');
 			}
 		});
 	}, [onAmountChange, enableUsdToggle, liveExchangeRate]);
@@ -454,10 +470,13 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		const rate = liveExchangeRate;
 
 		if (currentInputUnit === 'USD' && internalUsdAmount && parseFloat(internalUsdAmount) > 0) {
-			return `$${formatPrice(parseFloat(internalUsdAmount), false)}`;
+			// Use formatUsdAmount for USD display with dollar sign
+			return formatUsdAmount(parseFloat(internalUsdAmount), true);
 		} else if (currentInputUnit === 'CRYPTO' && amountValue && parseFloat(amountValue) > 0) {
 			if (rate && rate > 0) {
-				return `$${formatPrice(parseFloat(amountValue) * rate, false)}`;
+				// Use formatUsdAmount for USD display with dollar sign
+				const usdValue = parseFloat(amountValue) * rate;
+				return formatUsdAmount(usdValue, true);
 			} else if (rate === undefined) {
 				return '$...';
 			} else {
