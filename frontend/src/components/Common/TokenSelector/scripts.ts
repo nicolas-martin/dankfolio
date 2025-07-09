@@ -72,6 +72,7 @@ export const handleAmountInputChange = (text: string, onAmountChange: (value: st
 	onAmountChange(value);
 };
 
+
 /**
  * Calculates the USD value based on the selected token and amount.
  * @param token The currently selected token.
