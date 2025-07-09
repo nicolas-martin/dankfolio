@@ -398,34 +398,25 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	}, [onAmountChange, enableUsdToggle, liveExchangeRate]);
 
 	const handleUsdAmountChange = useCallback((text: string) => {
-		// Use validation function to ensure proper input formatting, just like crypto handler
+		// Use minimal validation - just filter non-numeric characters
 		handleAmountInputChange(text, (validatedText: string) => {
-			// Parse and format the USD amount to limit to 2 decimal places
-			if (validatedText && validatedText !== '.' && !validatedText.endsWith('.')) {
+			// Store exactly what the user types
+			setInternalUsdAmount(validatedText);
+
+			// Convert USD to crypto for parent component if it's a valid number
+			if (enableUsdToggle && onAmountChange && validatedText) {
 				const usdValue = parseFloat(validatedText);
-				if (!isNaN(usdValue)) {
-					// Format USD value with 2 decimal places for input
-					const formattedValue = formatUsdAmount(usdValue, false);
-					setInternalUsdAmount(formattedValue);
-					
-					// Convert USD to crypto for parent component
-					if (enableUsdToggle && onAmountChange) {
-						const rate = liveExchangeRate;
-						if (rate && rate > 0) {
-							const cryptoValue = usdValue / rate;
-							onAmountChange(cryptoValue.toString());
-						} else {
-							onAmountChange('');
-						}
+				if (!isNaN(usdValue) && usdValue > 0) {
+					const rate = liveExchangeRate;
+					if (rate && rate > 0) {
+						const cryptoValue = usdValue / rate;
+						onAmountChange(cryptoValue.toString());
+					} else {
+						onAmountChange('');
 					}
 				} else {
-					setInternalUsdAmount('');
-					if (onAmountChange) onAmountChange('');
+					onAmountChange('');
 				}
-			} else {
-				// Allow intermediate states like empty string or trailing dot
-				setInternalUsdAmount(validatedText);
-				if (onAmountChange) onAmountChange('');
 			}
 		});
 	}, [onAmountChange, enableUsdToggle, liveExchangeRate]);
@@ -443,7 +434,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	const currentAmountHandler = enableUsdToggle && currentInputUnit === 'USD' ? handleUsdAmountChange : handleCryptoAmountChange;
 
 	const placeholder = useMemo(() => (enableUsdToggle && currentInputUnit === 'USD'
-		? textInputProps?.placeholder ?? '$0.00'
+		? textInputProps?.placeholder ?? '0.00'
 		: textInputProps?.placeholder ?? '0.0000'),
 		[enableUsdToggle, currentInputUnit, textInputProps?.placeholder]
 	);

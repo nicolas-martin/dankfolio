@@ -33,42 +33,13 @@ export const useDebounce = <T>(value: T, delay: number): T => {
 };
 
 /**
- * Validates the amount input to allow only digits and a single decimal point.
+ * Minimal validation for amount input - just allows numbers and decimal point
  * @param text The input text.
  * @param onAmountChange The function to call with the validated text.
  */
 export const handleAmountInputChange = (text: string, onAmountChange: (value: string) => void) => {
-	// Handle empty string case
-	if (text === '') {
-		onAmountChange('');
-		return;
-	}
-
-	// Allow only numbers and dots initially
-	let value = text.replace(/[^0-9.]/g, '');
-
-	// Handle case where user just typed a dot
-	if (value === '.') {
-		onAmountChange('0.');
-		return;
-	}
-
-	// Split by decimal point
-	const decimalParts = value.split('.');
-
-	// If there's more than one decimal point, keep only the first one
-	if (decimalParts.length > 2) {
-		const integerPart = decimalParts[0];
-		const fractionalPart = decimalParts.slice(1).join('').substring(0, 6);
-		value = integerPart + '.' + fractionalPart;
-	} else if (decimalParts.length === 2) {
-		// Exactly one decimal point
-		const integerPart = decimalParts[0];
-		const fractionalPart = decimalParts[1].substring(0, 6); // Limit to 6 decimal places
-		value = integerPart + '.' + fractionalPart;
-	}
-	// If decimalParts.length === 1, no decimal point, keep as is
-
+	// Allow only numbers and dots, pass through everything else
+	const value = text.replace(/[^0-9.]/g, '');
 	onAmountChange(value);
 };
 
