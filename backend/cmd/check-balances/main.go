@@ -33,15 +33,18 @@ func main() {
 	solRPC := rpc.NewWithHeaders(solEndpoint, header)
 	// solanaClient := sgo.NewClient(solRPC)
 
-	k, err := solana.PublicKeyFromBase58("S7vYFFWH6BjJyEsdrPQpqpYTqLTrPRK6KW3VwsJuRaS")
+	k, err := solana.PublicKeyFromBase58("GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R")
 	if err != nil {
 		log.Fatalf("failed to parse public key: %v", err)
 	}
-	// solData, err := s.rpcClient.GetBalance(
-	// 	ctx,
-	// 	pubKey,
-	// 	rpc.CommitmentConfirmed,
-	// )
+	solData, err := solRPC.GetBalance(
+		context.Background(),
+		k,
+		rpc.CommitmentConfirmed,
+	)
+	if err != nil {
+		log.Fatalf("failed to get SOL balance: %v", err)
+	}
 	accounts, err := solRPC.GetTokenAccountsByOwner(
 		context.Background(),
 		k,
@@ -69,6 +72,11 @@ func main() {
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.Header([]string{"Token ID", "Amount"}) // Changed SetHeader to Header
+	
+	// Add SOL balance first
+	solBalance := float64(solData.Value) / float64(solana.LAMPORTS_PER_SOL)
+	table.Append([]string{"SOL (Native)", fmt.Sprintf("%.9f", solBalance)})
+	
 	for _, account := range accounts.Value {
 		parsedData := account.Account.Data.GetRawJSON()
 		if len(parsedData) == 0 {

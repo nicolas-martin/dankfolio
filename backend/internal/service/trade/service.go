@@ -584,10 +584,21 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 		return nil, fmt.Errorf("failed to get to coin %s: %w", toCoinMintAddress, err)
 	}
 
+	// Normalize native SOL addresses to wSOL for Jupiter API
+	jupiterInputMint := fromCoinMintAddress
+	if fromCoinMintAddress == model.NativeSolMint {
+		jupiterInputMint = model.SolMint
+	}
+	
+	jupiterOutputMint := toCoinMintAddress
+	if toCoinMintAddress == model.NativeSolMint {
+		jupiterOutputMint = model.SolMint
+	}
+
 	// Get quote from Jupiter with enhanced parameters
 	quote, err := s.jupiterClient.GetQuote(ctx, jupiter.QuoteParams{
-		InputMint:           fromCoinMintAddress, // Use mint address
-		OutputMint:          toCoinMintAddress,   // Use mint address
+		InputMint:           jupiterInputMint, // Use normalized mint address
+		OutputMint:          jupiterOutputMint,   // Use normalized mint address
 		Amount:              inputAmount,         // Amount is already in raw units (lamports for SOL)
 		SlippageBps:         slippageBpsInt,
 		PlatformFeeBps:      s.platformFeeBps, // Re-enabled: use proper ATA as fee account

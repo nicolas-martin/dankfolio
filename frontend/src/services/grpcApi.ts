@@ -712,7 +712,10 @@ export const grpcApi: grpcModel.API = {
 			// 2. Get swap quote using updated prices
 			const rawAmount = commonToRawAmount(amount, updatedFromCoin.decimals); // Use imported toRawAmount
 
-			const quoteResponse = await grpcApi.getSwapQuote(updatedFromCoin.address, updatedToCoin.address, rawAmount, includeFeeBreakdown, userPublicKey);
+			// Normalize addresses for Jupiter API (native SOL -> wSOL)
+			const fromAddress = updatedFromCoin.address === '11111111111111111111111111111111' ? 'So11111111111111111111111111111111111111112' : updatedFromCoin.address;
+			const toAddress = updatedToCoin.address === '11111111111111111111111111111111' ? 'So11111111111111111111111111111111111111112' : updatedToCoin.address;
+			const quoteResponse = await grpcApi.getSwapQuote(fromAddress, toAddress, rawAmount, includeFeeBreakdown, userPublicKey);
 
 			// 3. Format and return the combined result
 			const fullQuote: grpcModel.FullSwapQuoteDetails = {
