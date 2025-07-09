@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"connectrpc.com/connect"
@@ -71,10 +72,14 @@ func (s *tradeServiceHandler) GetSwapQuote(ctx context.Context, req *connect.Req
 		userPublicKey = *req.Msg.UserPublicKey
 	}
 
-	// quote, err := s.tradeService.GetSwapQuote(requestCtx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, slippageBps, req.Msg.IncludeFeeBreakdown, userPublicKey)
-	quote, err := s.tradeService.GetSwapQuote(requestCtx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, slippageBps, true, userPublicKey)
+	quote, err := s.tradeService.GetSwapQuote(requestCtx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, slippageBps, req.Msg.IncludeFeeBreakdown, userPublicKey)
 	if err != nil {
 		slog.Error("Failed to fetch trade quote", "error", err)
+		// Check for Jupiter TOKEN_NOT_TRADABLE error and provide friendly message
+		if isTokenNotTradableError(err) {
+			return nil, connect.NewError(connect.CodeInvalidArgument, 
+				fmt.Errorf("This token is not available for trading. It may be a new token that hasn't been approved for trading yet, or it might have trading restrictions."))
+		}
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade quote: %w", err))
 	}
 
@@ -128,6 +133,11 @@ func (s *tradeServiceHandler) PrepareSwap(ctx context.Context, req *connect.Requ
 
 	prepareResponse, err := s.tradeService.PrepareSwap(ctx, params)
 	if err != nil {
+		// Check for Jupiter TOKEN_NOT_TRADABLE error and provide friendly message
+		if isTokenNotTradableError(err) {
+			return nil, connect.NewError(connect.CodeInvalidArgument, 
+				fmt.Errorf("This token is not available for trading. It may be a new token that hasn't been approved for trading yet, or it might have trading restrictions."))
+		}
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to prepare swap: %w", err))
 	}
 
@@ -418,4 +428,13 @@ func convertModelToProtoTrade(trade *model.Trade) *pb.Trade {
 	}
 
 	return pbTrade
+}
+
+// isTokenNotTradableError checks if the error is a Jupiter TOKEN_NOT_TRADABLE error
+func isTokenNotTradableError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := err.Error()
+	return strings.Contains(errStr, "TOKEN_NOT_TRADABLE") || strings.Contains(errStr, "token is not tradable")
 }
