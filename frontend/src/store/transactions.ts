@@ -46,7 +46,4 @@ export const useTransactionsStore = create<TransactionsState>((set) => ({
 			}
 		}
 	},
-	clearTransactions: () => {
-		set(initialState);
-	},
 }));

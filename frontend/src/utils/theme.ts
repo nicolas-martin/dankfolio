@@ -1,8 +1,5 @@
-import { Dimensions } from 'react-native';
 import { MD3DarkTheme as DefaultTheme, MD3LightTheme, MD3Theme } from 'react-native-paper';
 
-export const SCREEN_WIDTH = Dimensions.get('window').width;
-export const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 // Base theme properties that both themes share
 const baseTheme = {

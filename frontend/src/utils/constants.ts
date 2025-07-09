@@ -10,8 +10,6 @@ export const REFRESH_INTERVALS = {
 	TRANSACTION_STATUS: 3 * 1000, // 3 seconds
 } as const;
 
-// Price History Fetch Configuration
-export const PRICE_HISTORY_FETCH_DELAY_MS = 2000;
 
 // Timeframes for charts and data fetching
 // (TimeframeOption type would ideally also be here or in a shared types file if not already)

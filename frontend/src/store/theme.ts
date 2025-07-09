@@ -12,8 +12,6 @@ interface ThemeStore {
 
 	// Actions
 	toggleTheme: () => Promise<void>;
-	setTheme: (theme: ThemeType) => Promise<void>;
-	initializeTheme: () => Promise<void>;
 }
 
 export const useThemeStore = create<ThemeStore>((set, get) => ({
@@ -45,47 +43,6 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
 		}
 	},
 
-	setTheme: async (theme: ThemeType) => {
-		try {
-			set({ isLoading: true });
-			logger.info(`ThemeStore: Setting theme to ${theme}`);
-
-			// Update the store state
-			set({ themeType: theme });
-
-			// Persist the change to storage
-			await AsyncStorage.setItem(THEME_STORAGE_KEY, theme);
-			logger.info(`ThemeStore: Theme preference saved to storage successfully`);
-		} catch (error) {
-			logger.error('ThemeStore: Error setting theme', { error });
-		} finally {
-			set({ isLoading: false });
-		}
-	},
-
-	initializeTheme: async () => {
-		try {
-			set({ isLoading: true });
-			logger.info('ThemeStore: Initializing theme from storage');
-
-			// Try to load the theme from storage
-			const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY) as ThemeType | null;
-
-			if (savedTheme && (savedTheme === 'light' || savedTheme === 'neon')) {
-				logger.info(`ThemeStore: Loaded theme '${savedTheme}' from storage`);
-				set({ themeType: savedTheme });
-			} else {
-				logger.info('ThemeStore: No saved theme found, using default');
-			}
-		} catch (error) {
-			logger.error('ThemeStore: Error initializing theme', { error });
-		} finally {
-			set({ isLoading: false });
-		}
-	}
 }));
 
-// Initialize the theme when this module is first imported
-useThemeStore.getState().initializeTheme().catch(error => {
-	logger.error('ThemeStore: Failed to initialize theme on import', { error });
-}); 
+ 

@@ -148,15 +148,6 @@ export const isRetryableTradeError = (error: unknown): boolean => {
 	);
 };
 
-/**
- * Extract error code from gRPC errors if available
- */
-export const getErrorCode = (error: unknown): string | number | undefined => {
-	if (error && typeof error === 'object' && 'code' in error) {
-		return (error as { code: string | number }).code;
-	}
-	return undefined;
-};
 
 /**
  * Search-specific error messages that provide user-friendly alternatives

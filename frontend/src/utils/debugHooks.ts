@@ -45,14 +45,6 @@ export const useHookDebug = (
 	}, [deps, name, depNames]);
 };
 
-// Legacy functions for backward compatibility
-export const useCallbackDebug = (deps: React.DependencyList, name: string, depNames?: string[]) => {
-	useHookDebug(deps, name, depNames);
-};
-
-export const useMemoDebug = (deps: React.DependencyList, name: string, depNames?: string[]) => {
-	useHookDebug(deps, name, depNames);
-};
 
 export const useNamedDepsDebug = (deps: Record<string, unknown>, name: string) => {
 	useHookDebug(deps, name);

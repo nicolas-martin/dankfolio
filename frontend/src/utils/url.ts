@@ -1,12 +1,9 @@
 import { Linking } from 'react-native';
 import { logger } from '@/utils/logger';
 
-export const getSolscanUrl = (txHash: string): string => {
-	return `https://solscan.io/tx/${txHash}`;
-};
 
 export const openSolscanUrl = async (txHash: string): Promise<void> => {
-	const url = getSolscanUrl(txHash);
+	const url = `https://solscan.io/tx/${txHash}`;
 	try {
 		const supported = await Linking.canOpenURL(url);
 		if (supported) {

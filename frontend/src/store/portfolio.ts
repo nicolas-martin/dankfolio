@@ -98,9 +98,6 @@ export const usePortfolioStore = create<PortfolioState>((set, _get) => ({
 		}
 	},
 
-	clearWallet: () => {
-		set({ wallet: null, tokens: [], error: null });
-	},
 
 	fetchPortfolioBalance: async (address: string, forceRefresh?: boolean) => {
 		log.info('🔄 [PortfolioStore] fetchPortfolioBalance called for address:', address);

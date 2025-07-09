@@ -226,8 +226,3 @@ export const createHorizontalDottedLinePoints = (
 	}));
 };
 
-// Helper for spring animation
-export const useSpring = (initialValue: number) => {
-	const sharedValue = useMemo(() => useSharedValue(initialValue), [initialValue]);
-	return sharedValue;
-};
