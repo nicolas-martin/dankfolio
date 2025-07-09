@@ -9,21 +9,6 @@ const IPFS_GATEWAYS = [
 	'https://ipfs.dweb.link/ipfs/',
 ];
 
-/**
- * Checks if a URL is an IPFS URL
- */
-export const isIpfsUrl = (url: string | undefined): boolean => {
-	if (!url) return false;
-
-	return (
-		url.startsWith('ipfs://') ||
-		url.includes('ipfs.io') ||
-		url.includes('ipfs.dweb.link') ||
-		url.includes('cf-ipfs.com') ||
-		url.includes('cloudflare-ipfs.com') ||
-		url.includes('gateway.pinata.cloud')
-	);
-};
 
 /**
  * Extracts IPFS hash from various IPFS URL formats
@@ -49,8 +34,16 @@ const extractIpfsHash = (url: string): string | null => {
 export const resolveIpfsUrl = (url: string | undefined): string | undefined => {
 	if (!url) return undefined;
 
+	// Check if it's an IPFS URL
+	const isIpfsUrl = url.startsWith('ipfs://') ||
+		url.includes('ipfs.io') ||
+		url.includes('ipfs.dweb.link') ||
+		url.includes('cf-ipfs.com') ||
+		url.includes('cloudflare-ipfs.com') ||
+		url.includes('gateway.pinata.cloud');
+
 	// If it's not an IPFS URL, return as is
-	if (!isIpfsUrl(url)) {
+	if (!isIpfsUrl) {
 		return url;
 	}
 
@@ -66,9 +59,3 @@ export const resolveIpfsUrl = (url: string | undefined): string | undefined => {
 	return `${IPFS_GATEWAYS[0]}${ipfsHash}`;
 };
 
-/**
- * Batch resolves multiple IPFS URLs
- */
-export const resolveIpfsUrls = (urls: (string | undefined)[]): (string | undefined)[] => {
-	return urls.map(resolveIpfsUrl);
-};

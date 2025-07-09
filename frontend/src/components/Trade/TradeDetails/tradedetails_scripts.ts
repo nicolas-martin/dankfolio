@@ -1,7 +1,6 @@
 import { formatPct } from "@/utils/numberFormat"
 import { SolFeeBreakdown } from "./tradedetails_types";
 
-export const formatExchangeRate = (rate: string): string => `Rate: ${rate}`;
 export const formatPriceImpactPct = (priceImpact: string): string => `Price Impact: ${formatPct(priceImpact, 4)}%`;
 
 // Format SOL amounts with appropriate precision

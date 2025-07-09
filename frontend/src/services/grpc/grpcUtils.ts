@@ -3,7 +3,7 @@ import { logger as log } from '@/utils/logger'; // Import the new logger
 import { Coin as FrontendCoin } from '@/types';
 import { Coin as pbCoin } from '@/gen/dankfolio/v1/coin_pb';
 import { env } from '@utils/env';
-import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
+import { Timestamp } from '@bufbuild/protobuf/wkt';
 import { getUserFriendlyTradeError } from '@/utils/errorUtils';
 
 export function mapGrpcCoinToFrontendCoin(grpcCoin: pbCoin): FrontendCoin {
@@ -164,10 +164,6 @@ export const handleGrpcError = (error: unknown, serviceName: string, methodName:
 	// For unknown error types, throw a generic error
 	throw new Error('An unexpected error occurred. Please try again.');
 };
-// Helper to convert timestamp strings to Timestamp objects
-export const convertToTimestamp = (dateStr: string): Timestamp => {
-	return timestampFromDate(new Date(dateStr));
-}
 
 export function timestampToDate(timestamp: Timestamp | undefined): Date | undefined {
 	if (!timestamp) return undefined;
