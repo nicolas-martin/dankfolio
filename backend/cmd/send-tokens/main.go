@@ -6,71 +6,108 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/gagliardetto/solana-go"
 	gagliardettorpc "github.com/gagliardetto/solana-go/rpc" // Alias to avoid collision with local rpc
+	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	dankfolioSolanaClient "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // Added alias for our solana client
+	trackerClient "github.com/nicolas-martin/dankfolio/backend/internal/clients/tracker"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 )
 
+type Config struct {
+	SolanaRPCEndpoint string `envconfig:"SOLANA_RPC_ENDPOINT" default:"https://api.mainnet-beta.solana.com"`
+	SolanaRPCAPIKey   string `envconfig:"SOLANA_RPC_API_KEY"`
+	DBURL             string `envconfig:"DB_URL" required:"true"`
+	Env               string `envconfig:"APP_ENV" required:"true"`
+	JupiterApiUrl     string `envconfig:"JUPITER_API_URL" required:"true"`
+	JupiterApiKey     string `envconfig:"JUPITER_API_KEY" required:"true"`
+	BirdEyeEndpoint   string `envconfig:"BIRDEYE_ENDPOINT" required:"true"`
+	BirdEyeAPIKey     string `envconfig:"BIRDEYE_API_KEY" required:"true"`
+}
+
+func loadConfig() *Config {
+	// Load environment variables from .env file (try to load it always for the command)
+	if err := godotenv.Load("../../.env"); err != nil {
+		log.Printf("Warning: Error loading .env file: %v", err)
+	}
+
+	var cfg Config
+	err := envconfig.Process("", &cfg)
+	if err != nil {
+		log.Fatalf("Error processing environment variables: %v", err)
+	}
+
+	return &cfg
+}
+
 func main() {
+	// Load configuration
+	config := loadConfig()
+
 	// Parse command line flags
-	rpcEndpoint := flag.String("rpc", "https://api.mainnet-beta.solana.com", "Solana RPC endpoint")
-	walletPath := flag.String("wallet", "", "Path to wallet keypair file")
+	rpcEndpoint := flag.String("rpc", config.SolanaRPCEndpoint, "Solana RPC endpoint")
+	privateKeyStr := flag.String("private-key", "", "Private key in base58 format")
 	toAddress := flag.String("to", "", "Destination wallet address")
 	amount := flag.Float64("amount", 0, "Amount to send")
 	coinMint := flag.String("coin", "", "Coin mint address (empty for SOL)")
 	flag.Parse()
 
 	// Validate required flags
-	if *walletPath == "" || *toAddress == "" || *amount <= 0 {
-		fmt.Println("Error: wallet path, destination address, and amount are required")
+	if *privateKeyStr == "" || *toAddress == "" || *amount <= 0 {
+		fmt.Println("Error: private key, destination address, and amount are required")
 		flag.Usage()
 		os.Exit(1)
+	}
+
+	// Initialize database store
+	store, err := postgres.NewStore(config.DBURL, true, slog.LevelInfo, config.Env)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
 	// Initialize RPC client
 	client := gagliardettorpc.New(*rpcEndpoint) // Use aliased rpc
 
-	// Initialize HTTP client and Jupiter client using environment variables
+	// Initialize HTTP client and clients
 	httpClient := &http.Client{
 		Timeout: time.Second * 10,
 	}
-	// Create API tracker
 
-	jupiterClient := jupiter.NewClient(httpClient, os.Getenv("JUPITER_API_URL"), os.Getenv("JUPITER_API_KEY"), nil)
-	solanaInfraClient := dankfolioSolanaClient.NewClient(client, nil) // Use aliased package
+	// Initialize API tracker
+	apiTracker := trackerClient.NewAPICallTracker(store, slog.Default())
 
-	// Initialize coin service using environment variables like main API
+	// Initialize clients
+	jupiterClient := jupiter.NewClient(httpClient, config.JupiterApiUrl, config.JupiterApiKey, apiTracker)
+	solanaInfraClient := dankfolioSolanaClient.NewClient(client, apiTracker)
+	birdeyeClient := birdeye.NewClient(httpClient, config.BirdEyeEndpoint, config.BirdEyeAPIKey, apiTracker)
+
+	// Initialize coin service with proper dependencies
 	coinServiceConfig := &coin.Config{
-		BirdEyeBaseURL:        os.Getenv("BIRDEYE_ENDPOINT"),
-		BirdEyeAPIKey:         os.Getenv("BIRDEYE_API_KEY"),
+		BirdEyeBaseURL:        config.BirdEyeEndpoint,
+		BirdEyeAPIKey:         config.BirdEyeAPIKey,
 		SolanaRPCEndpoint:     *rpcEndpoint,
 		NewCoinsFetchInterval: time.Hour, // Default for this utility
 	}
-	// Provide nil for currently unneeded dependencies in this cmd tool
-	coinService := coin.NewService(coinServiceConfig, jupiterClient, nil, solanaInfraClient, nil, nil, nil, nil)
+	coinService := coin.NewService(coinServiceConfig, jupiterClient, store, solanaInfraClient, birdeyeClient, apiTracker, nil, nil)
 
 	// Initialize the wallet service
-	walletService := wallet.New(solanaInfraClient, nil, coinService)
+	walletService := wallet.New(solanaInfraClient, store, coinService)
 
-	// Read and parse the wallet file
-	keyBytes, err := os.ReadFile(*walletPath)
+	// Parse the private key directly from command line input
+	privateKey, err := solana.PrivateKeyFromBase58(*privateKeyStr)
 	if err != nil {
-		log.Fatalf("Error reading wallet file: %v", err)
+		log.Fatalf("Error parsing private key: %v", err)
 	}
-
-	// Remove quotes if present
-	keyStr := strings.Trim(string(keyBytes), "\"")
-
-	// Parse the private key
-	privateKey := solana.MustPrivateKeyFromBase58(keyStr)
 	publicKey := privateKey.PublicKey()
 
 	fmt.Printf("Sending from wallet: %s\n", publicKey.String())
