@@ -61,7 +61,8 @@ module.exports = ({ config }) => ({
 		bundleIdentifier: "com.nicolasmartin.kaiju",
 		googleServicesFile: "./GoogleService-Info.plist",
 		infoPlist: {
-			ITSAppUsesNonExemptEncryption: false
+			ITSAppUsesNonExemptEncryption: false,
+			CFBundleDisplayName: "Kaiju Swap"
 		}
 	},
 	android: {
