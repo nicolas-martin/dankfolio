@@ -8,13 +8,17 @@ import { useStyles } from './styles'; // Import useStyles
 import { logger } from '@/utils/logger';
 import { resolveIpfsUrl } from '@/utils/ipfsResolver';
 
-const CachedImage: React.FC<CachedImageProps> = ({
+const CachedImage: React.FC<CachedImageProps> = React.memo(({
 	uri,
 	size = 50,
 	borderRadius,
 	style, // This is the prop 'style', not from a local StyleSheet
 	testID,
 	tintColor,
+	priority = 'normal',
+	onLoadStart: onLoadStartProp,
+	onLoadEnd: onLoadEndProp,
+	onError: onErrorProp,
 }) => {
 	const styles = useStyles(); // Use the hook
 	const [loadStartTime, setLoadStartTime] = useState<number>(0);
@@ -25,7 +29,8 @@ const CachedImage: React.FC<CachedImageProps> = ({
 		setLoadStartTime(Date.now());
 		setIsLoading(true);
 		setHasError(false);
-	}, []);
+		onLoadStartProp?.();
+	}, [onLoadStartProp]);
 
 	const handleLoadEnd = useCallback(() => {
 		setIsLoading(false);
@@ -34,7 +39,8 @@ const CachedImage: React.FC<CachedImageProps> = ({
 			const cacheKey = `${resolvedUri}-${size}x${size}`;
 			logCacheResult(loadTime, resolvedUri || uri, cacheKey);
 		}
-	}, [loadStartTime, uri, resolvedUri, size]);
+		onLoadEndProp?.();
+	}, [loadStartTime, uri, resolvedUri, size, onLoadEndProp]);
 
 	const handleError = useCallback((error: unknown) => {
 		const msg = error instanceof Error
@@ -43,7 +49,8 @@ const CachedImage: React.FC<CachedImageProps> = ({
 		logger.warn('[CachedImage] ❌ Load Error:', uri, msg);
 		setIsLoading(false);
 		setHasError(true);
-	}, [uri]);
+		onErrorProp?.(error);
+	}, [uri, onErrorProp]);
 
 	// Default to circular if no borderRadius is provided
 	const finalBorderRadius = borderRadius !== undefined ? borderRadius : size / 2;
@@ -53,6 +60,12 @@ const CachedImage: React.FC<CachedImageProps> = ({
 
 	// All hooks must be at top level before any conditional returns
 	const imageSource = useMemo(() => ({ uri: resolvedUri }), [resolvedUri]);
+	
+	// Memoize the style array to avoid re-creating on each render
+	const imageStyle = useMemo(() => {
+		const baseStyle = styles.createImageStyle(size, finalBorderRadius, style);
+		return isLoading ? [baseStyle, styles.hiddenImage] : baseStyle;
+	}, [styles, size, finalBorderRadius, style, isLoading]);
 
 	if (!resolvedUri || hasError) {
 		return (
@@ -75,20 +88,32 @@ const CachedImage: React.FC<CachedImageProps> = ({
 			)}
 			<ExpoCachedImage
 				source={imageSource} // Use memoized source
-				style={[
-					styles.createImageStyle(size, finalBorderRadius, style), // Use function from styles
-					isLoading && styles.hiddenImage // Use styles for hidden image
-				]}
+				style={imageStyle} // Use memoized style
 				cacheKey={`${resolvedUri}-${size}x${size}`}
 				onLoadStart={handleLoadStart}
 				onLoadEnd={handleLoadEnd}
 				onError={handleError}
 				testID={testID}
 				tintColor={tintColor || undefined}
+				priority={priority}
+				cachePolicy="disk"
 			/>
 		</View>
 	);
-};
+}, (prevProps, nextProps) => {
+	// Custom comparison function for memo
+	return (
+		prevProps.uri === nextProps.uri &&
+		prevProps.size === nextProps.size &&
+		prevProps.borderRadius === nextProps.borderRadius &&
+		prevProps.style === nextProps.style &&
+		prevProps.testID === nextProps.testID &&
+		prevProps.tintColor === nextProps.tintColor &&
+		prevProps.priority === nextProps.priority
+	);
+});
+
+CachedImage.displayName = 'CachedImage';
 
 // Removed old PLACEHOLDER_COLOR and placeholderStyles StyleSheet.create block
 
