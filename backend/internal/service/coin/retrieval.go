@@ -64,6 +64,11 @@ func (s *Service) GetCoinByID(ctx context.Context, idStr string) (*model.Coin, e
 }
 
 func (s *Service) GetCoinByAddress(ctx context.Context, address string) (*model.Coin, error) {
+	// Special handling for native SOL - it's not a real Solana address
+	if address == model.NativeSolMint {
+		return s.getNativeSolCoin(ctx)
+	}
+	
 	if !util.IsValidSolanaAddress(address) {
 		return nil, fmt.Errorf("invalid address: %s", address)
 	}

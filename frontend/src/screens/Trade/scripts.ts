@@ -6,10 +6,16 @@ import { toRawAmount, formatTokenBalance } from '@/utils/numberFormat';
 import { usePortfolioStore, getActiveWalletKeys } from '@/store/portfolio';
 import type { ToastProps } from '@/components/Common/Toast/toast_types';
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
-import { REFRESH_INTERVALS } from '@/utils/constants';
+import { REFRESH_INTERVALS, NATIVE_SOL_ADDRESS, SOLANA_ADDRESS } from '@/utils/constants';
 import { RefObject } from 'react';
 
 export const QUOTE_DEBOUNCE_MS = 1000;
+
+// Helper to normalize native SOL to wSOL for Jupiter API
+export const normalizeAddressForJupiter = (address: string): string => {
+	// Jupiter requires wSOL mint address for all SOL trades
+	return address === NATIVE_SOL_ADDRESS ? SOLANA_ADDRESS : address;
+};
 
 // Validate SOL balance for transaction fees after quote is received
 export const validateSolBalanceForQuote = (
@@ -185,7 +191,10 @@ const validateTradeParams = (fromCoin: Coin, toCoin: Coin, fromAmount: string, w
 // Transaction preparation helper
 const prepareTradeTransaction = async (fromCoin: Coin, toCoin: Coin, fromAmount: string, slippage: number, walletAddress: string) => {
 	const rawAmount = Number(toRawAmount(fromAmount, fromCoin.decimals));
-	const unsignedTx = await prepareSwapRequest(fromCoin.address, toCoin.address, rawAmount, slippage, walletAddress);
+	// Normalize addresses for Jupiter API (native SOL -> wSOL)
+	const fromAddress = normalizeAddressForJupiter(fromCoin.address);
+	const toAddress = normalizeAddressForJupiter(toCoin.address);
+	const unsignedTx = await prepareSwapRequest(fromAddress, toAddress, rawAmount, slippage, walletAddress);
 
 	const keys = await getActiveWalletKeys();
 	if (!keys?.privateKey || !keys?.publicKey) {

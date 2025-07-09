@@ -54,6 +54,12 @@ export const getUserFriendlyTradeError = (error: unknown): string => {
 		return TRADE_ERROR_MESSAGES.COULD_NOT_FIND_ANY_ROUTE;
 	}
 
+	// Check for Jupiter token not tradable error
+	if (errorMessage.includes('TOKEN_NOT_TRADABLE') || 
+		errorMessage.includes('is not tradable')) {
+		return 'This token is not available for trading. Please try a different token.';
+	}
+
 	// Check for other specific error patterns
 	if (errorMessage.toLowerCase().includes('insufficient liquidity')) {
 		return TRADE_ERROR_MESSAGES.INSUFFICIENT_LIQUIDITY;

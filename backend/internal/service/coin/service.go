@@ -74,6 +74,14 @@ func NewService(
 		}
 	}()
 
+	// Ensure native SOL coin exists
+	go func() {
+		backgroundCtx := context.Background()
+		if err := service.ensureNativeSolCoin(backgroundCtx); err != nil {
+			slog.ErrorContext(backgroundCtx, "Failed to ensure native SOL coin exists", slog.Any("error", err))
+		}
+	}()
+
 	// Initialize xStocks tokens during startup if enabled
 	if service.config != nil && service.config.InitializeXStocksOnStartup {
 		go func() {

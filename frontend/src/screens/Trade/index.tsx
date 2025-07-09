@@ -21,7 +21,7 @@ import {
 } from './scripts';
 import { signSwapTransaction } from '@/services/solana';
 import { getActiveWalletKeys } from '@/store/portfolio';
-import { SOLANA_ADDRESS } from '@/utils/constants';
+import { SOLANA_ADDRESS, NATIVE_SOL_ADDRESS } from '@/utils/constants';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 import { logger } from '@/utils/logger';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
@@ -135,7 +135,10 @@ const Trade: React.FC = () => {
 
 	// Memoized portfolio tokens
 	const fromPortfolioToken = useMemo(() => tokens.find(token => token.coin.address === fromCoin?.address), [tokens, fromCoin]);
-	const solPortfolioToken = useMemo(() => tokens.find(token => token.coin.address === SOLANA_ADDRESS), [tokens]);
+	const solPortfolioToken = useMemo(() => tokens.find(token => 
+		token.coin.address === SOLANA_ADDRESS || 
+		token.coin.address === NATIVE_SOL_ADDRESS
+	), [tokens]);
 
 	// Memoized objects to prevent JSX object creation
 	const toTextInputProps = useMemo(() => ({
