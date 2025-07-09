@@ -238,6 +238,7 @@ const Trade: React.FC = () => {
 				setFromAmount('');
 				setToAmount('');
 				setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
+				setHasDetailedFeeBreakdown(false); // Reset fee breakdown when changing tokens
 			},
 			handleSwapCoins
 		);
@@ -250,6 +251,7 @@ const Trade: React.FC = () => {
 				setFromAmount('');
 				setToAmount('');
 				setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
+				setHasDetailedFeeBreakdown(false); // Reset fee breakdown when changing tokens
 			},
 			handleSwapCoins
 		);
@@ -391,7 +393,8 @@ const Trade: React.FC = () => {
 			{ setFromCoin, setToCoin, setFromAmount, setToAmount }
 		);
 
-
+		// Reset fee breakdown when swapping coins
+		setHasDetailedFeeBreakdown(false);
 	};
 
 	const handleCloseConfirmationModal = () => {
