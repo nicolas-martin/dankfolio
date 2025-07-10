@@ -152,21 +152,25 @@ const App: React.FC = () => {
 				}
 			}
 
-			// Existing logger.breadcrumb call for starting authentication
+			// Initialize Firebase first before any other operations
 			logger.breadcrumb({ message: 'App: Preparing - Initializing Firebase', category: 'app_lifecycle' });
 			try {
 				await initializeFirebaseServices();
 				logger.info("� Firebase services initialized successfully.");
 			} catch (e) {
 				logger.error('❌ Failed to initialize Firebase services', { error: e?.message });
-				// Decide if this error should block app startup or be handled gracefully
+				// In production, Firebase is critical for authentication
+				if (!__DEV__) {
+					throw e;
+				}
 			}
+
+			// Now check wallet storage after Firebase is ready
+			logger.breadcrumb({ message: 'App: Preparing - Checking wallet storage', category: 'app_lifecycle' });
 
 			// Skip loading available coins on startup - will be loaded lazily when needed
 			// This reduces initial app load time and unnecessary API calls
 			logger.breadcrumb({ message: 'App: Skipping available coins preload for faster startup', category: 'app_lifecycle' });
-
-			logger.breadcrumb({ message: 'App: Preparing - Checking wallet storage', category: 'app_lifecycle' });
 			try {
 				const publicKey = await retrieveWalletFromStorage();
 
@@ -206,6 +210,9 @@ const App: React.FC = () => {
 
 	// Effect to update Sentry user context when wallet address changes
 	useEffect(() => {
+		// Skip the initial render when wallet is null
+		if (!appIsReady) return;
+		
 		if (wallet?.address) {
 			logger.info("Wallet address updated in store, setting Sentry user context.", { walletAddress: wallet.address });
 			Sentry.setUser({ id: wallet.address });
@@ -214,7 +221,7 @@ const App: React.FC = () => {
 			logger.info("Wallet address cleared from store, clearing Sentry user context.");
 			Sentry.withScope(scope => scope.setUser(null));
 		}
-	}, [wallet?.address]);
+	}, [wallet?.address, appIsReady]);
 
 
 	if (!appIsReady || needsWalletSetup === null) {
