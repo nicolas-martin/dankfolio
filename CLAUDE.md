@@ -128,3 +128,51 @@ Use provided setup scripts:
 - `./setup-backend.sh` - Go, buf, protoc, mockery, dependencies
 
 Both scripts create `.env` files from examples that require manual configuration.
+
+## Critical Known Issues & Fixes
+
+### Native SOL vs wSOL Handling (Fixed 2025-07-10)
+
+**Issue**: Swaps involving native SOL (address: `11111111111111111111111111111111`) were failing with "incorrect program id for instruction" error when trying to create ATAs.
+
+**Root Cause**: 
+- Native SOL is not a token and doesn't use the SPL Token program
+- Jupiter API only accepts wSOL (`So11111111111111111111111111111111111111112`)
+- The system was trying to create ATAs for native SOL, which is invalid
+
+**Solution**:
+1. **Address Normalization**: Convert native SOL to wSOL before Jupiter API calls
+   - In `PrepareSwap`: Normalize `FromCoinMintAddress` and `ToCoinMintAddress`
+   - In `GetSwapQuote`: Already had normalization (kept working)
+   - In `FeeMintSelector`: Added normalization for fee mint selection
+
+2. **Key Code Changes**:
+   ```go
+   // backend/internal/service/trade/service.go
+   normalizedFromMint := params.FromCoinMintAddress
+   if params.FromCoinMintAddress == model.NativeSolMint {
+       normalizedFromMint = model.SolMint
+   }
+   ```
+
+   ```go
+   // backend/internal/service/trade/fee_mint_selector.go
+   // In SelectFeeMint, ensure native SOL is converted to wSOL
+   if selectedFeeMint == nativeSolMint {
+       selectedFeeMint = WSOLMint
+   }
+   ```
+
+3. **Safety Checks**: Added conversions in ATA creation functions to prevent attempts to create ATAs for native SOL
+
+**Testing**:
+- `cmd/test-sol-swap/` - Validates Jupiter API behavior
+- `cmd/test-fee-mint/` - Tests fee mint selection
+- `cmd/validate-sol-swap/` - Comprehensive end-to-end validation
+- Unit tests in `sol_normalization_test.go`
+
+**Important Notes**:
+- Frontend still shows native SOL separately from wSOL for user clarity
+- Database maintains separate entries for SOL and wSOL
+- Price data is synchronized between them
+- The normalization is transparent to users
