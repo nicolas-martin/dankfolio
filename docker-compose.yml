@@ -1,17 +1,28 @@
 services:
-  db:
-    image: postgres:15
-    restart: always
-    environment:
-      POSTGRES_DB: dankfolio_dev
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
+    db:
+        image: postgres:15
+        restart: always
+        environment:
+            POSTGRES_DB: dankfolio_dev
+            POSTGRES_USER: user
+            POSTGRES_PASSWORD: password
+        ports:
+            - "5432:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+    ipfs:
+        image: ipfs/go-ipfs:latest
+        container_name: ipfs-node
+        volumes:
+            - /tmp/ipfs-export:/export # your add/import dir
+            - /tmp/ipfs-data:/data/ipfs # IPFS repo
+        ports:
+            - "4001:4001" # p2p
+            - "4001:4001/udp" # p2p/QUIC
+            - "5001:5001" # API (admin access; keep local)
+            - "8080:8080" # Gateway
+        restart: unless-stopped
 volumes:
-  # Explicit volume definition - ensures proper cleanup
-  postgres_data:
-    driver: local
+    # Explicit volume definition - ensures proper cleanup
+    postgres_data:
+        driver: local
