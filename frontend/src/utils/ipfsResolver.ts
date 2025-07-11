@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Utility to resolve IPFS URLs to HTTP gateway URLs
  */
@@ -50,7 +51,7 @@ export const resolveIpfsUrl = (url: string | undefined): string | undefined => {
 	// Extract IPFS hash
 	const ipfsHash = extractIpfsHash(url);
 	if (!ipfsHash) {
-		console.warn('[ipfsResolver] Could not extract IPFS hash from URL:', url);
+		logger.warn('[ipfsResolver] Could not extract IPFS hash from URL:', url);
 		return url;
 	}
 

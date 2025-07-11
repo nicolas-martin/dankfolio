@@ -60,7 +60,7 @@ const CachedImage: React.FC<CachedImageProps> = React.memo(({
 
 	// All hooks must be at top level before any conditional returns
 	const imageSource = useMemo(() => ({ uri: resolvedUri }), [resolvedUri]);
-	
+
 	// Memoize the style array to avoid re-creating on each render
 	const imageStyle = useMemo(() => {
 		const baseStyle = styles.createImageStyle(size, finalBorderRadius, style);
@@ -89,7 +89,7 @@ const CachedImage: React.FC<CachedImageProps> = React.memo(({
 			<ExpoCachedImage
 				source={imageSource} // Use memoized source
 				style={imageStyle} // Use memoized style
-				cacheKey={`${resolvedUri}-${size}x${size}`}
+				cacheKey={`${resolvedUri}`}
 				onLoadStart={handleLoadStart}
 				onLoadEnd={handleLoadEnd}
 				onError={handleError}
