@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import { useState, useCallback } from 'react';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/types/navigation';
 import { useCoinStore } from '@/store/coins';
@@ -37,9 +37,15 @@ export const useXStocksData = () => {
 		}
 	}, []);
 
-	useEffect(() => {
-		fetchXStocks();
-	}, [fetchXStocks]);
+	useFocusEffect(
+		useCallback(() => {
+			fetchXStocks();
+
+			return () => {
+				setXStocksTokens([]);
+			}
+		}, [fetchXStocks])
+	);
 
 	const handleRefresh = useCallback(() => {
 		setRefreshing(true);
