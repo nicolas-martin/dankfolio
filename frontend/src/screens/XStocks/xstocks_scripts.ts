@@ -5,6 +5,7 @@ import { RootStackParamList } from '@/types/navigation';
 import { useCoinStore } from '@/store/coins';
 import { grpcApi } from '@/services/grpcApi';
 import { Coin } from '@/types';
+import { logger } from '@/utils/logger';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -18,9 +19,18 @@ export const useXStocksData = () => {
 	const fetchXStocks = useCallback(async () => {
 		try {
 			const coins = await grpcApi.getXStocksCoins(100, 0);
+			logger.log('[XStocks] Fetched coins:', {
+				count: coins.length,
+				sample: coins.slice(0, 3).map(c => ({
+					symbol: c.symbol,
+					name: c.name,
+					logoURI: c.logoURI,
+					hasLogo: !!c.logoURI,
+				})),
+			});
 			setXStocksTokens(coins);
 		} catch (error) {
-			console.error('Failed to fetch xStocks:', error);
+			logger.error('[XStocks] Failed to fetch:', error);
 		} finally {
 			setLoading(false);
 			setRefreshing(false);
