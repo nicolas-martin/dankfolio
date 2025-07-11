@@ -214,11 +214,22 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 			}
 		}
 
+		// Normalize native SOL to wSOL for fee mint selection (Jupiter only works with wSOL)
+		normalizedFromMint := params.FromCoinMintAddress
+		if params.FromCoinMintAddress == model.NativeSolMint {
+			normalizedFromMint = model.SolMint
+		}
+		
+		normalizedToMint := params.ToCoinMintAddress
+		if params.ToCoinMintAddress == model.NativeSolMint {
+			normalizedToMint = model.SolMint
+		}
+
 		// Use fee mint selector to determine optimal fee collection
 		feeAccountATA, selectedFeeMint, err := s.feeMintSelector.SelectFeeMint(
 			ctx,
-			params.FromCoinMintAddress,
-			params.ToCoinMintAddress,
+			normalizedFromMint,
+			normalizedToMint,
 			swapMode,
 			jupiterQuote,
 		)
@@ -1049,6 +1060,14 @@ func (s *Service) ataExists(ctx context.Context, ataAddress solanago.PublicKey) 
 func (s *Service) createATA(ctx context.Context, owner, mint solanago.PublicKey, signerKey *solanago.PrivateKey) error {
 	if signerKey == nil {
 		return fmt.Errorf("signer key is required for ATA creation")
+	}
+
+	// Safety check: Convert native SOL to wSOL for ATA creation
+	if mint.String() == "11111111111111111111111111111111" {
+		// Native SOL doesn't have ATAs, use wSOL instead
+		wsolMint, _ := solanago.PublicKeyFromBase58(model.SolMint)
+		mint = wsolMint
+		slog.Debug("Converting native SOL to wSOL for ATA creation", "original", "11111111111111111111111111111111", "converted", mint.String())
 	}
 
 	// Calculate ATA address

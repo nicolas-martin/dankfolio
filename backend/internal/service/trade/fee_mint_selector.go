@@ -72,20 +72,29 @@ func (s *FeeMintSelector) SelectFeeMint(
 	}
 
 	// Priority 2: Apply our proven fee mint selection logic (from platform-fee-test)
+	// Also normalize native SOL to wSOL
+	nativeSolMint := "11111111111111111111111111111111"
+	
 	switch swapMode {
 	case "ExactOut":
 		// For ExactOut, must use input mint ONLY (Jupiter requirement)
 		selectedFeeMint = inputMint
-		slog.Debug("ExactOut swap: must use input mint for fees", "mint", inputMint)
+		// Convert native SOL to wSOL
+		if selectedFeeMint == nativeSolMint {
+			selectedFeeMint = WSOLMint
+			slog.Debug("ExactOut swap: converting native SOL to wSOL for fees")
+		}
+		slog.Debug("ExactOut swap: using input mint for fees", "mint", selectedFeeMint)
 
 	case "ExactIn", "":
 		// For ExactIn, prefer WSOL if it's involved (better liquidity for fee collection)
-		if outputMint == WSOLMint {
+		// Also handle native SOL by converting to wSOL
+		if outputMint == WSOLMint || outputMint == nativeSolMint {
 			selectedFeeMint = WSOLMint
-			slog.Debug("ExactIn swap with WSOL output: using WSOL for fees")
-		} else if inputMint == WSOLMint {
+			slog.Debug("ExactIn swap with SOL output: using WSOL for fees")
+		} else if inputMint == WSOLMint || inputMint == nativeSolMint {
 			selectedFeeMint = WSOLMint
-			slog.Debug("ExactIn swap with WSOL input: using WSOL for fees")
+			slog.Debug("ExactIn swap with SOL input: using WSOL for fees")
 		} else {
 			// Token-to-token swap: use input mint (proven strategy)
 			selectedFeeMint = inputMint
@@ -96,6 +105,10 @@ func (s *FeeMintSelector) SelectFeeMint(
 	default:
 		slog.Warn("Unknown swap mode, defaulting to input mint", "swapMode", swapMode)
 		selectedFeeMint = inputMint
+		// Convert native SOL to wSOL
+		if selectedFeeMint == nativeSolMint {
+			selectedFeeMint = WSOLMint
+		}
 	}
 
 	// Check if the selected fee mint has an ATA, create if needed
@@ -129,6 +142,12 @@ func (s *FeeMintSelector) calculateAndCheckATA(
 	owner solanago.PublicKey,
 	mint string,
 ) (string, error) {
+	// Convert native SOL to wSOL for ATA checking
+	if mint == "11111111111111111111111111111111" {
+		mint = WSOLMint
+		slog.Debug("Converting native SOL to wSOL for ATA check", "original", "11111111111111111111111111111111", "converted", mint)
+	}
+
 	mintPubKey, err := solanago.PublicKeyFromBase58(mint)
 	if err != nil {
 		return "", err
@@ -153,6 +172,12 @@ func (s *FeeMintSelector) ensureATA(
 	owner solanago.PublicKey,
 	mint string,
 ) (string, error) {
+	// Convert native SOL to wSOL for ATA creation
+	if mint == "11111111111111111111111111111111" {
+		mint = WSOLMint
+		slog.Debug("Converting native SOL to wSOL for ATA creation", "original", "11111111111111111111111111111111", "converted", mint)
+	}
+
 	mintPubKey, err := solanago.PublicKeyFromBase58(mint)
 	if err != nil {
 		return "", err
