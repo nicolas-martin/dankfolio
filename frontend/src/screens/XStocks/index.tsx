@@ -5,6 +5,7 @@ import { useStyles } from './xstocks_styles';
 import { formatPrice, formatCompactPercentage } from '@/utils/numberFormat';
 import { Coin } from '@/types';
 import CachedImage from '@/components/Common/CachedImage';
+import { logger } from '@/utils/logger';
 
 const XStocks: React.FC = () => {
 	const styles = useStyles();
@@ -17,6 +18,13 @@ const XStocks: React.FC = () => {
 	} = useXStocksData();
 
 	const renderItem = useCallback(({ item }: { item: Coin }) => {
+		logger.log('[XStocks] Rendering item:', {
+			symbol: item.symbol,
+			name: item.name,
+			logoURI: item.logoURI,
+			hasLogo: !!item.logoURI,
+		});
+		
 		const priceChangeColor = item.price24hChangePercent && item.price24hChangePercent >= 0
 			? styles.positiveChange
 			: styles.negativeChange;
