@@ -114,6 +114,11 @@ const Trade: React.FC = () => {
 		}
 	}, [fromCoin, getCoinByID, toCoin?.symbol]);
 
+	// Reset fee breakdown flag when coin pair changes
+	useEffect(() => {
+		setHasDetailedFeeBreakdown(false);
+	}, [fromCoin?.address, toCoin?.address]);
+
 	// Fetch portfolio balance if wallet exists and tokens are empty
 	useEffect(() => {
 		if (wallet?.address && tokens.length === 0) {
@@ -184,16 +189,17 @@ const Trade: React.FC = () => {
 				}
 
 				setTargetAmount(quoteData.estimatedAmount);
-				setTradeDetails({
+				setTradeDetails(prevDetails => ({
 					exchangeRate: quoteData.exchangeRate,
 					gasFee: quoteData.fee,
 					priceImpactPct: quoteData.priceImpactPct,
 					totalFee: quoteData.totalFee,
 					route: quoteData.route,
-					solFeeBreakdown: quoteData.solFeeBreakdown,
-					totalSolRequired: quoteData.totalSolRequired,
-					tradingFeeSol: quoteData.tradingFeeSol
-				});
+					// Preserve existing fee breakdown if we already have it and didn't request a new one
+					solFeeBreakdown: quoteData.solFeeBreakdown || prevDetails.solFeeBreakdown,
+					totalSolRequired: quoteData.totalSolRequired || prevDetails.totalSolRequired,
+					tradingFeeSol: quoteData.tradingFeeSol || prevDetails.tradingFeeSol
+				}));
 
 				// Validate SOL balance for transaction fees immediately after quote
 				validateSolBalanceForQuote(
@@ -223,7 +229,7 @@ const Trade: React.FC = () => {
 				setTargetAmount('');
 				setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
 				setHasSufficientSolBalance(true); // Reset SOL balance validation on error
-				setHasDetailedFeeBreakdown(false); // Reset fee breakdown flag on error
+				// Don't reset fee breakdown on error - we want to keep it for the current pair
 			} finally {
 				setIsQuoteLoading(false);
 			}
@@ -232,29 +238,49 @@ const Trade: React.FC = () => {
 	);
 
 	const handleSelectFromToken = (token: Coin) => {
+		const previousAmount = fromAmount;
 		handleSelectToken(
 			'from', token, fromCoin, toCoin, setFromCoin,
 			() => {
 				setFromAmount('');
 				setToAmount('');
 				setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
-				setHasDetailedFeeBreakdown(false); // Reset fee breakdown when changing tokens
+				// Don't reset fee breakdown here - it's handled by useEffect
 			},
 			handleSwapCoins
 		);
+		
+		// Re-fetch quote if we had an amount and the new token is different
+		if (previousAmount && token && toCoin && token.address !== fromCoin?.address) {
+			// Use setTimeout to ensure state updates have completed
+			setTimeout(() => {
+				setFromAmount(previousAmount);
+				handleFromAmountChange(previousAmount);
+			}, 0);
+		}
 	};
 
 	const handleSelectToToken = (token: Coin) => {
+		const previousFromAmount = fromAmount;
 		handleSelectToken(
 			'to', token, toCoin, fromCoin, setToCoin,
 			() => {
 				setFromAmount('');
 				setToAmount('');
 				setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
-				setHasDetailedFeeBreakdown(false); // Reset fee breakdown when changing tokens
+				// Don't reset fee breakdown here - it's handled by useEffect
 			},
 			handleSwapCoins
 		);
+		
+		// Re-fetch quote if we had an amount and the new token is different
+		if (previousFromAmount && token && fromCoin && token.address !== toCoin?.address) {
+			// Use setTimeout to ensure state updates have completed
+			setTimeout(() => {
+				setFromAmount(previousFromAmount);
+				handleFromAmountChange(previousFromAmount);
+			}, 0);
+		}
 	};
 
 	const handleFromAmountChange = useCallback(
@@ -388,13 +414,23 @@ const Trade: React.FC = () => {
 	const handleSwapCoins = () => {
 		logger.breadcrumb({ category: 'trade', message: 'Pressed swap tokens button', data: { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol } });
 
+		const previousToAmount = toAmount;
+
 		swapCoinsUtil(
 			{ fromCoin, toCoin, fromAmount, toAmount },
 			{ setFromCoin, setToCoin, setFromAmount, setToAmount }
 		);
 
-		// Reset fee breakdown when swapping coins
-		setHasDetailedFeeBreakdown(false);
+		// Don't reset fee breakdown when swapping - coin pair doesn't change
+
+		// Re-fetch quote after swapping if amounts exist
+		if (previousToAmount && fromCoin && toCoin) {
+			// Use setTimeout to ensure state updates have completed
+			// After swap, the previousToAmount becomes the new fromAmount
+			setTimeout(() => {
+				handleFromAmountChange(previousToAmount);
+			}, 0);
+		}
 	};
 
 	const handleCloseConfirmationModal = () => {
