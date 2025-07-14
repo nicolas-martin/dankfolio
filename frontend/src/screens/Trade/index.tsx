@@ -207,6 +207,8 @@ const Trade: React.FC = () => {
 					quoteData.totalSolRequired || quoteData.totalFee,
 					showToast,
 					setHasSufficientSolBalance,
+					currentAmount,
+					direction === 'from' ? currentFromCoin : currentToCoin,
 				);
 
 			} catch (error) {
