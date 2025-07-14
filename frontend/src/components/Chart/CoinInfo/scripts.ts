@@ -14,13 +14,6 @@ export const TelegramIconComponent = TelegramIcon;
 export const DiscordIconComponent = DiscordIcon;
 export const LinkIconComponent = LinkIcon;
 
-export const formatNumber = (num: number): string => {
-	if (num >= 1000000000) return (num / 1000000000).toFixed(2) + 'B';
-	if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
-	if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
-	return num.toFixed(2);
-};
-
 export const handleLinkPress = (url?: string): void => {
 	if (url) {
 		const validUrl = url.startsWith('http://') || url.startsWith('https://')
