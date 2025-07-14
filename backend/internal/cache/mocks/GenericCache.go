@@ -37,6 +37,46 @@ func (_m *MockGenericCache[T]) EXPECT() *MockGenericCache_Expecter[T] {
 	return &MockGenericCache_Expecter[T]{mock: &_m.Mock}
 }
 
+// Delete provides a mock function for the type MockGenericCache
+func (_mock *MockGenericCache[T]) Delete(key string) {
+	_mock.Called(key)
+	return
+}
+
+// MockGenericCache_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
+type MockGenericCache_Delete_Call[T any] struct {
+	*mock.Call
+}
+
+// Delete is a helper method to define mock.On call
+//   - key string
+func (_e *MockGenericCache_Expecter[T]) Delete(key interface{}) *MockGenericCache_Delete_Call[T] {
+	return &MockGenericCache_Delete_Call[T]{Call: _e.mock.On("Delete", key)}
+}
+
+func (_c *MockGenericCache_Delete_Call[T]) Run(run func(key string)) *MockGenericCache_Delete_Call[T] {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockGenericCache_Delete_Call[T]) Return() *MockGenericCache_Delete_Call[T] {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *MockGenericCache_Delete_Call[T]) RunAndReturn(run func(key string)) *MockGenericCache_Delete_Call[T] {
+	_c.Run(run)
+	return _c
+}
+
 // Get provides a mock function for the type MockGenericCache
 func (_mock *MockGenericCache[T]) Get(key string) (T, bool) {
 	ret := _mock.Called(key)

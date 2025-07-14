@@ -173,6 +173,11 @@ func (s *Service) FetchAndStoreTrendingTokens(ctx context.Context) error {
 		}
 
 		slog.InfoContext(ctx, "Trending coin store refresh transaction complete", slog.Time("fetchTimestamp", enrichedCoins.FetchTimestamp), slog.Int("enrichedCoinsProcessed", len(enrichedCoins.Coins)))
+		
+		// Invalidate cache after successful DB update
+		s.cache.Delete(cacheKey_trending)
+		slog.InfoContext(ctx, "Invalidated trending coins cache after DB refresh")
+		
 		return nil
 	})
 }
@@ -269,6 +274,11 @@ func (s *Service) FetchAndStoreTopGainersTokens(ctx context.Context) error {
 		}
 
 		slog.InfoContext(ctx, "Top gainers coin store refresh transaction complete", slog.Int("enrichedCoinsProcessed", len(enrichedCoins)))
+		
+		// Invalidate cache after successful DB update
+		s.cache.Delete(cacheKey_top)
+		slog.InfoContext(ctx, "Invalidated top gainers coins cache after DB refresh")
+		
 		return nil
 	})
 }
@@ -407,6 +417,11 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 		}
 
 		slog.InfoContext(ctx, "New coins store refresh (Birdeye source) transaction complete", slog.Int("enriched_coins_processed_count", len(enrichedCoins)))
+		
+		// Invalidate cache after successful DB update
+		s.cache.Delete(cacheKey_new)
+		slog.InfoContext(ctx, "Invalidated new coins cache after DB refresh")
+		
 		return nil
 	})
 }
