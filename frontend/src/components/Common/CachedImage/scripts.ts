@@ -1,5 +1,4 @@
 import { logger } from '@/utils/logger';
-import { fetchIpfsImageAsDataUri, clearIpfsImageCache } from '@/utils/ipfsEnhancedResolver';
 
 // Real image URLs from mock data for testing
 const REAL_TEST_IMAGES = [
