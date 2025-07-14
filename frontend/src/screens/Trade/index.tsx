@@ -108,7 +108,7 @@ const Trade: React.FC = () => {
 		logger.log(`[Trade] Initialized with fromCoin: ${fromCoin?.symbol}, toCoin: ${toCoin?.symbol}`);
 
 		if (!fromCoin) {
-			getCoinByID(SOLANA_ADDRESS, false).then(solCoin => {
+			getCoinByID(NATIVE_SOL_ADDRESS, false).then(solCoin => {
 				if (solCoin) setFromCoin(solCoin);
 			});
 		}
@@ -140,8 +140,8 @@ const Trade: React.FC = () => {
 
 	// Memoized portfolio tokens
 	const fromPortfolioToken = useMemo(() => tokens.find(token => token.coin.address === fromCoin?.address), [tokens, fromCoin]);
-	const solPortfolioToken = useMemo(() => tokens.find(token => 
-		token.coin.address === SOLANA_ADDRESS || 
+	const solPortfolioToken = useMemo(() => tokens.find(token =>
+		token.coin.address === SOLANA_ADDRESS ||
 		token.coin.address === NATIVE_SOL_ADDRESS
 	), [tokens]);
 
@@ -251,7 +251,7 @@ const Trade: React.FC = () => {
 			},
 			handleSwapCoins
 		);
-		
+
 		// Re-fetch quote if we had an amount and the new token is different
 		if (previousAmount && token && toCoin && token.address !== fromCoin?.address) {
 			// Use setTimeout to ensure state updates have completed
@@ -274,7 +274,7 @@ const Trade: React.FC = () => {
 			},
 			handleSwapCoins
 		);
-		
+
 		// Re-fetch quote if we had an amount and the new token is different
 		if (previousFromAmount && token && fromCoin && token.address !== toCoin?.address) {
 			// Use setTimeout to ensure state updates have completed
@@ -461,6 +461,7 @@ const Trade: React.FC = () => {
 			navigation.goBack();
 		} else {
 			// Fallback to Home tab if no navigation history
+			// @ts-expect-error - Navigation type issue with nested navigators
 			navigation.navigate('MainTabs', { screen: 'Home' });
 		}
 
