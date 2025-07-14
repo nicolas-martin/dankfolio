@@ -144,6 +144,28 @@ func (a *GoGenericCacheAdapter[T]) Set(key string, data T, expiration time.Durat
 	}
 }
 
+// Delete removes an item from the cache
+func (a *GoGenericCacheAdapter[T]) Delete(key string) {
+	startTime := time.Now()
+	err := a.cacheManager.Delete(context.Background(), key)
+	duration := time.Since(startTime)
+	
+	if err != nil {
+		slog.Error("❌ Failed to delete item from cache",
+			slog.String("service", a.logPrefix),
+			slog.String("key", key),
+			slog.Duration("deleteDuration", duration),
+			slog.String("error", err.Error()),
+		)
+	} else {
+		slog.Info("🗑️ Successfully deleted item from cache",
+			slog.String("service", a.logPrefix),
+			slog.String("key", key),
+			slog.Duration("deleteDuration", duration),
+		)
+	}
+}
+
 // isNil checks if a value is nil without using reflection
 func isNil[T any](v T) bool {
 	// For pointer types, we can compare to nil directly
