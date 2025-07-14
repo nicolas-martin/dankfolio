@@ -2,8 +2,8 @@ import React, { useEffect, useMemo } from 'react';
 import {
 	Modal,
 	View,
-	Image,
 	TouchableOpacity,
+	Dimensions,
 } from 'react-native';
 import Animated, {
 	useSharedValue,
@@ -14,6 +14,10 @@ import Animated, {
 import { BlurView } from 'expo-blur';
 import { ImageZoomModalProps } from './types';
 import { useStyles } from './styles';
+import CachedImage from '@/components/Common/CachedImage';
+
+const { width } = Dimensions.get('window');
+const IMAGE_SIZE = width * 0.7;
 
 const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 	isVisible,
@@ -63,10 +67,6 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 		backgroundStyle
 	], [styles.blurContainer, backgroundStyle]);
 
-	const imageSource = useMemo(() => ({
-		uri: imageUri || ''
-	}), [imageUri]);
-
 	if (!isVisible && animationValue.value === 0) return null;
 
 	return (
@@ -92,10 +92,10 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 								onPress={(e) => e.stopPropagation()}
 							>
 								<Animated.View style={animatedStyle}>
-									<Image
-										source={imageSource}
+									<CachedImage
+										uri={imageUri}
+										size={IMAGE_SIZE}
 										style={styles.image}
-										resizeMode="cover"
 									/>
 								</Animated.View>
 							</TouchableOpacity>

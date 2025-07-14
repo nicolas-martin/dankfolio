@@ -20,20 +20,20 @@ func (w Wallet) GetID() string {
 // Field names aligned with BirdEye API for consistency
 type Coin struct {
 	ID                     uint64         `gorm:"primaryKey;autoIncrement;not null"`
-	Address                string         `gorm:"column:address;not null;uniqueIndex:idx_coins_address"` // Was: MintAddress
+	Address                string         `gorm:"column:address;not null;uniqueIndex:idx_coins_address"`
 	Name                   string         `gorm:"column:name;not null"`
 	Symbol                 string         `gorm:"column:symbol;not null;index:idx_coins_symbol"`
 	Decimals               int            `gorm:"column:decimals;not null"`
 	Description            string         `gorm:"column:description"`
-	LogoURI                string         `gorm:"column:logo_uri"`          // Was: IconUrl (BirdEye uses logoURI)
+	LogoURI                string         `gorm:"column:logo_uri"`
 	Tags                   pq.StringArray `gorm:"column:tags;type:text[];index:idx_coins_tags,type:gin"`
 	Price                  float64        `gorm:"column:price;default:0.0"`
-	Price24hChangePercent  float64        `gorm:"column:price_24h_change_percent;default:0.0;index:idx_coins_price_change_desc"` // Keep this one (BirdEye standard)
-	Marketcap              float64        `gorm:"column:marketcap;default:0.0;index:idx_coins_marketcap_desc"`                // Was: MarketCap (BirdEye uses lowercase)
-	Volume24hUSD           float64        `gorm:"column:volume_24h_usd;default:0.0;index:idx_coins_volume_desc"`           // Was: Volume24h (BirdEye uses volume24hUSD)
+	Price24hChangePercent  float64        `gorm:"column:price_24h_change_percent;default:0.0;index:idx_coins_price_change_desc"`
+	Marketcap              float64        `gorm:"column:marketcap;default:0.0;index:idx_coins_marketcap_desc"`
+	Volume24hUSD           float64        `gorm:"column:volume_24h_usd;default:0.0;index:idx_coins_volume_desc"`
 	Volume24hChangePercent float64        `gorm:"column:volume_24h_change_percent;default:0.0"`
 	Liquidity              float64        `gorm:"column:liquidity;default:0.0"`
-	FDV                    float64        `gorm:"column:fdv;default:0.0"` // Keep uppercase (BirdEye uses FDV)
+	FDV                    float64        `gorm:"column:fdv;default:0.0"`
 	Rank                   int            `gorm:"column:rank;default:0"`
 	Website                string         `gorm:"column:website"`
 	Twitter                string         `gorm:"column:twitter"`
@@ -70,7 +70,6 @@ func (c Coin) GetID() string {
 	// The subtask says "Update the GetID() method to return "id"". This likely refers to the new PK field name.
 	return "id"
 }
-
 
 // Trade represents the structure of the 'trades' table in the database.
 type Trade struct {
