@@ -23,16 +23,24 @@ export const validateSolBalanceForQuote = (
 	totalSolRequired: string,
 	showToast: (params: ToastProps) => void,
 	setHasSufficientSolBalance: (sufficient: boolean) => void,
+	fromAmount?: string,
+	fromCoin?: Coin | null,
 ): boolean => {
 	const solBalance = solPortfolioToken?.amount ?? 0;
-	const requiredSol = parseFloat(totalSolRequired) || 0;
+	const networkFees = parseFloat(totalSolRequired) || 0;
+	
+	// If swapping FROM SOL, we need swap amount + network fees
+	// Otherwise, we just need network fees
+	const swapAmount = (fromCoin?.symbol === 'SOL' && fromAmount) ? parseFloat(fromAmount) || 0 : 0;
+	const totalRequired = networkFees + swapAmount;
 
 	// Only validate SOL fees if we have a comprehensive fee estimate or if SOL balance is critically low
-	if (requiredSol > 0) {
+	if (networkFees > 0 || swapAmount > 0) {
 		// Use comprehensive SOL requirement from quote
-		if (solBalance < requiredSol) {
-			// const shortfall = requiredSol - solBalance;
-			const message = `Insufficient SOL for transaction fees. Required: ${formatTokenBalance(requiredSol)} SOL, Balance: ${formatTokenBalance(solBalance)} SOL`;
+		if (solBalance < totalRequired) {
+			const message = swapAmount > 0 
+				? `Insufficient SOL. Required: ${formatTokenBalance(swapAmount)} SOL (swap) + ${formatTokenBalance(networkFees)} SOL (fees) = ${formatTokenBalance(totalRequired)} SOL. Balance: ${formatTokenBalance(solBalance)} SOL`
+				: `Insufficient SOL for transaction fees. Required: ${formatTokenBalance(networkFees)} SOL, Balance: ${formatTokenBalance(solBalance)} SOL`;
 
 			showToast({
 				type: 'error',
