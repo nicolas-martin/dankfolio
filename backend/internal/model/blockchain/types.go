@@ -1,7 +1,5 @@
 package blockchain
 
-// Will be needed for interfaces later
-
 // Address represents a generic blockchain address.
 // For simplicity, using string. Could be a struct for more complex needs.
 type Address string

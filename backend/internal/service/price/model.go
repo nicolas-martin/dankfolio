@@ -31,40 +31,36 @@ type BackendTimeframeConfig struct {
 	HistoryType         string        // The type of history to fetch, e.g., "1H", "4H", "1D"
 }
 
+// Rounding is also used for CacheExpiry
 var TimeframeConfigMap = map[pb.GetPriceHistoryRequest_PriceHistoryType]BackendTimeframeConfig{
 	pb.GetPriceHistoryRequest_ONE_HOUR: {
 		BirdeyeType:         "1m",
 		DefaultViewDuration: 1 * time.Hour,
 		Rounding:            2 * time.Minute,
-		// Rounding:            1 * time.Minute,
-		HistoryType: pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_HOUR)],
+		HistoryType:         pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_HOUR)],
 	},
 	pb.GetPriceHistoryRequest_FOUR_HOUR: {
 		BirdeyeType:         "5m",
 		DefaultViewDuration: 4 * time.Hour,
 		Rounding:            10 * time.Minute,
-		// Rounding:            5 * time.Minute,
-		HistoryType: pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_FOUR_HOUR)],
+		HistoryType:         pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_FOUR_HOUR)],
 	},
 	pb.GetPriceHistoryRequest_ONE_DAY: {
 		BirdeyeType:         "15m",
 		DefaultViewDuration: 24 * time.Hour,
 		Rounding:            20 * time.Minute,
-		// Rounding:            10 * time.Minute,
-		HistoryType: pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_DAY)],
+		HistoryType:         pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_DAY)],
 	},
 	pb.GetPriceHistoryRequest_ONE_WEEK: {
 		BirdeyeType:         "1H",
 		DefaultViewDuration: 7 * 24 * time.Hour,
 		Rounding:            120 * time.Minute,
-		// Rounding:            60 * time.Minute,
-		HistoryType: pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_WEEK)],
+		HistoryType:         pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_WEEK)],
 	},
 	pb.GetPriceHistoryRequest_ONE_MONTH: {
 		BirdeyeType:         "4H",
 		DefaultViewDuration: 30 * 24 * time.Hour,
 		Rounding:            480 * time.Minute, // 4 hours
-		// Rounding:            240 * time.Minute, // 4 hours
-		HistoryType: pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_MONTH)],
+		HistoryType:         pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_MONTH)],
 	},
 }

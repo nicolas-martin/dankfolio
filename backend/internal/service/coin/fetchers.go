@@ -424,6 +424,11 @@ type coinListFunc func(ctx context.Context, opts db.ListOptions) ([]model.Coin, 
 type coinFetchFunc func(ctx context.Context) error
 
 // getCoinsCachedWithFallback is a standardized helper for fetching coins with cache, DB, and API fallback
+// The function follows this logic:
+// 1. Check cache first - if found, return immediately
+// 2. Query database - if coins exist, cache them and return
+// 3. If database is empty, fetch from API, store in DB, then cache and return
+// Background fetchers keep the data fresh at configured intervals
 func (s *Service) getCoinsCachedWithFallback(
 	ctx context.Context,
 	cacheKey string,
@@ -458,15 +463,9 @@ func (s *Service) getCoinsCachedWithFallback(
 	}
 
 	// Step 4: Check if we need to fetch fresh data
-	needsFetch := false
-	if len(coins) == 0 {
-		needsFetch = true
-		slog.InfoContext(ctx, "No coins found in database, will fetch from API",
-			"cacheKey", cacheKey)
-	} else if s.isDataStale(coins) {
-		needsFetch = true
-		slog.InfoContext(ctx, "Coins data is stale, will refresh from API",
-			"cacheKey", cacheKey)
+	needsFetch := len(coins) == 0
+	if needsFetch {
+		slog.InfoContext(ctx, "No coins found in database, will fetch from API", "cacheKey", cacheKey)
 	}
 
 	// Step 5: Fetch from API if needed (with mutex to prevent duplicates)
@@ -483,22 +482,14 @@ func (s *Service) getCoinsCachedWithFallback(
 		mutex.Unlock()
 
 		if fetchErr != nil {
-			slog.ErrorContext(ctx, "Failed to fetch data from API",
-				"cacheKey", cacheKey, "error", fetchErr)
-			// If we have stale data, return it with a short cache TTL
-			if len(coins) > 0 {
-				s.cache.Set(cacheKey, coins, staleCacheTTL)
-				return coins, totalCount, nil
-			}
-			// No data at all, return error
+			slog.ErrorContext(ctx, "Failed to fetch data from API", "cacheKey", cacheKey, "error", fetchErr)
 			return nil, 0, fmt.Errorf("failed to fetch data and no cached data available: %w", fetchErr)
 		}
 
 		// Re-query database after successful fetch
 		coins, totalCount, err = listFunc(ctx, listOpts)
 		if err != nil {
-			slog.ErrorContext(ctx, "Failed to list coins after API fetch",
-				"cacheKey", cacheKey, "error", err)
+			slog.ErrorContext(ctx, "Failed to list coins after API fetch", "cacheKey", cacheKey, "error", err)
 			return nil, 0, fmt.Errorf("failed to list coins after fetch: %w", err)
 		}
 	}
@@ -512,28 +503,6 @@ func (s *Service) getCoinsCachedWithFallback(
 	}
 
 	return coins, totalCount, nil
-}
-
-// isDataStale checks if any coin in the list has stale data (older than 1 hour)
-func (s *Service) isDataStale(coins []model.Coin) bool {
-	if len(coins) == 0 {
-		return true
-	}
-
-	// Check the first coin's last updated time as a proxy for the whole list
-	if coins[0].LastUpdated == "" {
-		return true
-	}
-
-	lastUpdated, err := time.Parse(time.RFC3339, coins[0].LastUpdated)
-	if err != nil {
-		slog.Warn("Failed to parse LastUpdated time for staleness check",
-			"lastUpdated", coins[0].LastUpdated, "error", err)
-		return true
-	}
-
-	// Consider data stale if older than 1 hour
-	return time.Since(lastUpdated) > time.Hour
 }
 
 // GetNewCoins implements the RPC method with domain types.
@@ -581,19 +550,20 @@ func (s *Service) GetTopGainersCoins(ctx context.Context, limit, offset int32) (
 func (s *Service) GetXStocksCoins(ctx context.Context, limit, offset int32) ([]model.Coin, int32, error) {
 	// For xStocks, we'll query directly from the database without caching
 	// since these are relatively stable tokens that don't need frequent updates
-	
+
 	// Query coins with xstocks tag, sorted by highest % gain
 	coins, err := s.store.SearchCoins(ctx, "", []string{"xstocks"}, 0, limit, offset, "price_24h_change_percent", true)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to get xStocks coins: %w", err)
 	}
-	
+
 	// Get total count by querying without limit/offset
 	allCoins, err := s.store.SearchCoins(ctx, "", []string{"xstocks"}, 0, 0, 0, "price_24h_change_percent", true)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to get total xStocks count: %w", err)
 	}
 	totalCount := int32(len(allCoins))
-	
+
 	return coins, totalCount, nil
 }
+

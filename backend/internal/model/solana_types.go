@@ -16,7 +16,7 @@ type TransactionOptions struct {
 type SignatureStatus struct {
 	Slot               uint64
 	Confirmations      *uint64
-	Err                interface{}
+	Err                any
 	ConfirmationStatus string
 }
 
