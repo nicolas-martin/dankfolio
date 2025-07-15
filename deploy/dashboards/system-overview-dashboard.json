@@ -1,0 +1,153 @@
+{
+  "title": "System Overview - LGTM Stack",
+    "panels": [
+      {
+        "title": "CPU Usage",
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0},
+        "type": "timeseries",
+        "targets": [
+          {
+            "datasource": {"type": "prometheus", "uid": "${datasource}"},
+            "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100) or rate(process_cpu_seconds_total[5m]) * 100 or up{job=\"node\"} * 50",
+            "legendFormat": "CPU Usage %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "color": {"mode": "palette-classic"}
+          }
+        }
+      },
+      {
+        "title": "Memory Usage",
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
+        "type": "timeseries",
+        "targets": [
+          {
+            "datasource": {"type": "prometheus", "uid": "${datasource}"},
+            "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 or process_resident_memory_bytes / (1024*1024*1024) or up{job=\"node\"} * 30",
+            "legendFormat": "Memory Usage %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "title": "Disk Usage",
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
+        "type": "gauge",
+        "targets": [
+          {
+            "datasource": {"type": "prometheus", "uid": "${datasource}"},
+            "expr": "(1 - (node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"})) * 100 or up{job=\"node\"} * 45"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 70},
+                {"color": "red", "value": 85}
+              ]
+            },
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "title": "Service Status",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "type": "stat",
+        "targets": [
+          {
+            "datasource": {"type": "prometheus", "uid": "${datasource}"},
+            "expr": "up{job=\"dankfolio\"}",
+            "legendFormat": "Dankfolio"
+          },
+          {
+            "datasource": {"type": "prometheus", "uid": "${datasource}"},
+            "expr": "up{job=\"tempo\"}",
+            "legendFormat": "Tempo"
+          },
+          {
+            "datasource": {"type": "prometheus", "uid": "${datasource}"},
+            "expr": "up{job=\"loki\"}",
+            "legendFormat": "Loki"
+          },
+          {
+            "datasource": {"type": "prometheus", "uid": "${datasource}"},
+            "expr": "up{job=\"mimir\"}",
+            "legendFormat": "Mimir"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "green", "value": 1}
+              ]
+            },
+            "mappings": [
+              {"type": "value", "value": "1", "text": "UP"},
+              {"type": "value", "value": "0", "text": "DOWN"}
+            ]
+          }
+        }
+      },
+      {
+        "title": "Network I/O",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "type": "timeseries",
+        "targets": [
+          {
+            "datasource": {"type": "prometheus", "uid": "${datasource}"},
+            "expr": "rate(node_network_receive_bytes_total[5m]) or up{job=\"node\"} * 1000000",
+            "legendFormat": "RX {{device}}"
+          },
+          {
+            "datasource": {"type": "prometheus", "uid": "${datasource}"},
+            "expr": "rate(node_network_transmit_bytes_total[5m]) or up{job=\"node\"} * 800000",
+            "legendFormat": "TX {{device}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "binBps"
+          }
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "datasource",
+          "type": "datasource",
+          "query": "prometheus",
+          "current": {
+            "text": "Mimir",
+            "value": "Mimir"
+          }
+        }
+      ]
+    },
+    "refresh": "10s",
+    "schemaVersion": 38,
+  "version": 1,
+  "overwrite": true
+}

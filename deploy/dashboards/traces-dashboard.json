@@ -1,0 +1,65 @@
+{
+  "title": "Distributed Tracing",
+    "panels": [
+      {
+        "title": "Trace Search",
+        "gridPos": {"h": 20, "w": 24, "x": 0, "y": 0},
+        "type": "traces",
+        "targets": [
+          {
+            "datasource": {"type": "tempo", "uid": "${tempoDatasource}"},
+            "query": "",
+            "queryType": "search",
+            "limit": 20,
+            "search": "",
+            "serviceMap": {
+              "datasourceUid": "${datasource}"
+            },
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "title": "Service Map",
+        "gridPos": {"h": 12, "w": 24, "x": 0, "y": 20},
+        "type": "nodeGraph",
+        "targets": [
+          {
+            "datasource": {"type": "tempo", "uid": "${tempoDatasource}"},
+            "query": "",
+            "queryType": "serviceMap",
+            "serviceMapQuery": {
+              "datasourceUid": "${datasource}"
+            },
+            "refId": "A"
+          }
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "datasource",
+          "type": "datasource",
+          "query": "prometheus",
+          "current": {
+            "text": "Mimir",
+            "value": "Mimir"
+          }
+        },
+        {
+          "name": "tempoDatasource",
+          "type": "datasource",
+          "query": "tempo",
+          "current": {
+            "text": "Tempo",
+            "value": "Tempo"
+          }
+        }
+      ]
+    },
+    "refresh": "10s",
+    "schemaVersion": 38,
+  "version": 1,
+  "overwrite": true
+}
