@@ -1,6 +1,10 @@
 {
   "title": "Distributed Tracing",
-    "panels": [
+  "overwrite": true,
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
       {
         "title": "Trace Search",
         "gridPos": {"h": 20, "w": 24, "x": 0, "y": 0},
@@ -8,10 +12,9 @@
         "targets": [
           {
             "datasource": {"type": "tempo", "uid": "${tempoDatasource}"},
-            "query": "",
+            "query": "{resource.service.name=\"dankfolio-backend\"}",
             "queryType": "search",
             "limit": 20,
-            "search": "",
             "serviceMap": {
               "datasourceUid": "${datasource}"
             },
