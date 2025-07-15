@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -63,7 +64,10 @@ func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level, env st
 
 	// Add OpenTelemetry instrumentation if not in development
 	if env != "development" {
-		if err := db.Use(tracing.NewPlugin()); err != nil {
+		if err := db.Use(tracing.NewPlugin(
+			tracing.WithAttributes(attribute.String("db.orm", "gorm")),
+			tracing.WithDBSystem("postgresql"),
+		)); err != nil {
 			slog.Warn("Failed to register OpenTelemetry plugin for database", "error", err)
 			// Continue without instrumentation
 		} else {
