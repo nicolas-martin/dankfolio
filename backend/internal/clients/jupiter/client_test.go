@@ -10,8 +10,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry" // For TelemetryAPI if asserting interface compliance
 )
 
 // mockTelemetry is a mock implementation of TelemetryAPI for testing.
@@ -60,9 +58,6 @@ func (m *mockTelemetry) ResetStats(ctx context.Context) error {
 func (m *mockTelemetry) Start(ctx context.Context) {
 	// Not used in this test
 }
-
-// Ensure mockTelemetry implements TelemetryAPI.
-var _ telemetry.TelemetryAPI = (*mockTelemetry)(nil)
 
 func TestClient_GetNewCoins_Success(t *testing.T) {
 	expectedNewTokens := []NewTokenInfo{

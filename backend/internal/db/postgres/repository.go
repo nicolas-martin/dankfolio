@@ -18,22 +18,21 @@ import (
 
 // Repository implements the generic db.Repository interface using GORM.
 // S is the schema type (used with GORM), M is the model type (used in services).
-// For ApiStat, S and M might be the same (model.ApiStat).
 type Repository[S interface {
-	schema.Coin | schema.Trade | schema.Wallet | model.ApiStat | schema.NaughtyWord // Added schema.NaughtyWord for S
+	schema.Coin | schema.Trade | schema.Wallet | schema.NaughtyWord
 	db.Entity
 }, M interface {
-	model.Coin | model.Trade | model.Wallet | model.ApiStat | model.NaughtyWord // Added model.NaughtyWord for M
+	model.Coin | model.Trade | model.Wallet | model.NaughtyWord
 }] struct {
 	db *gorm.DB
 }
 
 // NewRepository creates a new GORM repository.
 func NewRepository[S interface {
-	schema.Coin | schema.Trade | schema.Wallet | model.ApiStat | schema.NaughtyWord
+	schema.Coin | schema.Trade | schema.Wallet | schema.NaughtyWord
 	db.Entity
 }, M interface {
-	model.Coin | model.Trade | model.Wallet | model.ApiStat | model.NaughtyWord
+	model.Coin | model.Trade | model.Wallet | model.NaughtyWord
 }](db *gorm.DB) *Repository[S, M] {
 	return &Repository[S, M]{db: db}
 }
@@ -44,7 +43,6 @@ func (r *Repository[S, M]) Get(ctx context.Context, id string) (*M, error) {
 	// Default to "id" as primary key column name.
 	// Specific types like schema.Coin might override GetID() to return a different value
 	// if their PK is not 'id', but the query here assumes the column is named 'id' if GetID() from zero value is not reliable.
-	// For ApiStat (uint ID), schemaItem.GetID() on zero value would be "0".
 	// For string ID types (like Trade), schemaItem.GetID() on zero value would be "".
 	// Hardcoding "id = ?" is safer for types with standard "id" PK.
 	// This assumes that `id` parameter passed to Get is always for a column named "id".
@@ -110,8 +108,8 @@ func (r *Repository[S, M]) Update(ctx context.Context, item *M) error {
 
 // Upsert inserts or updates an entity.
 func (r *Repository[S, M]) Upsert(ctx context.Context, item *M) (int64, error) {
-	schemaItem := r.fromModel(*item) // schemaItem is *S, e.g. *schema.Coin or *model.ApiStat
-	var s S                          // Zero value of S, e.g. schema.Coin or model.ApiStat
+	schemaItem := r.fromModel(*item) // schemaItem is *S, e.g. *schema.Coin
+	var s S                          // Zero value of S, e.g. schema.Coin
 
 	var conflictColumns []clause.Column
 	var updateColumns []string
@@ -123,27 +121,12 @@ func (r *Repository[S, M]) Upsert(ctx context.Context, item *M) (int64, error) {
 	_ = sPtr       // Avoid unused variable error if not directly used in switch, using schemaItem instead for getColumnNames
 
 	switch any(s).(type) {
-	case model.ApiStat:
-		// For ApiStat, conflict is on (service_name, endpoint_name, date)
-		// GORM tags on model.ApiStat define `uniqueIndex:idx_service_endpoint_date`
-		// We can specify the constraint name or the columns.
-		// It's safer to specify columns if the auto-generated name is not predictable,
-		// or use GORM's built-in unique index handling if `Model(&model.ApiStat{})` is used before Clauses.
-		// However, here we're in a generic repo.
-		conflictColumns = []clause.Column{
-			{Name: "service_name"},
-			{Name: "endpoint_name"},
-			{Name: "date"},
-		}
-		// getColumnNames for *model.ApiStat returns {"count"}
-		updateColumns = getColumnNames(schemaItem) // schemaItem is *model.ApiStat here
 	default:
 		// Default behavior for other types. Assumes PK column name is "id".
 		// This is a simplification. If other types have different PK names (e.g. "uuid", "mint_address for Coin"),
 		// this default case needs to be smarter or those types need specific cases.
 		// schema.Coin and schema.RawCoin have mint_address as their unique ID for upsert logic.
 		// schema.Trade and schema.Wallet have string ID.
-		// model.ApiStat has uint ID, auto-increment.
 		// The GetID() method on the *instance* provides the value for the PK.
 		// The conflict target should be the actual column name.
 		// For types like Coin/RawCoin, their PK for conflict is mint_address, not 'id'.
@@ -210,7 +193,6 @@ func (r *Repository[S, M]) BulkUpsert(ctx context.Context, items *[]M) (int64, e
 	switch any(s).(type) {
 	case schema.Coin:
 		conflictColumns = []clause.Column{{Name: "address"}}
-	// model.ApiStat is not expected in BulkUpsert with PK conflict, it has its own unique index.
 	// If it were, its PK is 'id'.
 	default:
 		// Defaulting to "id" for other types like Trade, Wallet.
@@ -401,13 +383,6 @@ func (r *Repository[S, M]) toModel(s S) any {
 			PublicKey: v.PublicKey,
 			CreatedAt: v.CreatedAt,
 		}
-	// If S can be model.ApiStat, and M is model.ApiStat
-	case model.ApiStat:
-		// When S is model.ApiStat, v is model.ApiStat. We return a pointer to it.
-		// Ensure the return type matches what the caller of toModel expects (any, which will be asserted to *M).
-		// If M is also model.ApiStat, this is direct.
-		copiedStat := v // Create a copy
-		return &copiedStat
 	case schema.NaughtyWord:
 		return &model.NaughtyWord{
 			Word:     v.Word,
@@ -489,13 +464,6 @@ func (r *Repository[S, M]) fromModel(m M) any {
 			PublicKey: v.PublicKey,
 			CreatedAt: v.CreatedAt,
 		}
-	// If M is model.ApiStat, and S is model.ApiStat
-	case model.ApiStat:
-		// When M is model.ApiStat, v is model.ApiStat. We return a pointer to it.
-		// Ensure the return type matches what the caller of fromModel expects (any, which will be asserted to *S for GORM).
-		// If S is also model.ApiStat, this is direct.
-		copiedStat := v // Create a copy
-		return &copiedStat
 	case model.NaughtyWord:
 		return &schema.NaughtyWord{
 			Word:     v.Word,
@@ -531,9 +499,6 @@ func getColumnNames(data any) []string {
 	case *schema.Wallet:
 		// Explicitly list columns to update, excluding PK 'id'
 		return []string{"public_key"} // CreatedAt is usually set on create
-	case *model.ApiStat: // If S is model.ApiStat
-		// Columns for ApiStat to update on conflict. ID is PK. Date, ServiceName, EndpointName are part of conflict key.
-		return []string{"count"}
 	case *schema.NaughtyWord:
 		// Columns for NaughtyWord to update on conflict. Word is PK.
 		return []string{"language"}
