@@ -41,12 +41,19 @@ func InitTelemetry(ctx context.Context, cfg Config) (*Telemetry, error) {
 		return nil, fmt.Errorf("failed to create resource: %w", err)
 	}
 
+	// Traces go to Tempo on default port (4317)
 	tracerProvider, err := newTracerProvider(ctx, res, cfg.OTLPEndpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create tracer provider: %w", err)
 	}
 
-	meterProvider, err := newMeterProvider(ctx, res, cfg.OTLPEndpoint)
+	// Metrics go to Alloy on port 4319
+	metricsEndpoint := cfg.OTLPEndpoint
+	if metricsEndpoint == "localhost:4317" {
+		metricsEndpoint = "localhost:4319"
+	}
+	
+	meterProvider, err := newMeterProvider(ctx, res, metricsEndpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create meter provider: %w", err)
 	}
