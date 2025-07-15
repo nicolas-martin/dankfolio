@@ -44,7 +44,7 @@ func main() {
 	}
 
 	// Create Birdeye client
-	client := birdeye.NewClient(httpClient, endpoint, apiKey, nil)
+	client := birdeye.NewClient(httpClient, endpoint, apiKey)
 
 	// Create search parameters
 	params := birdeye.SearchParams{

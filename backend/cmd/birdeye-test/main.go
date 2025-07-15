@@ -44,7 +44,7 @@ func main() {
 		Timeout: 30 * time.Second,
 	}
 
-	birdeyeClient := birdeye.NewClient(httpClient, endpoint, apiKey, nil)
+	birdeyeClient := birdeye.NewClient(httpClient, endpoint, apiKey)
 	ctx := context.Background()
 
 	// Step 1: Get trending tokens

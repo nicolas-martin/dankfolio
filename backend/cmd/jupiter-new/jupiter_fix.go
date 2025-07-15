@@ -22,7 +22,7 @@ func main() {
 	// Create API tracker
 
 	// Test with the free API endpoint (lite-api.jup.ag)
-	jupiterClient := jupiter.NewClient(httpClient, "https://lite-api.jup.ag", "", nil)
+	jupiterClient := jupiter.NewClient(httpClient, "https://lite-api.jup.ag", "")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()

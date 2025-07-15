@@ -128,7 +128,7 @@ func main() {
 	// Create API tracker
 	// apiTracker := telemetry.TelemetryAPI
 
-	offchainClient := offchain.NewClient(httpClient, nil)
+	offchainClient := offchain.NewClient(httpClient)
 
 	log.Printf("📊 Processing %d common tokens", len(coins))
 
