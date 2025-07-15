@@ -18,6 +18,7 @@ import (
 	firebase "firebase.google.com/go/v4"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	imageservice "github.com/nicolas-martin/dankfolio/backend/internal/service/image"
 
 	"github.com/gagliardetto/solana-go/rpc"
@@ -143,9 +144,11 @@ func main() {
 	slog.Info("API Call Tracker initialized with OpenTelemetry.")
 
 	// Now initialize all clients with the properly initialized apiTracker
-	jupiterClient := jupiter.NewClient(httpClient, config.JupiterApiUrl, config.JupiterApiKey, apiTracker)
+	jupiterWrappedHTTP := clients.WrapHTTPClient(httpClient, "jupiter", apiTracker)
+	jupiterClient := jupiter.NewClient(jupiterWrappedHTTP, config.JupiterApiUrl, config.JupiterApiKey)
 
-	birdeyeClient := birdeye.NewClient(httpClient, config.BirdEyeEndpoint, config.BirdEyeAPIKey, apiTracker)
+	birdeyeWrappedHTTP := clients.WrapHTTPClient(httpClient, "birdeye", apiTracker)
+	birdeyeClient := birdeye.NewClient(birdeyeWrappedHTTP, config.BirdEyeEndpoint, config.BirdEyeAPIKey)
 
 	header := map[string]string{
 		"Authorization": "Bearer " + config.SolanaRPCAPIKey,
@@ -159,17 +162,18 @@ func main() {
 
 	solanaClient := solana.NewClient(solClient, apiTracker)
 
-	offchainClient := offchain.NewClient(httpClient, apiTracker)
+	offchainWrappedHTTP := clients.WrapHTTPClient(httpClient, "offchain", apiTracker)
+	offchainClient := offchain.NewClient(offchainWrappedHTTP)
 
 	// No need to load stats or start background processing with OpenTelemetry
 
 	coinServiceConfig := &coin.Config{
-		BirdEyeBaseURL:          config.BirdEyeEndpoint,
-		BirdEyeAPIKey:           config.BirdEyeAPIKey,
-		SolanaRPCEndpoint:       config.SolanaRPCEndpoint,
-		NewCoinsFetchInterval:   config.NewCoinsFetchInterval,
-		TrendingFetchInterval:   config.TrendingCoinsFetchInterval,
-		TopGainersFetchInterval: config.TopGainersFetchInterval,
+		BirdEyeBaseURL:             config.BirdEyeEndpoint,
+		BirdEyeAPIKey:              config.BirdEyeAPIKey,
+		SolanaRPCEndpoint:          config.SolanaRPCEndpoint,
+		NewCoinsFetchInterval:      config.NewCoinsFetchInterval,
+		TrendingFetchInterval:      config.TrendingCoinsFetchInterval,
+		TopGainersFetchInterval:    config.TopGainersFetchInterval,
 		InitializeXStocksOnStartup: config.InitializeXStocksOnStartup,
 	}
 
