@@ -32,7 +32,7 @@ import (
 
 type Client struct {
 	rpcConn *rpc.Client
-	tracker tracker.APITracker
+	tracker *tracker.APITracker
 }
 
 // Comment out the interface implementation check for now until we can fix all issues
@@ -41,7 +41,7 @@ var (
 	_ clients.GenericClientAPI = (*Client)(nil)
 )
 
-func NewClient(solClient *rpc.Client, tracker tracker.APITracker) clients.GenericClientAPI {
+func NewClient(solClient *rpc.Client, tracker *tracker.APITracker) clients.GenericClientAPI {
 	return &Client{
 		rpcConn: solClient,
 		tracker: tracker,
@@ -53,6 +53,26 @@ func NewClient(solClient *rpc.Client, tracker tracker.APITracker) clients.Generi
 // It might be removed or adapted if a generic GetTokenMetadata is added to GenericClientAPI.
 func (c *Client) GetMetadataAccount(ctx context.Context, mint string) (*tm.Metadata, error) {
 	var metadata *tm.Metadata
+	if c.tracker == nil {
+		// No telemetry, just execute the function
+		mintPubkey := solana.MustPublicKeyFromBase58(mint)
+		metadataPDA, bumpSeed, err := solana.FindTokenMetadataAddress(mintPubkey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to derive metadata account PDA for %s: %w", mint, err)
+		}
+
+		accountInfo, err := c.rpcConn.GetAccountInfo(ctx, metadataPDA)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get account info for metadata PDA %s (mint: %s, seed %d): %w", metadataPDA, mint, bumpSeed, err)
+		}
+
+		deserializedMetadata, err := tm.MetadataDeserialize(accountInfo.Value.Data.GetBinary())
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse metadata for %s: %w", mint, err)
+		}
+		return &deserializedMetadata, nil
+	}
+	
 	err := c.tracker.InstrumentCall(ctx, "solana", "GetMetadataAccount", func(ctx context.Context) error {
 		mintPubkey := solana.MustPublicKeyFromBase58(mint)
 		metadataPDA, bumpSeed, err := solana.FindTokenMetadataAddress(mintPubkey)
@@ -153,15 +173,15 @@ func (c *Client) ExecuteSignedTransaction(ctx context.Context, signedTx string) 
 		return solana.Signature{}, err
 	}
 
-	if simResult.Err != nil {
-		slog.Error("Transaction simulation error", "error", simResult.Err)
-		return solana.Signature{}, fmt.Errorf("transaction simulation error: %v", simResult.Err)
+	if simResult.Value != nil && simResult.Value.Err != nil {
+		slog.Error("Transaction simulation error", "error", simResult.Value.Err)
+		return solana.Signature{}, fmt.Errorf("transaction simulation error: %v", simResult.Value.Err)
 	}
 
 	// Log simulation results
 	slog.Info("Transaction simulation successful",
-		"units_consumed", simResult.UnitsConsumed,
-		"logs", simResult.Logs)
+		"units_consumed", simResult.Value.UnitsConsumed,
+		"logs", simResult.Value.Logs)
 
 	// Send transaction with optimized options
 	var sig solana.Signature

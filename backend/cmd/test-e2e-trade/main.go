@@ -84,11 +84,8 @@ func main() {
 	// Create HTTP client
 	httpClient := &http.Client{Timeout: 30 * time.Second}
 
-	// Create telemetry service
-	telemetryService := &mockTelemetry{}
-
 	// Create Jupiter client
-	jupiterClient := jupiter.NewClient(httpClient, "https://api.jup.ag", "", telemetryService)
+	jupiterClient := jupiter.NewClient(httpClient, "https://api.jup.ag", "")
 
 	// Create Solana RPC client
 	solanaRPCURL := os.Getenv("SOLANA_RPC_URL")

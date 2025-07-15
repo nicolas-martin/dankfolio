@@ -81,6 +81,11 @@ func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level, env st
 	return NewStoreWithDB(db), nil
 }
 
+// DB returns the underlying GORM database instance
+func (s *Store) DB() *gorm.DB {
+	return s.db
+}
+
 // Close closes the database connection.
 func (s *Store) Close() error {
 	sqlDB, err := s.db.DB()
