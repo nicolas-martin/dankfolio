@@ -33,7 +33,7 @@ const (
 
 // Client handles interactions with the Jupiter API
 type Client struct {
-	httpClient *http.Client
+	httpClient clients.HTTPDoer
 	baseURL    string
 	apiKey     string
 	tracker    tracker.APITracker
@@ -42,12 +42,11 @@ type Client struct {
 var _ ClientAPI = (*Client)(nil) // Ensure Client implements ClientAPI
 
 // NewClient creates a new instance of Client
-func NewClient(httpClient *http.Client, url, key string, tracker tracker.APITracker) ClientAPI {
+func NewClient(httpClient clients.HTTPDoer, url, key string) ClientAPI {
 	return &Client{
 		httpClient: httpClient,
 		baseURL:    url,
 		apiKey:     key,
-		tracker:    tracker,
 	}
 }
 
@@ -137,13 +136,6 @@ func (c *Client) GetQuote(ctx context.Context, params QuoteParams) (*QuoteRespon
 func (c *Client) GetAllCoins(ctx context.Context) (*CoinListResponse, error) {
 	url := fmt.Sprintf("%s%s", c.baseURL, tokenListEndpoint) // Inline URL formatting
 	slog.Debug("Fetching all tokens from Jupiter", "url", url)
-
-	// Store original timeout and set a longer one for this request
-	originalTimeout := c.httpClient.Timeout
-	c.httpClient.Timeout = 5 * time.Minute
-	defer func() {
-		c.httpClient.Timeout = originalTimeout // Restore original timeout
-	}()
 
 	tokensData, _, err := GetRequest[[]CoinListInfo](c, ctx, url)
 	if err != nil {

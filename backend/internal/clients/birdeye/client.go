@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/util"
 )
 
@@ -26,19 +26,17 @@ const (
 
 // Client handles interactions with the BirdEye API
 type Client struct {
-	httpClient *http.Client
+	httpClient clients.HTTPDoer
 	baseURL    string
 	apiKey     string
-	tracker    telemetry.TelemetryAPI
 }
 
 // NewClient creates a new instance of the BirdEye client
-func NewClient(httpClient *http.Client, baseURL string, apiKey string, tracker telemetry.TelemetryAPI) ClientAPI {
+func NewClient(httpClient clients.HTTPDoer, baseURL string, apiKey string) ClientAPI {
 	return &Client{
 		httpClient: httpClient, // Use passed-in httpClient
 		baseURL:    baseURL,
 		apiKey:     apiKey,
-		tracker:    tracker,
 	}
 }
 
@@ -392,9 +390,6 @@ func getRequest[T any](c *Client, ctx context.Context, requestURL string) (*T, e
 		if endpointName == "" {
 			endpointName = "/"
 		}
-		if c.tracker != nil {
-			c.tracker.TrackCall("birdeye", endpointName)
-		}
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", requestURL, nil)
@@ -483,9 +478,6 @@ func postRequest[T any](c *Client, ctx context.Context, requestURL string, reque
 		endpointName := parsedURL.Path
 		if endpointName == "" {
 			endpointName = "/" // Default if path is empty
-		}
-		if c.tracker != nil {
-			c.tracker.TrackCall("birdeye", endpointName)
 		}
 	}
 
