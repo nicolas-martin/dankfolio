@@ -74,7 +74,7 @@ func (i *OtelInterceptor) initMetrics() error {
 }
 
 func (i *OtelInterceptor) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		start := time.Now()
 
 		method := info.FullMethod
@@ -88,9 +88,9 @@ func (i *OtelInterceptor) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 		)
 		defer span.End()
 
-		if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if _, ok := metadata.FromIncomingContext(ctx); ok {
 			if traceID := tracker.ExtractTraceID(ctx); traceID != "" {
-				md = metadata.Pairs("x-trace-id", traceID)
+				md := metadata.Pairs("x-trace-id", traceID)
 				ctx = metadata.NewOutgoingContext(ctx, md)
 			}
 		}
@@ -132,7 +132,7 @@ func (i *OtelInterceptor) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 }
 
 func (i *OtelInterceptor) StreamServerInterceptor() grpc.StreamServerInterceptor {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		start := time.Now()
 		ctx := ss.Context()
 
@@ -192,3 +192,4 @@ type wrappedServerStream struct {
 func (w *wrappedServerStream) Context() context.Context {
 	return w.ctx
 }
+

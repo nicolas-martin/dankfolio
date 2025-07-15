@@ -25,6 +25,13 @@ export OTLP_ENDPOINT="localhost:4317"  # Default value
    - Error tracking
    - Active requests tracking
 
+3. **Database Operations**: Using the official GORM OpenTelemetry plugin provides:
+   - Automatic tracing of all database queries
+   - SQL statement capture in spans
+   - Table and operation type attributes
+   - Error tracking and status codes
+   - Query execution timing
+
 ### Metrics Available
 
 - `dankfolio.grpc_request_duration_seconds` - Histogram of gRPC request durations
@@ -40,6 +47,7 @@ Each request generates a trace with:
 - Unique trace ID (returned in `x-trace-id` header)
 - Span hierarchy showing the flow through services
 - External API calls as child spans
+- Database queries as child spans with SQL details
 - Error details when failures occur
 
 ## Using with Grafana/Tempo/Prometheus
