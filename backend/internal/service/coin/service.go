@@ -9,8 +9,8 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/tracker"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
-	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
 )
 
 const (
@@ -29,7 +29,7 @@ type Service struct {
 	fetcherCtx     context.Context
 	fetcherCancel  context.CancelFunc
 	birdeyeClient  birdeye.ClientAPI
-	apiTracker     telemetry.TelemetryAPI
+	apiTracker     *tracker.APITracker
 	cache          CoinCache
 	naughtyWordSet map[string]struct{}
 	xstocksConfig  *XStocksConfig
@@ -47,7 +47,7 @@ func NewService(
 	store db.Store,
 	chainClient clients.GenericClientAPI,
 	birdeyeClient birdeye.ClientAPI,
-	apiTracker telemetry.TelemetryAPI,
+	apiTracker *tracker.APITracker,
 	offchainClient offchain.ClientAPI,
 	coinCache CoinCache,
 ) *Service {

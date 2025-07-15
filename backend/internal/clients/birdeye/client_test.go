@@ -11,7 +11,6 @@ import (
 	"time"
 
 	birdeyeclient "github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
-	telementryMock "github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,7 +18,6 @@ const testAPIKey = "test-api-key"
 
 func TestGetTrendingTokens_Success(t *testing.T) {
 	expectedPath := "/defi/token_trending"
-	mockTracker := telementryMock.NewMockTelemetryAPI(t)
 
 	mockResponse := birdeyeclient.TokenTrendingResponse{
 		Success: true,
@@ -59,9 +57,8 @@ func TestGetTrendingTokens_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey, mockTracker)
+	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey)
 
-	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
 
 	resp, err := client.GetTrendingTokens(context.Background(), birdeyeclient.TrendingTokensParams{})
 
@@ -72,12 +69,10 @@ func TestGetTrendingTokens_Success(t *testing.T) {
 	assert.Equal(t, mockResponse.Data.Tokens[0].Address, resp.Data.Tokens[0].Address)
 	assert.Equal(t, mockResponse.Data.Tokens[0].Name, resp.Data.Tokens[0].Name)
 
-	mockTracker.AssertExpectations(t)
 }
 
 func TestGetTrendingTokens_HttpError(t *testing.T) {
 	expectedPath := "/defi/token_trending"
-	mockTracker := telementryMock.NewMockTelemetryAPI(t)
 	errorBody := "{\"error\": \"internal server error\"}"
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -88,8 +83,7 @@ func TestGetTrendingTokens_HttpError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey, mockTracker)
-	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
+	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey)
 
 	resp, err := client.GetTrendingTokens(context.Background(), birdeyeclient.TrendingTokensParams{})
 
@@ -99,12 +93,10 @@ func TestGetTrendingTokens_HttpError(t *testing.T) {
 	assert.Contains(t, err.Error(), "status code: 500")
 	assert.Contains(t, err.Error(), errorBody)
 
-	mockTracker.AssertExpectations(t)
 }
 
 func TestGetTrendingTokens_JsonDecodingError(t *testing.T) {
 	expectedPath := "/defi/token_trending"
-	mockTracker := telementryMock.NewMockTelemetryAPI(t)
 	malformedJSON := "{\"success\": true, \"data\": [{\"address\": \"TOKEN_1\"" // Missing closing brackets
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -115,8 +107,7 @@ func TestGetTrendingTokens_JsonDecodingError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey, mockTracker)
-	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
+	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey)
 
 	resp, err := client.GetTrendingTokens(context.Background(), birdeyeclient.TrendingTokensParams{})
 
@@ -126,12 +117,10 @@ func TestGetTrendingTokens_JsonDecodingError(t *testing.T) {
 	// Removing the problematic assertion: assert.Contains(t, err.Error(), "failed to unmarshal response")
 	assert.Contains(t, err.Error(), "unexpected end of JSON input") // This specific error should be present
 
-	mockTracker.AssertExpectations(t)
 }
 
 func TestGetTrendingTokens_Timeout(t *testing.T) {
 	expectedPath := "/defi/token_trending"
-	mockTracker := telementryMock.NewMockTelemetryAPI(t)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(150 * time.Millisecond) // Delay to induce timeout
@@ -164,8 +153,7 @@ func TestGetTrendingTokens_Timeout(t *testing.T) {
 	// This is not possible with the current NewClient structure.
 	// We will proceed with the existing client, understanding this test might be slow or not perfectly precise.
 
-	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey, mockTracker)
-	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
+	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey)
 
 	// Create a context with a shorter timeout for this specific call
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond) // Shorter than server delay
@@ -183,12 +171,10 @@ func TestGetTrendingTokens_Timeout(t *testing.T) {
 	isTimeoutError := strings.Contains(errStr, "context deadline exceeded") || strings.Contains(errStr, "Client.Timeout exceeded while awaiting headers")
 	assert.True(t, isTimeoutError, fmt.Sprintf("Expected a timeout error, but got: %v", err))
 
-	mockTracker.AssertExpectations(t)
 }
 
 func TestGetTrendingTokens_NoApiKey(t *testing.T) {
 	expectedPath := "/defi/token_trending"
-	mockTracker := telementryMock.NewMockTelemetryAPI(t)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// X-API-KEY should not be present or be empty
@@ -206,19 +192,16 @@ func TestGetTrendingTokens_NoApiKey(t *testing.T) {
 	defer server.Close()
 
 	// Create client with an empty API key
-	client := birdeyeclient.NewClient(server.Client(), server.URL, "", mockTracker)
+	client := birdeyeclient.NewClient(server.Client(), server.URL, "")
 
-	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
 
 	_, err := client.GetTrendingTokens(context.Background(), birdeyeclient.TrendingTokensParams{})
 
 	assert.NoError(t, err)
-	mockTracker.AssertExpectations(t)
 }
 
 func TestGetTrendingTokens_WithParameters(t *testing.T) {
 	expectedPath := "/defi/token_trending"
-	mockTracker := telementryMock.NewMockTelemetryAPI(t)
 
 	mockResponse := birdeyeclient.TokenTrendingResponse{
 		Success: true,
@@ -265,9 +248,8 @@ func TestGetTrendingTokens_WithParameters(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey, mockTracker)
+	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey)
 
-	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
 
 	params := birdeyeclient.TrendingTokensParams{
 		SortBy:   "v24hUSD",
@@ -285,12 +267,10 @@ func TestGetTrendingTokens_WithParameters(t *testing.T) {
 	assert.Equal(t, mockResponse.Data.Tokens[0].Address, resp.Data.Tokens[0].Address)
 	assert.Equal(t, mockResponse.Data.Tokens[0].Name, resp.Data.Tokens[0].Name)
 
-	mockTracker.AssertExpectations(t)
 }
 
 func TestGetPriceHistory_Success(t *testing.T) {
 	expectedPath := "/defi/history_price" // Changed from "/history_price"
-	mockTracker := telementryMock.NewMockTelemetryAPI(t)
 
 	params := birdeyeclient.PriceHistoryParams{
 		Address:     "TEST_ADDRESS",
@@ -331,8 +311,7 @@ func TestGetPriceHistory_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey, mockTracker)
-	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
+	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey)
 
 	resp, err := client.GetPriceHistory(context.Background(), params)
 
@@ -343,12 +322,10 @@ func TestGetPriceHistory_Success(t *testing.T) {
 	assert.Equal(t, mockResponse.Data.Items[0].Value, resp.Data.Items[0].Value)
 	assert.Equal(t, mockResponse.Data.Items[1].UnixTime, resp.Data.Items[1].UnixTime)
 
-	mockTracker.AssertExpectations(t)
 }
 
 func TestGetPriceHistory_HttpError(t *testing.T) {
 	expectedPath := "/defi/history_price" // Changed from "/history_price"
-	mockTracker := telementryMock.NewMockTelemetryAPI(t)
 	errorBody := `{"error": "server blew up"}`
 
 	params := birdeyeclient.PriceHistoryParams{
@@ -367,8 +344,7 @@ func TestGetPriceHistory_HttpError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey, mockTracker)
-	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
+	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey)
 
 	resp, err := client.GetPriceHistory(context.Background(), params)
 
@@ -378,5 +354,4 @@ func TestGetPriceHistory_HttpError(t *testing.T) {
 	assert.Contains(t, err.Error(), "status code: 500")
 	assert.Contains(t, err.Error(), errorBody)
 
-	mockTracker.AssertExpectations(t)
 }
