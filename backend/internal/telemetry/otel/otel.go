@@ -105,13 +105,19 @@ func newMeterProvider(ctx context.Context, res *resource.Resource, endpoint stri
 		return nil, fmt.Errorf("failed to create gRPC connection: %w", err)
 	}
 
-	metricExporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithGRPCConn(conn))
+	metricExporter, err := otlpmetricgrpc.New(ctx, 
+		otlpmetricgrpc.WithGRPCConn(conn),
+		otlpmetricgrpc.WithTimeout(10*time.Second),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create metric exporter: %w", err)
 	}
 
 	mp := sdkmetric.NewMeterProvider(
-		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter, sdkmetric.WithInterval(10*time.Second))),
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter, 
+			sdkmetric.WithInterval(30*time.Second),
+			sdkmetric.WithTimeout(10*time.Second),
+		)),
 		sdkmetric.WithResource(res),
 	)
 
