@@ -117,31 +117,45 @@ func main() {
 	}
 	slog.Info("Database store initialized successfully.")
 
-	// Initialize OpenTelemetry
-	otelConfig := otel.Config{
-		ServiceName:    "dankfolio-backend",
-		ServiceVersion: "1.0.0",
-		Environment:    config.Env,
-		OTLPEndpoint:   config.OTLPEndpoint,
-	}
-	if otelConfig.OTLPEndpoint == "" {
-		otelConfig.OTLPEndpoint = "localhost:4317" // Default OTLP gRPC endpoint
-	}
+	// Initialize OpenTelemetry (skip in development unless explicitly configured)
+	var otelTelemetry *otel.Telemetry
+	var apiTracker *tracker.APITracker
+	
+	if config.Env == "development" && config.OTLPEndpoint == "" {
+		slog.Info("Skipping OpenTelemetry initialization in development environment")
+		// Create a no-op telemetry for development
+		otelTelemetry = otel.NewNoOpTelemetry("dankfolio-backend")
+		apiTracker, err = tracker.NewAPITracker(otelTelemetry)
+		if err != nil {
+			slog.Error("Failed to create no-op API tracker", slog.Any("error", err))
+			os.Exit(1)
+		}
+	} else {
+		otelConfig := otel.Config{
+			ServiceName:    "dankfolio-backend",
+			ServiceVersion: "1.0.0",
+			Environment:    config.Env,
+			OTLPEndpoint:   config.OTLPEndpoint,
+		}
+		if otelConfig.OTLPEndpoint == "" {
+			otelConfig.OTLPEndpoint = "localhost:4317" // Default OTLP gRPC endpoint
+		}
 
-	otelTelemetry, err := otel.InitTelemetry(ctx, otelConfig)
-	if err != nil {
-		slog.Error("Failed to initialize OpenTelemetry", slog.Any("error", err))
-		os.Exit(1)
+		otelTelemetry, err = otel.InitTelemetry(ctx, otelConfig)
+		if err != nil {
+			slog.Error("Failed to initialize OpenTelemetry", slog.Any("error", err))
+			os.Exit(1)
+		}
+		slog.Info("OpenTelemetry initialized successfully", slog.String("endpoint", otelConfig.OTLPEndpoint))
+		
+		apiTracker, err = tracker.NewAPITracker(otelTelemetry)
+		if err != nil {
+			slog.Error("Failed to create API tracker", slog.Any("error", err))
+			os.Exit(1)
+		}
 	}
-	slog.Info("OpenTelemetry initialized successfully", slog.String("endpoint", otelConfig.OTLPEndpoint))
-
-	// Initialize APICallTracker with OpenTelemetry
-	apiTracker, err := tracker.NewAPITracker(otelTelemetry)
-	if err != nil {
-		slog.Error("Failed to create API tracker", slog.Any("error", err))
-		os.Exit(1)
-	}
-	slog.Info("API Call Tracker initialized with OpenTelemetry.")
+	
+	slog.Info("API Call Tracker initialized.")
 
 	// Now initialize all clients with the properly initialized apiTracker
 	jupiterWrappedHTTP := clients.WrapHTTPClient(httpClient, "jupiter", apiTracker)
@@ -437,7 +451,7 @@ type Config struct {
 	PlatformPrivateKey         string        `envconfig:"PLATFORM_PRIVATE_KEY"`                         // Base64 encoded private key for platform account
 	DevAppCheckToken           string        `envconfig:"DEV_APP_CHECK_TOKEN"`
 	InitializeXStocksOnStartup bool          `envconfig:"INITIALIZE_XSTOCKS_ON_STARTUP" default:"false"`
-	OTLPEndpoint               string        `envconfig:"OTLP_ENDPOINT" default:"localhost:4317"`
+	OTLPEndpoint               string        `envconfig:"OTLP_ENDPOINT"`
 }
 
 func loadConfig() *Config {

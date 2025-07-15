@@ -119,16 +119,25 @@ func newMeterProvider(ctx context.Context, res *resource.Resource, endpoint stri
 }
 
 func (t *Telemetry) Shutdown(ctx context.Context) error {
+	// Handle no-op case
+	if t.TracerProvider == nil && t.MeterProvider == nil {
+		return nil
+	}
+	
 	shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	var errs []error
-	if err := t.TracerProvider.Shutdown(shutdownCtx); err != nil {
-		errs = append(errs, fmt.Errorf("failed to shutdown tracer provider: %w", err))
+	if t.TracerProvider != nil {
+		if err := t.TracerProvider.Shutdown(shutdownCtx); err != nil {
+			errs = append(errs, fmt.Errorf("failed to shutdown tracer provider: %w", err))
+		}
 	}
 
-	if err := t.MeterProvider.Shutdown(shutdownCtx); err != nil {
-		errs = append(errs, fmt.Errorf("failed to shutdown meter provider: %w", err))
+	if t.MeterProvider != nil {
+		if err := t.MeterProvider.Shutdown(shutdownCtx); err != nil {
+			errs = append(errs, fmt.Errorf("failed to shutdown meter provider: %w", err))
+		}
 	}
 
 	if len(errs) > 0 {
@@ -136,4 +145,15 @@ func (t *Telemetry) Shutdown(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// NewNoOpTelemetry creates a no-op telemetry instance for development environments
+func NewNoOpTelemetry(serviceName string) *Telemetry {
+	// Use the global providers which are no-op by default
+	return &Telemetry{
+		TracerProvider: nil,
+		MeterProvider:  nil,
+		Tracer:         otel.Tracer(serviceName),
+		Meter:          otel.Meter(serviceName),
+	}
 }
