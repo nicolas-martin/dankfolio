@@ -1,5 +1,5 @@
 {
-  "title": "Database Operations Tracing",
+  "title": "Database Operations Tracing (GORM)",
   "overwrite": true,
   "schemaVersion": 38,
   "version": 1,
@@ -29,7 +29,7 @@
   "panels": [
     {
       "title": "Database Query Trace Search",
-      "type": "tempo-search",
+      "type": "table",
       "gridPos": {
         "h": 12,
         "w": 24,
@@ -43,10 +43,26 @@
             "uid": "${tempoDatasource}"
           },
           "queryType": "search",
-          "search": "db.system=postgresql",
-          "limit": 20
+          "query": "{span.db.orm=\"gorm\"}",
+          "limit": 20,
+          "tableType": "traces",
+          "refId": "A"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          }
+        }
+      },
+      "options": {
+        "showHeader": true,
+        "footer": {
+          "show": false
+        }
+      }
     },
     {
       "title": "Database Operations by Table",
@@ -64,10 +80,10 @@
             "uid": "${tempoDatasource}"
           },
           "queryType": "search",
-          "search": "db.system=postgresql",
-          "tableType": "spans",
-          "groupBy": ["db.table", "db.operation"],
-          "limit": 100
+          "query": "{span.db.orm=\"gorm\"}",
+          "tableType": "traces",
+          "limit": 100,
+          "refId": "A"
         }
       ],
       "fieldConfig": {
@@ -104,9 +120,10 @@
             "uid": "${tempoDatasource}"
           },
           "queryType": "search",
-          "search": "db.system=postgresql duration>100ms",
-          "tableType": "spans",
-          "limit": 20
+          "query": "{span.db.orm=\"gorm\" && duration > 100ms}",
+          "tableType": "traces",
+          "limit": 20,
+          "refId": "A"
         }
       ],
       "fieldConfig": {
@@ -157,9 +174,10 @@
             "uid": "${tempoDatasource}"
           },
           "queryType": "search",
-          "search": "db.system=postgresql status.code=ERROR",
-          "tableType": "spans",
-          "limit": 50
+          "query": "{span.db.orm=\"gorm\" && status.code=\"error\"}",
+          "tableType": "traces",
+          "limit": 50,
+          "refId": "A"
         }
       ],
       "fieldConfig": {
@@ -176,7 +194,7 @@
     },
     {
       "title": "Trace Exemplars for Database Operations",
-      "type": "trace",
+      "type": "traces",
       "gridPos": {
         "h": 12,
         "w": 24,
@@ -186,7 +204,19 @@
       "datasource": {
         "type": "tempo",
         "uid": "${tempoDatasource}"
-      }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "${tempoDatasource}"
+          },
+          "queryType": "search",
+          "query": "{span.db.orm=\"gorm\"}",
+          "limit": 10,
+          "refId": "A"
+        }
+      ]
     }
   ]
 }

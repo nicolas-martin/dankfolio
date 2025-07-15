@@ -23,6 +23,15 @@
           "text": "Loki",
           "value": "Loki"
         }
+      },
+      {
+        "name": "tempoDatasource",
+        "type": "datasource",
+        "query": "tempo",
+        "current": {
+          "text": "Tempo",
+          "value": "Tempo"
+        }
       }
     ]
   },
