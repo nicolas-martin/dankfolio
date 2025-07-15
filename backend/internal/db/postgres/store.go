@@ -10,6 +10,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"gorm.io/plugin/opentelemetry/tracing"
 
 	"github.com/lib/pq"
 
@@ -58,6 +59,16 @@ func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level, env st
 	db, err := gorm.Open(postgres.Open(dsn), gc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	// Add OpenTelemetry instrumentation if not in development
+	if env != "development" {
+		if err := db.Use(tracing.NewPlugin()); err != nil {
+			slog.Warn("Failed to register OpenTelemetry plugin for database", "error", err)
+			// Continue without instrumentation
+		} else {
+			slog.Info("Database OpenTelemetry instrumentation enabled")
+		}
 	}
 
 	sqlDB, err := db.DB()

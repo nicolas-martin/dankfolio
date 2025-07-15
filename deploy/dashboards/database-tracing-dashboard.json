@@ -1,0 +1,192 @@
+{
+  "title": "Database Operations Tracing",
+  "overwrite": true,
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {
+          "text": "Mimir",
+          "value": "Mimir"
+        }
+      },
+      {
+        "name": "tempoDatasource",
+        "type": "datasource",
+        "query": "tempo",
+        "current": {
+          "text": "Tempo",
+          "value": "Tempo"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "Database Query Trace Search",
+      "type": "tempo-search",
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "${tempoDatasource}"
+          },
+          "queryType": "search",
+          "search": "db.system=postgresql",
+          "limit": 20
+        }
+      ]
+    },
+    {
+      "title": "Database Operations by Table",
+      "type": "table",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "${tempoDatasource}"
+          },
+          "queryType": "search",
+          "search": "db.system=postgresql",
+          "tableType": "spans",
+          "groupBy": ["db.table", "db.operation"],
+          "limit": 100
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          }
+        }
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "title": "Slowest Database Queries",
+      "type": "table",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "${tempoDatasource}"
+          },
+          "queryType": "search",
+          "search": "db.system=postgresql duration>100ms",
+          "tableType": "spans",
+          "limit": 20
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Duration"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Duration"
+          }
+        ]
+      }
+    },
+    {
+      "title": "Database Errors",
+      "type": "table",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "${tempoDatasource}"
+          },
+          "queryType": "search",
+          "search": "db.system=postgresql status.code=ERROR",
+          "tableType": "spans",
+          "limit": 50
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          }
+        }
+      },
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "title": "Trace Exemplars for Database Operations",
+      "type": "trace",
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "${tempoDatasource}"
+      }
+    }
+  ]
+}

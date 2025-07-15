@@ -59,7 +59,6 @@ func TestGetTrendingTokens_Success(t *testing.T) {
 
 	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey)
 
-
 	resp, err := client.GetTrendingTokens(context.Background(), birdeyeclient.TrendingTokensParams{})
 
 	assert.NoError(t, err)
@@ -120,7 +119,6 @@ func TestGetTrendingTokens_JsonDecodingError(t *testing.T) {
 }
 
 func TestGetTrendingTokens_Timeout(t *testing.T) {
-	expectedPath := "/defi/token_trending"
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(150 * time.Millisecond) // Delay to induce timeout
@@ -194,7 +192,6 @@ func TestGetTrendingTokens_NoApiKey(t *testing.T) {
 	// Create client with an empty API key
 	client := birdeyeclient.NewClient(server.Client(), server.URL, "")
 
-
 	_, err := client.GetTrendingTokens(context.Background(), birdeyeclient.TrendingTokensParams{})
 
 	assert.NoError(t, err)
@@ -249,7 +246,6 @@ func TestGetTrendingTokens_WithParameters(t *testing.T) {
 	defer server.Close()
 
 	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey)
-
 
 	params := birdeyeclient.TrendingTokensParams{
 		SortBy:   "v24hUSD",

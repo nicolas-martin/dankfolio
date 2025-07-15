@@ -44,7 +44,7 @@ func NewOtelConnectInterceptor(tracer trace.Tracer, meter metric.Meter) (connect
 	return func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 			start := time.Now()
-			
+
 			procedure := req.Spec().Procedure
 			ctx, span := tracer.Start(ctx, procedure,
 				trace.WithSpanKind(trace.SpanKindServer),
@@ -91,3 +91,4 @@ func NewOtelConnectInterceptor(tracer trace.Tracer, meter metric.Meter) (connect
 		}
 	}, nil
 }
+

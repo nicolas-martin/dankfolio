@@ -76,8 +76,8 @@ func TestClient_GetNewCoins_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	httpClient := server.Client()                        // Use the test server's client
-	client := NewClient(httpClient, server.URL, "", nil) // Use server.URL as baseURL, nil for tracker
+	httpClient := server.Client()                   // Use the test server's client
+	client := NewClient(httpClient, server.URL, "") // Use server.URL as baseURL, nil for tracker
 
 	ctx := context.Background()
 	resp, err := client.GetNewCoins(ctx, nil)
@@ -110,7 +110,7 @@ func TestClient_GetNewCoins_HTTPError(t *testing.T) {
 	defer server.Close()
 
 	httpClient := server.Client()
-	client := NewClient(httpClient, server.URL, "", nil) // nil for tracker
+	client := NewClient(httpClient, server.URL, "") // nil for tracker
 
 	ctx := context.Background()
 	resp, err := client.GetNewCoins(ctx, nil)
@@ -132,7 +132,7 @@ func TestClient_GetNewCoins_MalformedJSON(t *testing.T) {
 	defer server.Close()
 
 	httpClient := server.Client()
-	client := NewClient(httpClient, server.URL, "", nil) // nil for tracker
+	client := NewClient(httpClient, server.URL, "") // nil for tracker
 
 	ctx := context.Background()
 	resp, err := client.GetNewCoins(ctx, nil)
@@ -161,7 +161,7 @@ func TestClient_GetNewCoins_EmptyList(t *testing.T) {
 	defer server.Close()
 
 	httpClient := server.Client()
-	client := NewClient(httpClient, server.URL, "", nil) // nil for tracker
+	client := NewClient(httpClient, server.URL, "") // nil for tracker
 
 	ctx := context.Background()
 	resp, err := client.GetNewCoins(ctx, nil)
@@ -182,8 +182,8 @@ func TestClient_GetNewCoins_NetworkError(t *testing.T) {
 	serverURL := server.URL // Store the URL
 	server.Close()          // Close the server
 
-	httpClient := &http.Client{}                        // Use a default http client
-	client := NewClient(httpClient, serverURL, "", nil) // Point to the now-closed server URL, nil for tracker
+	httpClient := &http.Client{}                   // Use a default http client
+	client := NewClient(httpClient, serverURL, "") // Point to the now-closed server URL, nil for tracker
 
 	ctx := context.Background()
 	resp, err := client.GetNewCoins(ctx, nil)
@@ -206,7 +206,7 @@ func TestClient_GetNewCoins_ContextCancelled(t *testing.T) {
 	defer server.Close()
 
 	httpClient := server.Client()
-	client := NewClient(httpClient, server.URL, "", nil) // nil for tracker
+	client := NewClient(httpClient, server.URL, "") // nil for tracker
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel context immediately
@@ -244,7 +244,7 @@ func TestClient_GetNewCoins_WithPagination(t *testing.T) {
 	defer server.Close()
 
 	httpClient := server.Client()
-	client := NewClient(httpClient, server.URL, "", nil) // nil for tracker
+	client := NewClient(httpClient, server.URL, "") // nil for tracker
 
 	ctx := context.Background()
 	limit := int(10)
@@ -273,7 +273,7 @@ func TestTrackCall_EndpointTruncation(t *testing.T) {
 	mockTracker := &mockTelemetry{}
 	// NewClient returns ClientAPI. GetRequest and PostRequest are package-level functions
 	// that expect *Client as their first argument.
-	rawClient := NewClient(server.Client(), server.URL, "", mockTracker)
+	rawClient := NewClient(server.Client(), server.URL, "")
 
 	// Type assert rawClient to *Client to pass to GetRequest/PostRequest
 	clientInstance, ok := rawClient.(*Client)

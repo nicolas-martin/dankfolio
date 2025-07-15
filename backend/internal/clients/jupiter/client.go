@@ -359,7 +359,7 @@ func doGetRequest[T any](ctx context.Context, c *Client, requestURL string) (T, 
 		slog.Error("Jupiter API returned HTML instead of JSON",
 			"url", requestURL,
 			"content_type", resp.Header.Get("Content-Type"))
-		return zeroT, respBody, fmt.Errorf("Jupiter API returned HTML page instead of JSON data for %s - this may indicate an API endpoint issue or rate limiting", requestURL)
+		return zeroT, respBody, fmt.Errorf("jupiter API returned HTML page instead of JSON data for %s - this may indicate an API endpoint issue or rate limiting", requestURL)
 	}
 
 	var responseObject T

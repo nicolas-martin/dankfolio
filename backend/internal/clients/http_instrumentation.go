@@ -8,8 +8,10 @@ import (
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/tracker"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 // HTTPDoer interface for http.Client compatibility
@@ -68,6 +70,9 @@ func (c *InstrumentedHTTPClient) Do(req *http.Request) (*http.Response, error) {
 
 	// Update request context
 	req = req.WithContext(ctx)
+	
+	// Inject trace context into HTTP headers for distributed tracing
+	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
 
 	// Record timing
 	start := time.Now()
