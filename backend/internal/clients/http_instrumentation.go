@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/tracker"
@@ -46,6 +47,18 @@ func (c *InstrumentedHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	endpointName := req.URL.Path
 	if endpointName == "" {
 		endpointName = "/"
+	}
+	
+	// Normalize endpoint names for better metrics grouping
+	// This prevents query parameters from creating unique metric labels
+	if c.serviceName == "birdeye" {
+		// Remove query parameters and normalize Birdeye endpoints
+		if idx := strings.Index(endpointName, "?"); idx != -1 {
+			endpointName = endpointName[:idx]
+		}
+	} else if c.serviceName == "jupiter" && strings.Contains(endpointName, "/tokens/v1/token/") {
+		// Normalize Jupiter token endpoints
+		endpointName = "/tokens/v1/token/{address}"
 	}
 
 	// Start span
