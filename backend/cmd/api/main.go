@@ -66,9 +66,21 @@ func main() {
 		slog.String("appEnv", config.Env),
 		slog.Int("port", config.GRPCPort),
 		slog.Duration("newCoinsFetchInterval", config.NewCoinsFetchInterval),
+		slog.Duration("trendingCoinsFetchInterval", config.TrendingCoinsFetchInterval),
+		slog.Duration("topGainersFetchInterval", config.TopGainersFetchInterval),
 		slog.String("solanaRPCEndpoint", config.SolanaRPCEndpoint),
 		slog.Int("platformFeeBps", config.PlatformFeeBps),
 		slog.String("platformFeeAccountAddress", config.PlatformFeeAccountAddress),
+		slog.String("jupiterApiUrl", config.JupiterApiUrl),
+		slog.String("BirdEyeEndpoint", config.BirdEyeEndpoint),
+		slog.String("otlpEndpoint", config.OTLPEndpoint),
+		slog.Bool("initializeXStocksOnStartup", config.InitializeXStocksOnStartup),
+		slog.String("dbUrl", maskSensitiveURL(config.DBURL)),
+		slog.Bool("jupiterApiKeySet", config.JupiterApiKey != ""),
+		slog.Bool("birdEyeApiKeySet", config.BirdEyeAPIKey != ""),
+		slog.Bool("solanaRPCApiKeySet", config.SolanaRPCAPIKey != ""),
+		slog.Bool("platformPrivateKeySet", config.PlatformPrivateKey != ""),
+		slog.Bool("devAppCheckTokenSet", config.DevAppCheckToken != ""),
 	)
 
 	ctx := context.Background()
@@ -120,7 +132,7 @@ func main() {
 	// Initialize OpenTelemetry (skip in development unless explicitly configured)
 	var otelTelemetry *otel.Telemetry
 	var apiTracker *tracker.APITracker
-	
+
 	if config.Env == "development" && config.OTLPEndpoint == "" {
 		slog.Info("Skipping OpenTelemetry initialization in development environment")
 		// Create a no-op telemetry for development
@@ -147,14 +159,14 @@ func main() {
 			os.Exit(1)
 		}
 		slog.Info("OpenTelemetry initialized successfully", slog.String("endpoint", otelConfig.OTLPEndpoint))
-		
+
 		apiTracker, err = tracker.NewAPITracker(otelTelemetry)
 		if err != nil {
 			slog.Error("Failed to create API tracker", slog.Any("error", err))
 			os.Exit(1)
 		}
 	}
-	
+
 	slog.Info("API Call Tracker initialized.")
 
 	// Now initialize all clients with the properly initialized apiTracker
@@ -431,6 +443,30 @@ func main() {
 // Helper function to get a pointer to an int.
 func pint(i int) *int {
 	return &i
+}
+
+// maskSensitiveURL masks sensitive parts of a URL while preserving useful information
+func maskSensitiveURL(url string) string {
+	if url == "" {
+		return ""
+	}
+	
+	// Simple approach: mask everything after the first @ and before the last /
+	// This will show the protocol and database name while hiding credentials and host details
+	parts := strings.Split(url, "@")
+	if len(parts) < 2 {
+		return url // No credentials to mask
+	}
+	
+	// Get the part after @
+	afterAt := parts[len(parts)-1]
+	hostAndPath := strings.Split(afterAt, "/")
+	if len(hostAndPath) < 2 {
+		return parts[0] + "@***"
+	}
+	
+	// Return protocol + masked credentials + database name
+	return parts[0] + "@***/***/" + hostAndPath[len(hostAndPath)-1]
 }
 
 type Config struct {
