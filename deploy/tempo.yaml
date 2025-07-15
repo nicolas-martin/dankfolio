@@ -1,10 +1,11 @@
 server:
     http_listen_port: 3200
-    grpc_listen_port: 9096 # Changed from 4317
 
 distributor:
-    receivers:
-        otlp:
-            protocols:
-                grpc:
-                    endpoint: 0.0.0.0:9096 # Changed from 4317
+    receivers: {}
+
+storage:
+    trace:
+        backend: local
+        local:
+            path: /var/lib/tempo/traces

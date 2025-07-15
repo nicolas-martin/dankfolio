@@ -385,11 +385,11 @@ func getRequest[T any](c *Client, ctx context.Context, requestURL string) (*T, e
 	if err != nil {
 		slog.Error("Failed to parse URL for tracking", "url", requestURL, "error", err)
 		return nil, fmt.Errorf("failed to parse URL: %w", err)
-	} else {
-		endpointName := parsedURL.Path
-		if endpointName == "" {
-			endpointName = "/"
-		}
+	}
+	
+	endpointName := parsedURL.Path
+	if endpointName == "" {
+		endpointName = "/"
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", requestURL, nil)
