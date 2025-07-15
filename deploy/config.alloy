@@ -1,3 +1,4 @@
+
   // ─── OTLP Receiver (Single Ingestion Point) ─────────────────────
   otelcol.receiver.otlp "default" {
     grpc { endpoint = "0.0.0.0:4317" }
@@ -14,15 +15,15 @@
   }
 
   otelcol.exporter.otlp "tempo" {
-    client {
-      endpoint = "localhost:9096"  // Tempo's new gRPC port
-    }
+  client {
+    endpoint = "localhost:4318"
     tls {
       insecure = true
     }
   }
+}
 
-  // ─── Metrics Pipeline → Mimir ───────────────────────────────────
+// ─── Metrics Pipeline → Mimir ───────────────────────────────────
   otelcol.processor.batch "metrics" {
     output { metrics = [otelcol.exporter.prometheus.mimir.input] }
   }

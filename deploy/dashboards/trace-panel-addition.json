@@ -1,0 +1,85 @@
+{
+  "title": "Recent Traces with Errors",
+  "type": "table",
+  "gridPos": {
+    "h": 10,
+    "w": 24,
+    "x": 0,
+    "y": 32
+  },
+  "datasource": {
+    "type": "tempo",
+    "uid": "${tempoDatasource}"
+  },
+  "targets": [
+    {
+      "datasource": {
+        "type": "tempo",
+        "uid": "${tempoDatasource}"
+      },
+      "query": "{resource.service.name=\"dankfolio\" && status.code=\"error\"}",
+      "queryType": "search",
+      "limit": 20,
+      "tableType": "traces",
+      "refId": "A"
+    }
+  ],
+  "fieldConfig": {
+    "defaults": {
+      "custom": {
+        "align": "auto",
+        "displayMode": "auto"
+      }
+    },
+    "overrides": [
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Trace ID"
+        },
+        "properties": [
+          {
+            "id": "links",
+            "value": [
+              {
+                "title": "View Trace",
+                "url": "/explore?orgId=1&left=%5B%22now-1h%22,%22now%22,%22Tempo%22,%7B%22query%22:%22${__value.raw}%22%7D%5D",
+                "targetBlank": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "transformations": [
+    {
+      "id": "organize",
+      "options": {
+        "excludeByName": {},
+        "indexByName": {
+          "traceName": 0,
+          "startTime": 1,
+          "duration": 2,
+          "spanCount": 3,
+          "traceID": 4
+        },
+        "renameByName": {
+          "traceName": "Operation",
+          "startTime": "Start Time",
+          "duration": "Duration",
+          "spanCount": "Spans",
+          "traceID": "Trace ID"
+        }
+      }
+    }
+  ],
+  "options": {
+    "showHeader": true,
+    "footer": {
+      "show": false,
+      "reducer": ["sum"],
+      "fields": ""
+    }
+  }
+}
