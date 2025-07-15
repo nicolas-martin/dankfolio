@@ -1,8 +1,13 @@
 server:
     http_listen_port: 3200
+    grpc_listen_port: 9095
 
 distributor:
-    receivers: {}
+    receivers:
+        otlp:
+            protocols:
+                grpc:
+                    endpoint: 127.0.0.1:4318
 
 storage:
     trace:
