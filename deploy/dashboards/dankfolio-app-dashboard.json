@@ -1,264 +1,350 @@
 {
   "title": "Dankfolio Application Monitoring",
-    "panels": [
+  "overwrite": true,
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "templating": {
+    "list": [
       {
-        "title": "Request Rate",
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
-        "type": "timeseries",
-        "targets": [
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "rate(dankfolio_grpc_requests_total[5m])",
-            "legendFormat": "{{rpc_method}}"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "reqps",
-            "color": {"mode": "palette-classic"}
-          }
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {
+          "text": "Mimir",
+          "value": "Mimir"
         }
       },
       {
-        "title": "Error Rate",
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
-        "type": "timeseries",
-        "targets": [
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "rate(dankfolio_grpc_requests_total{rpc_grpc_status_code!=\"OK\"}[5m])",
-            "legendFormat": "{{rpc_method}} - {{rpc_grpc_status_code}}"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "errors/s",
-            "color": {"mode": "palette-classic"},
-            "custom": {
-              "fillOpacity": 10
-            }
-          }
-        }
-      },
-      {
-        "title": "API Response Time (p95)",
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
-        "type": "gauge",
-        "targets": [
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "histogram_quantile(0.95, rate(dankfolio_grpc_request_duration_seconds_bucket[5m]))",
-            "legendFormat": "{{rpc_method}}",
-            "format": "time_series"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "s",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {"color": "green", "value": null},
-                {"color": "yellow", "value": 0.5},
-                {"color": "red", "value": 1}
-              ]
-            },
-            "max": 2,
-            "displayName": "${__field.labels.rpc_method}"
-          },
-          "overrides": [
-            {
-              "matcher": {"id": "byRegexp", "options": ".*"},
-              "properties": [
-                {
-                  "id": "displayName",
-                  "value": "${__field.labels.rpc_method}"
-                }
-              ]
-            }
-          ]
-        },
-        "transformations": [
-          {
-            "id": "renameByRegex",
-            "options": {
-              "regex": "dankfolio\\.v1\\.(.*)",
-              "renamePattern": "$1"
-            }
-          }
-        ]
-      },
-      {
-        "title": "Active Requests",
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
-        "type": "stat",
-        "targets": [
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "dankfolio_grpc_active_requests",
-            "legendFormat": "{{rpc_method}} Active"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {"mode": "thresholds"},
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {"color": "green", "value": null},
-                {"color": "yellow", "value": 50},
-                {"color": "red", "value": 100}
-              ]
-            }
-          }
-        },
-        "transformations": [
-          {
-            "id": "renameByRegex",
-            "options": {
-              "regex": "dankfolio\\.v1\\.(.*) Active",
-              "renamePattern": "$1"
-            }
-          }
-        ]
-      },
-      {
-        "title": "External API Call Rate",
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
-        "type": "timeseries",
-        "targets": [
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "rate(dankfolio_api_calls_total[5m])",
-            "legendFormat": "{{service_name}} - {{endpoint_name}}"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "reqps",
-            "color": {"mode": "palette-classic"}
-          }
-        }
-      },
-      {
-        "title": "External API Errors",
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
-        "type": "timeseries",
-        "targets": [
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "rate(dankfolio_api_errors_total[5m])",
-            "legendFormat": "{{service_name}} - {{error_type}}"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "errors/s",
-            "color": {"mode": "palette-classic"}
-          }
-        }
-      },
-      {
-        "title": "External API Response Times (p95)",
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
-        "type": "timeseries",
-        "targets": [
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "histogram_quantile(0.95, rate(dankfolio_api_call_duration_seconds_bucket[5m]))",
-            "legendFormat": "{{service_name}} - {{endpoint_name}}"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "s",
-            "color": {"mode": "palette-classic"}
-          }
-        }
-      },
-      {
-        "title": "gRPC Error Rate by Status",
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
-        "type": "timeseries",
-        "targets": [
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "rate(dankfolio_grpc_requests_total[5m]) - rate(dankfolio_grpc_requests_total{rpc_grpc_status_code=\"OK\"}[5m])",
-            "legendFormat": "{{rpc_method}} Errors"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "errors/s",
-            "color": {"mode": "palette-classic"}
-          }
-        }
-      },
-      {
-        "title": "Application Logs",
-        "gridPos": {"h": 10, "w": 24, "x": 0, "y": 32},
-        "type": "logs",
-        "targets": [
-          {
-            "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
-            "expr": "{job=\"dankfolio\"} |= \"\"",
-            "refId": "A"
-          }
-        ],
-        "options": {
-          "showTime": true,
-          "showLabels": true,
-          "showCommonLabels": false,
-          "wrapLogMessage": true,
-          "prettifyLogMessage": true,
-          "enableLogDetails": true,
-          "dedupStrategy": "none",
-          "sortOrder": "Descending"
-        }
-      },
-      {
-        "title": "Error Logs",
-        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 42},
-        "type": "logs",
-        "targets": [
-          {
-            "datasource": {"type": "loki", "uid": "${lokiDatasource}"},
-            "expr": "{job=\"dankfolio\"} |= \"ERROR\"",
-            "refId": "A"
-          }
-        ],
-        "options": {
-          "showTime": true,
-          "showLabels": false,
-          "wrapLogMessage": true
+        "name": "lokiDatasource",
+        "type": "datasource",
+        "query": "loki",
+        "current": {
+          "text": "Loki",
+          "value": "Loki"
         }
       }
-    ],
-    "templating": {
-      "list": [
+    ]
+  },
+  "panels": [
+    {
+      "title": "Request Rate",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
         {
-          "name": "datasource",
-          "type": "datasource",
-          "query": "prometheus",
-          "current": {
-            "text": "Mimir",
-            "value": "Mimir"
-          }
-        },
-        {
-          "name": "lokiDatasource",
-          "type": "datasource",
-          "query": "loki",
-          "current": {
-            "text": "Loki",
-            "value": "Loki"
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "rate(dankfolio_grpc_requests_total[5m])",
+          "legendFormat": "{{rpc_method}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": {
+            "mode": "palette-classic"
           }
         }
-      ]
+      }
     },
-    "refresh": "10s",
-    "schemaVersion": 38,
-  "version": 1,
-  "overwrite": true
+    {
+      "title": "Error Rate",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "rate(dankfolio_grpc_requests_total{rpc_grpc_status_code!=\"OK\"}[5m])",
+          "legendFormat": "{{rpc_method}} - {{rpc_grpc_status_code}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "errors/s",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 10
+          }
+        }
+      }
+    },
+    {
+      "title": "API Response Time (p95)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "type": "gauge",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "label_replace(histogram_quantile(0.95, rate(dankfolio_grpc_request_duration_seconds_bucket[5m])), \"rpc_method\", \"$1\", \"rpc_method\", \"^/?dankfolio\\\\.v1\\\\.(.*)\")",
+          "legendFormat": "{{rpc_method}}"
+        }
+      ],
+      "options": {
+        "showName": true,
+        "showValue": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "displayName": "${__field.displayName}",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.5
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "max": 2
+        }
+      }
+    },
+    {
+      "title": "Active Requests",
+      "type": "stat",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "label_replace(\n  dankfolio_grpc_active_requests,\n  \"rpc_method\",\n  \"$1\",\n  \"rpc_method\",\n  \"dankfolio\\\\.v1\\\\.(.*)\"\n)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "displayName": "${__field.name}",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "External API Call Rate",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "rate(dankfolio_api_calls_total[5m])",
+          "legendFormat": "{{service_name}} - {{endpoint_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      }
+    },
+    {
+      "title": "External API Errors",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "rate(dankfolio_api_errors_total[5m])",
+          "legendFormat": "{{service_name}} - {{error_type}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "errors/s",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      }
+    },
+    {
+      "title": "External API Response Times (p95)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "histogram_quantile(0.95, rate(dankfolio_api_call_duration_seconds_bucket[5m]))",
+          "legendFormat": "{{service_name}} - {{endpoint_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      }
+    },
+    {
+      "title": "gRPC Error Rate by Status",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "rate(dankfolio_grpc_requests_total[5m]) - rate(dankfolio_grpc_requests_total{rpc_grpc_status_code=\"OK\"}[5m])",
+          "legendFormat": "{{rpc_method}} Errors"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "errors/s",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      }
+    },
+    {
+      "title": "Application Logs",
+      "type": "logs",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 32
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "expr": "{job=\"dankfolio\"} |= \"\"",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "title": "Error Logs",
+      "type": "logs",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${lokiDatasource}"
+          },
+          "expr": "{job=\"dankfolio\"} |= \"ERROR\"",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "wrapLogMessage": true
+      }
+    }
+  ]
 }
