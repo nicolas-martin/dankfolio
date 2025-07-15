@@ -1,0 +1,82 @@
+  // ─── OTLP Receiver (Single Ingestion Point) ─────────────────────
+  otelcol.receiver.otlp "default" {
+    grpc { endpoint = "0.0.0.0:4317" }
+
+    output {
+      traces = [otelcol.processor.batch.traces.input]
+      metrics = [otelcol.processor.batch.metrics.input]
+    }
+  }
+
+  // ─── Traces Pipeline → Tempo ────────────────────────────────────
+  otelcol.processor.batch "traces" {
+    output { traces = [otelcol.exporter.otlp.tempo.input] }
+  }
+
+  otelcol.exporter.otlp "tempo" {
+    client {
+      endpoint = "localhost:9096"  // Tempo's new gRPC port
+    }
+    tls {
+      insecure = true
+    }
+  }
+
+  // ─── Metrics Pipeline → Mimir ───────────────────────────────────
+  otelcol.processor.batch "metrics" {
+    output { metrics = [otelcol.exporter.prometheus.mimir.input] }
+  }
+
+  otelcol.exporter.prometheus "mimir" {
+    forward_to = [prometheus.remote_write.mimir.receiver]
+  }
+
+  // ─── Prometheus Scraping → Mimir ────────────────────────────────
+  prometheus.scrape "node" {
+    targets = [ { __address__ = "localhost:9100" } ]
+    forward_to = [prometheus.remote_write.mimir.receiver]
+  }
+
+  prometheus.remote_write "mimir" {
+    endpoint { url = "http://127.0.0.1:9009/api/v1/push" }
+  }
+
+  // ─── Journal Logs → Loki ─────────────────────────────────────────────
+  // Collect all system logs
+  loki.source.journal "system" {
+    forward_to = [loki.process.system.receiver]
+    labels = {
+      job = "systemd",
+    }
+  }
+
+  // Collect specific service logs (your app)
+  loki.source.journal "dankfolio" {
+    forward_to = [loki.process.system.receiver]
+    matches = "_SYSTEMD_UNIT=dankfolio.service"
+    labels = {
+      job = "dankfolio",
+      app = "dankfolio",
+    }
+  }
+
+  loki.process "system" {
+    forward_to = [loki.write.default.receiver]
+
+    // Extract unit name as label
+    stage.regex {
+      expression = "_SYSTEMD_UNIT=(?P<unit>.*)"
+    }
+
+    stage.labels {
+      values = {
+        unit = "",
+      }
+    }
+  }
+
+  loki.write "default" {
+    endpoint {
+      url = "http://localhost:3100/loki/api/v1/push"
+    }
+  }

@@ -1,0 +1,21 @@
+apiVersion: 1
+
+datasources:
+    - name: Loki
+      type: loki
+      url: http://localhost:3100
+      access: proxy
+
+    - name: Tempo
+      type: tempo
+      url: http://localhost:3200
+      access: proxy
+
+    - name: Mimir
+      type: prometheus
+      url: http://localhost:9009/prometheus
+      access: proxy
+      jsonData:
+          httpHeaderName1: X-Scope-OrgID
+      secureJsonData:
+          httpHeaderValue1: anonymous
