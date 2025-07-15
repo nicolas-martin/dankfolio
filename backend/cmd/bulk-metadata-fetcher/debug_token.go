@@ -25,9 +25,9 @@ func main() {
 	if rpcURL == "" {
 		rpcURL = "https://api.mainnet-beta.solana.com"
 	}
-	
+
 	apiKey := os.Getenv("SOLANA_RPC_API_KEY")
-	
+
 	// Create RPC client
 	var rpcClient *rpc.Client
 	if apiKey != "" {
@@ -58,7 +58,7 @@ func main() {
 	fmt.Printf("Mint: %s\n", mintAddr)
 	fmt.Printf("Owner: %s\n", accountInfo.Value.Owner)
 	fmt.Printf("Data length: %d bytes\n", len(data))
-	
+
 	// Print first 100 bytes in hex
 	fmt.Println("\nFirst 100 bytes (hex):")
 	if len(data) > 100 {
@@ -66,13 +66,13 @@ func main() {
 	} else {
 		fmt.Println(hex.Dump(data))
 	}
-	
+
 	// Check account type at offset 82
 	if len(data) > 82 {
 		fmt.Printf("\nAccount type at offset 82: %d\n", data[82])
 		if data[82] == 1 {
 			fmt.Println("This is a mint with extensions")
-			
+
 			// Check extension length at offset 83-84
 			if len(data) > 84 {
 				extLen := uint16(data[83]) | uint16(data[84])<<8
@@ -82,10 +82,11 @@ func main() {
 			fmt.Println("This is NOT a mint with extensions")
 		}
 	}
-	
+
 	// Print last 100 bytes to look for metadata
 	if len(data) > 200 {
 		fmt.Println("\nLast 100 bytes (hex):")
 		fmt.Println(hex.Dump(data[len(data)-100:]))
 	}
 }
+

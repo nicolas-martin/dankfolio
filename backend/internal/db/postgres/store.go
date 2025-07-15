@@ -24,8 +24,7 @@ type Store struct {
 	coinsRepo        db.Repository[model.Coin]
 	tradesRepo       db.Repository[model.Trade]
 	walletRepo       db.Repository[model.Wallet]
-	apiStatsRepo     db.Repository[model.ApiStat]
-	naughtyWordsRepo db.Repository[model.NaughtyWord] // <<< ADD THIS LINE
+	naughtyWordsRepo db.Repository[model.NaughtyWord]
 }
 
 var _ db.Store = (*Store)(nil) // Compile-time check for interface implementation
@@ -38,8 +37,7 @@ func NewStoreWithDB(database *gorm.DB) *Store {
 		coinsRepo:        NewRepository[schema.Coin, model.Coin](database),
 		tradesRepo:       NewRepository[schema.Trade, model.Trade](database),
 		walletRepo:       NewRepository[schema.Wallet, model.Wallet](database),
-		apiStatsRepo:     NewRepository[model.ApiStat, model.ApiStat](database),          // Use generic repo; S=model.ApiStat, M=model.ApiStat
-		naughtyWordsRepo: NewRepository[schema.NaughtyWord, model.NaughtyWord](database), // <<< ADD THIS LINE
+		naughtyWordsRepo: NewRepository[schema.NaughtyWord, model.NaughtyWord](database),
 	}
 }
 
@@ -74,7 +72,7 @@ func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level, env st
 
 	if enableAutoMigrate {
 		// Auto-migrate the schema, now including model.ApiStat and schema.NaughtyWord
-		if err := db.AutoMigrate(&schema.Coin{}, &schema.Trade{}, &schema.Wallet{}, &model.ApiStat{}, &schema.NaughtyWord{}); err != nil {
+		if err := db.AutoMigrate(&schema.Coin{}, &schema.Trade{}, &schema.Wallet{}, &schema.NaughtyWord{}); err != nil {
 			return nil, fmt.Errorf("failed to auto-migrate schemas: %w", err)
 		}
 	}
@@ -112,10 +110,6 @@ func (s *Store) Coins() db.Repository[model.Coin] {
 
 func (s *Store) Trades() db.Repository[model.Trade] {
 	return s.tradesRepo
-}
-
-func (s *Store) ApiStats() db.Repository[model.ApiStat] { // Changed return type
-	return s.apiStatsRepo
 }
 
 // NaughtyWords returns the repository for NaughtyWord entities.

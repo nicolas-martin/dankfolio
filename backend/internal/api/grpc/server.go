@@ -13,6 +13,8 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
@@ -28,6 +30,8 @@ type Server struct {
 	appCheckClient   *appcheck.Client
 	env              string
 	devAppCheckToken string
+	tracer           trace.Tracer
+	meter            metric.Meter
 }
 
 // NewServer creates a new Server instance
@@ -54,17 +58,35 @@ func NewServer(
 	}
 }
 
+// SetOtel sets the OpenTelemetry tracer and meter for the server
+func (s *Server) SetOtel(tracer trace.Tracer, meter metric.Meter) {
+	s.tracer = tracer
+	s.meter = meter
+}
+
 // Start starts the Connect RPC server
 func (s *Server) Start(port int) error {
 	// Create logger interceptor
 	logInterceptor := middleware.GRPCLoggerInterceptor()
 	debugModeInterceptor := middleware.GRPCDebugModeInterceptor()
 
+	// Create OpenTelemetry interceptor if tracer and meter are set
+	var interceptors []connect.Interceptor
+	interceptors = append(interceptors, debugModeInterceptor, logInterceptor)
+	
+	if s.tracer != nil && s.meter != nil {
+		otelInterceptor, err := middleware.NewOtelConnectInterceptor(s.tracer, s.meter)
+		if err != nil {
+			return fmt.Errorf("failed to create OpenTelemetry interceptor: %w", err)
+		}
+		interceptors = append(interceptors, otelInterceptor)
+	}
+
 	// Create App Check authentication middleware
 	appCheckMiddleware := middleware.AppCheckMiddleware(s.appCheckClient, s.env, s.devAppCheckToken)
 
 	// Default interceptors for all handlers
-	defaultInterceptors := connect.WithInterceptors(debugModeInterceptor, logInterceptor)
+	defaultInterceptors := connect.WithInterceptors(interceptors...)
 
 	// Create a sub-mux for protected routes
 	protectedMux := http.NewServeMux()

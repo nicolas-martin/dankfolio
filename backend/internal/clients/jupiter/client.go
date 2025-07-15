@@ -15,7 +15,8 @@ import (
 
 	solanago "github.com/gagliardetto/solana-go"
 
-	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/tracker"
 	"github.com/nicolas-martin/dankfolio/backend/internal/util"
 )
 
@@ -35,13 +36,13 @@ type Client struct {
 	httpClient *http.Client
 	baseURL    string
 	apiKey     string
-	tracker    telemetry.TelemetryAPI
+	tracker    tracker.APITracker
 }
 
 var _ ClientAPI = (*Client)(nil) // Ensure Client implements ClientAPI
 
 // NewClient creates a new instance of Client
-func NewClient(httpClient *http.Client, url, key string, tracker telemetry.TelemetryAPI) ClientAPI {
+func NewClient(httpClient *http.Client, url, key string, tracker tracker.APITracker) ClientAPI {
 	return &Client{
 		httpClient: httpClient,
 		baseURL:    url,
@@ -116,7 +117,7 @@ func (c *Client) GetQuote(ctx context.Context, params QuoteParams) (*QuoteRespon
 	}
 
 	fullURL := fmt.Sprintf("%s/swap/v1/quote?%s", c.baseURL, queryParams.Encode())
-	
+
 	slog.Info("Jupiter API request", "url", fullURL, "baseURL", c.baseURL)
 
 	quoteRespData, rawBody, err := GetRequest[QuoteResponse](c, ctx, fullURL)
@@ -294,7 +295,7 @@ func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp []byte, us
 
 // GetRequest is a helper function to perform an HTTP GET request, check status, and unmarshal response
 func GetRequest[T any](c *Client, ctx context.Context, requestURL string) (T, []byte, error) {
-	var zeroT T // Zero value for T to return in error cases
+	// var zeroT T // Zero value for T to return in error cases
 	// Extract endpointName from URL
 	parsedURL, err := url.Parse(requestURL)
 	if err != nil {
@@ -308,12 +309,22 @@ func GetRequest[T any](c *Client, ctx context.Context, requestURL string) (T, []
 		if endpointName == "" {
 			endpointName = "/" // Default if path is empty
 		}
-		if c.tracker != nil {
-			c.tracker.TrackCall("jupiter", endpointName)
-		}
+
+		// Use generic instrumentation if available
+		return clients.InstrumentHTTPRequestWithResponse(ctx, &c.tracker, "jupiter", endpointName, func(ctx context.Context) (T, []byte, error) {
+			return doGetRequest[T](ctx, c, requestURL)
+		})
+
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", requestURL, nil) // Method is hardcoded to GET
+	return doGetRequest[T](ctx, c, requestURL)
+}
+
+// doGetRequest performs the actual GET request without instrumentation
+func doGetRequest[T any](ctx context.Context, c *Client, requestURL string) (T, []byte, error) {
+	var zeroT T
+
+	req, err := http.NewRequestWithContext(ctx, "GET", requestURL, nil)
 	if err != nil {
 		return zeroT, nil, fmt.Errorf("failed to create GET request: %w", err)
 	}
@@ -382,19 +393,31 @@ func PostRequest[T any](c *Client, ctx context.Context, requestURL string, reque
 	parsedURL, err := url.Parse(requestURL)
 	if err != nil {
 		slog.Error("Failed to parse URL for tracking", "url", requestURL, "error", err)
-		// Fallback or decide how to handle error
-	} else {
-		endpointName := parsedURL.Path
-		if strings.HasPrefix(endpointName, "/tokens/v1/token/") {
-			endpointName = "/tokens/v1/token"
-		}
-		if endpointName == "" {
-			endpointName = "/" // Default if path is empty
-		}
-		if c.tracker != nil {
-			c.tracker.TrackCall("jupiter", endpointName)
-		}
+		return zeroT, err
 	}
+
+	endpointName := parsedURL.Path
+	if strings.HasPrefix(endpointName, "/tokens/v1/token/") {
+		endpointName = "/tokens/v1/token"
+	}
+	if endpointName == "" {
+		endpointName = "/" // Default if path is empty
+	}
+
+	result, err := clients.InstrumentHTTPRequest(ctx, &c.tracker, "jupiter", endpointName, func(ctx context.Context) (*T, error) {
+		res, err := doPostRequest[T](ctx, c, requestURL, requestBody)
+		return &res, err
+	})
+	if result != nil {
+		return *result, err
+	}
+	return zeroT, err
+
+}
+
+// doPostRequest performs the actual POST request without instrumentation
+func doPostRequest[T any](ctx context.Context, c *Client, requestURL string, requestBody any) (T, error) {
+	var zeroT T
 
 	// Marshal the request body to JSON
 	bodyBytes, err := json.Marshal(requestBody)

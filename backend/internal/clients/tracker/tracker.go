@@ -1,274 +1,199 @@
-package clients
+package tracker
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
-	"maps"
-	"sync"
 	"time"
 
-	"github.com/nicolas-martin/dankfolio/backend/internal/db"
-	"github.com/nicolas-martin/dankfolio/backend/internal/model"
-	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
+	"github.com/nicolas-martin/dankfolio/backend/internal/telemetry/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
-// APICallTrackerImpl implements the telemetry.TelemetryAPI interface using a thread-safe map
-// and a database store for persistence.
-type APICallTrackerImpl struct {
-	counts  map[string]map[string]int
-	mutex   sync.Mutex
-	dbStore db.Store
-	logger  *slog.Logger
-}
-
-// NewAPICallTracker creates a new APICallTrackerImpl.
-func NewAPICallTracker(store db.Store, logger *slog.Logger) telemetry.TelemetryAPI {
-	if logger == nil {
-		logger = slog.Default()
-	}
-	return &APICallTrackerImpl{
-		counts:  make(map[string]map[string]int),
-		dbStore: store,
-		logger:  logger.With("component", "api_call_tracker"),
+// APITracker tracks API calls using OpenTelemetry
+type APITracker struct {
+	telemetry *otel.Telemetry
+	metrics   struct {
+		apiCallCounter  metric.Int64Counter
+		apiCallDuration metric.Float64Histogram
+		activeRequests  metric.Int64UpDownCounter
+		errorCounter    metric.Int64Counter
 	}
 }
 
-// Increment records an API call to a specific service and endpoint both in memory and in the database.
-func (t *APICallTrackerImpl) Increment(serviceName, endpointName string) {
-	t.mutex.Lock()
-	if _, ok := t.counts[serviceName]; !ok {
-		t.counts[serviceName] = make(map[string]int)
-	}
-	t.counts[serviceName][endpointName]++
-	newTotalCount := t.counts[serviceName][endpointName]
-	t.mutex.Unlock() // Unlock before DB call to avoid holding lock during I/O
-
-	// Persist to database.
-	// The Upsert method in ApiStatsRepository now sets the count to the provided value.
-	// So, we pass the newTotalCount.
-	stat := &model.ApiStat{
-		ServiceName:  serviceName,
-		EndpointName: endpointName,
-		Date:         time.Now().Truncate(24 * time.Hour), // Use current date, truncated to day
-		Count:        newTotalCount,                       // Pass the new total count
+// NewAPITracker creates a new OpenTelemetry-based API tracker
+func NewAPITracker(telemetry *otel.Telemetry) (*APITracker, error) {
+	tracker := &APITracker{
+		telemetry: telemetry,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) // Context for DB operation
-	defer cancel()
-
-	if _, err := t.dbStore.ApiStats().Upsert(ctx, stat); err != nil { // Correctly handle two return values
-		t.logger.Error("Failed to upsert API stat", "error", err, "service", serviceName, "endpoint", endpointName, "new_total_count", newTotalCount)
-		// If DB write fails, the in-memory count is already incremented.
-		// Depending on requirements, we might want to revert or handle this.
-		// For now, we log the error and the in-memory count remains.
+	if err := tracker.initMetrics(); err != nil {
+		return nil, fmt.Errorf("failed to initialize metrics: %w", err)
 	}
+
+	return tracker, nil
 }
 
-// TrackCall implements the telemetry.TelemetryAPI interface by delegating to Increment
-func (t *APICallTrackerImpl) TrackCall(serviceName, endpointName string) {
-	t.Increment(serviceName, endpointName)
-}
+func (t *APITracker) initMetrics() error {
+	var err error
 
-// GetStats returns a copy of the current in-memory statistics.
-func (t *APICallTrackerImpl) GetStats() map[string]map[string]int {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
-
-	statsCopy := make(map[string]map[string]int)
-	for serviceName, endpointMap := range t.counts {
-		statsCopy[serviceName] = make(map[string]int)
-		maps.Copy(statsCopy[serviceName], endpointMap)
-	}
-	return statsCopy
-}
-
-// LoadStatsForToday fetches today's stats from the database and populates the in-memory stats map.
-// This should typically be called once at application startup.
-func (t *APICallTrackerImpl) LoadStatsForToday(ctx context.Context) error {
-	today := time.Now().Truncate(24 * time.Hour)
-
-	opts := db.ListOptions{
-		Filters: []db.FilterOption{
-			// model.ApiStat has `Date time.Time gorm:"type:date"`.
-			// GORM should handle comparison with a time.Time value correctly for DATE columns.
-			// Formatting to "2006-01-02" string might be needed if there are timezone issues or specific DB driver behaviors,
-			// but direct time.Time is often preferred with GORM if possible.
-			// Let's stick to time.Time for now, as repository.go's GetByDate was also using time.Time with date.Format.
-			// The generic ListWithOpts builds SQL like "date = ?" so GORM will handle the value.
-			{Field: "date", Operator: db.FilterOpEqual, Value: today},
-		},
-		// No limit needed, we want all stats for that date.
-	}
-
-	// db.Repository.ListWithOpts returns ([]T, int64, error)
-	// For model.ApiStat, T is model.ApiStat. So result is []model.ApiStat
-	dbStats, _, err := t.dbStore.ApiStats().ListWithOpts(ctx, opts)
+	t.metrics.apiCallCounter, err = t.telemetry.Meter.Int64Counter(
+		"dankfolio.api_calls_total",
+		metric.WithDescription("Total number of API calls"),
+		metric.WithUnit("{call}"),
+	)
 	if err != nil {
-		// Note: ListWithOpts might not return db.ErrNotFound directly if no records match filters.
-		// It would typically return an empty slice and no error.
-		// db.ErrNotFound is more common for Get or First type operations.
-		// So, we don't explicitly check for db.ErrNotFound here, an empty slice is sufficient.
-		t.logger.Error("Failed to load API stats for today from database using ListWithOpts", "error", err)
-		return err
+		return fmt.Errorf("failed to create api call counter: %w", err)
 	}
 
-	if len(dbStats) == 0 {
-		t.logger.Info("No API stats found in DB for today", "date", today.Format("2006-01-02"))
-		return nil // Not an error if no stats exist yet
+	t.metrics.apiCallDuration, err = t.telemetry.Meter.Float64Histogram(
+		"dankfolio.api_call_duration_seconds",
+		metric.WithDescription("Duration of API calls in seconds"),
+		metric.WithUnit("s"),
+		metric.WithExplicitBucketBoundaries(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create api call duration histogram: %w", err)
 	}
-	// Not an error if no stats exist yet, so return nil.
-	// This line is now part of the len(dbStats) == 0 block due to the brace removal.
-	// It should be outside or the logic re-evaluated.
-	// Based on the original intent, if len(dbStats) == 0, we log and return nil.
-	// The 'return nil' after the block seems redundant if the block itself returns nil.
-	// Let's assume the first 'return nil' inside the if is sufficient.
-	// The second 'return nil' would be dead code if the 'if' block is taken.
-	// If the 'if' block is NOT taken, then execution continues.
-	// The original code had:
-	// if len(dbStats) == 0 { log; return nil; } // Corrected this line
-	// return nil // This was likely an error, making LoadStatsForToday always return nil if dbStats was not empty.
 
-	// Corrected logic: if empty, log and return nil. Otherwise, proceed.
-	// The 'return nil' that was outside the 'if' block (and causing syntax error) is removed.
-
-	t.mutex.Lock() // Lock to safely update in-memory stats
-	defer t.mutex.Unlock()
-
-	// Clear existing in-memory stats for today or merge carefully.
-	// For simplicity, this implementation will overwrite based on DB data for the current day.
-	// If Increment was called before LoadStatsForToday, those in-memory counts might be lost
-	// or incorrectly merged if not handled.
-	// A safer approach might be to only call LoadStatsForToday at startup before any Increments.
-	// Or, to merge: add DB count to existing in-memory count if any.
-	// Current: DB is source of truth at load time.
-	t.counts = make(map[string]map[string]int) // Reset in-memory map for today
-
-	for _, stat := range dbStats {
-		if stat.Date.Equal(today) { // Ensure we only load today's stats
-			if _, ok := t.counts[stat.ServiceName]; !ok {
-				t.counts[stat.ServiceName] = make(map[string]int)
-			}
-			// The count from DB is the total for that service/endpoint/date.
-			// So, we set it directly.
-			t.counts[stat.ServiceName][stat.EndpointName] = stat.Count
-		}
+	t.metrics.activeRequests, err = t.telemetry.Meter.Int64UpDownCounter(
+		"dankfolio.active_requests",
+		metric.WithDescription("Number of active requests"),
+		metric.WithUnit("{request}"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create active requests counter: %w", err)
 	}
-	t.logger.Info("Successfully loaded API stats for today from database using ListWithOpts", "date", today.Format("2006-01-02"), "number_of_records", len(dbStats))
+
+	t.metrics.errorCounter, err = t.telemetry.Meter.Int64Counter(
+		"dankfolio.api_errors_total",
+		metric.WithDescription("Total number of API errors"),
+		metric.WithUnit("{error}"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create error counter: %w", err)
+	}
+
 	return nil
 }
 
-// ResetStats flushes all current in-memory statistics to the database for the current day
-// and then clears the in-memory map. This is typically called at the end of a period (e.g., end of day).
-func (t *APICallTrackerImpl) ResetStats(ctx context.Context) error {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
-
-	t.logger.Info("Starting ResetStats: flushing in-memory stats to DB and clearing memory.")
-
-	// Use a single context for all DB operations within this reset.
-	// A short timeout might be appropriate if many stats need flushing.
-	opCtx, cancel := context.WithTimeout(ctx, 30*time.Second) // E.g., 30 seconds timeout for all upserts
-	defer cancel()
-
-	today := time.Now().Truncate(24 * time.Hour)
-	var firstError error
-
-	for serviceName, endpointMap := range t.counts {
-		for endpointName, count := range endpointMap {
-			if count == 0 { // No need to persist if count is zero (though upsert might handle it)
-				continue
-			}
-			stat := &model.ApiStat{
-				ServiceName:  serviceName,
-				EndpointName: endpointName,
-				Date:         today,
-				Count:        count, // This is the total accumulated count from memory
-			}
-			// Upsert returns (int64, error), we ignore the int64 here.
-			if _, err := t.dbStore.ApiStats().Upsert(opCtx, stat); err != nil {
-				t.logger.Error("Failed to upsert API stat during ResetStats",
-					"error", err,
-					"service", serviceName,
-					"endpoint", endpointName,
-					"count", count)
-				if firstError == nil {
-					firstError = err // Capture the first error encountered
-				}
-				// Continue trying to flush other stats even if one fails.
-			}
-		}
+// TrackCall tracks an API call (for backward compatibility)
+func (t *APITracker) TrackCall(serviceName, endpointName string) {
+	attrs := []attribute.KeyValue{
+		attribute.String("service.name", serviceName),
+		attribute.String("endpoint.name", endpointName),
 	}
 
-	// Clear the in-memory map after attempting to flush all stats.
-	t.counts = make(map[string]map[string]int)
-	t.logger.Info("In-memory stats cleared after ResetStats.")
-
-	return firstError // Return the first error encountered, if any
+	t.metrics.apiCallCounter.Add(context.Background(), 1, metric.WithAttributes(attrs...))
 }
 
-// Start launches the background goroutine for periodic logging and daily stats reset.
-func (t *APICallTrackerImpl) Start(ctx context.Context) {
-	t.logger.Info("Starting APICallTracker background processing goroutine.")
+// TrackCallWithContext tracks an API call with context
+func (t *APITracker) TrackCallWithContext(ctx context.Context, serviceName, endpointName string) {
+	attrs := []attribute.KeyValue{
+		attribute.String("service.name", serviceName),
+		attribute.String("endpoint.name", endpointName),
+	}
 
-	go func() {
-		// TODO: Make logging interval configurable if needed, e.g., from t.config
-		loggingTicker := time.NewTicker(5 * time.Minute)
-		defer loggingTicker.Stop()
+	t.metrics.apiCallCounter.Add(ctx, 1, metric.WithAttributes(attrs...))
 
-		durationToNextMidnightUTC := func() time.Duration {
-			now := time.Now().UTC()
-			midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).Add(24 * time.Hour)
-			return midnight.Sub(now)
-		}
+	if span := trace.SpanFromContext(ctx); span.IsRecording() {
+		span.SetAttributes(
+			attribute.String("external.service", serviceName),
+			attribute.String("external.endpoint", endpointName),
+		)
+	}
+}
 
-		midnightTimer := time.NewTimer(durationToNextMidnightUTC())
-		defer midnightTimer.Stop()
+// StartSpan starts a new span for an API call
+func (t *APITracker) StartSpan(ctx context.Context, serviceName, endpointName string) (context.Context, trace.Span) {
+	spanName := fmt.Sprintf("%s.%s", serviceName, endpointName)
+	ctx, span := t.telemetry.Tracer.Start(ctx, spanName,
+		trace.WithAttributes(
+			attribute.String("service.name", serviceName),
+			attribute.String("endpoint.name", endpointName),
+		),
+		trace.WithSpanKind(trace.SpanKindClient),
+	)
 
-		t.logger.Info("APICallTracker: Daily reset timer initiated.",
-			slog.Duration("next_midnight_in", durationToNextMidnightUTC()))
+	t.metrics.activeRequests.Add(ctx, 1, metric.WithAttributes(
+		attribute.String("service.name", serviceName),
+	))
 
-		for {
-			select {
-			case <-ctx.Done():
-				t.logger.Info("APICallTracker: Shutting down background processing goroutine due to context cancellation.")
-				// On shutdown, a final ResetStats is called by main.go's shutdown handler explicitly.
-				// So, no need to call it here again.
-				return
+	return ctx, span
+}
 
-			case <-loggingTicker.C:
-				t.logger.Debug("APICallTracker: Logging API stats periodically.")
-				telemetry.LogAPIStats(t, t.logger) // t (APICallTrackerImpl) implements APICallTracker interface
+// EndSpan ends a span and records any error
+func (t *APITracker) EndSpan(span trace.Span, err error, serviceName string) {
+	ctx := context.Background()
 
-			case <-midnightTimer.C:
-				t.logger.Info("APICallTracker: Midnight UTC reached. Performing daily reset of API stats.")
+	t.metrics.activeRequests.Add(ctx, -1, metric.WithAttributes(
+		attribute.String("service.name", serviceName),
+	))
 
-				// Use a new context for these operations as the main ctx might be closing if app is shutting down near midnight.
-				// However, these operations are part of the normal lifecycle managed by the Start context.
-				// If Start's ctx is cancelled, the goroutine exits.
-				// Using a short-timeout new context for ResetStats and LoadStatsForToday might be safer
-				// to prevent them from blocking shutdown if ctx is nearly done.
-				// For now, we use the goroutine's main ctx, assuming it's managed correctly by the caller of Start.
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 
-				opCtx, opCancel := context.WithTimeout(context.Background(), 1*time.Minute) // Context for this specific set of operations
+		t.metrics.errorCounter.Add(ctx, 1, metric.WithAttributes(
+			attribute.String("service.name", serviceName),
+			attribute.String("error.type", fmt.Sprintf("%T", err)),
+		))
+	} else {
+		span.SetStatus(codes.Ok, "")
+	}
 
-				if err := t.ResetStats(opCtx); err != nil {
-					t.logger.Error("APICallTracker: Failed to reset API stats at end of day", slog.Any("error", err))
-				} else {
-					t.logger.Info("APICallTracker: Successfully reset API stats for the ended day.")
-				}
+	span.End()
+}
 
-				if err := t.LoadStatsForToday(opCtx); err != nil {
-					t.logger.Error("APICallTracker: Failed to load API stats for the new day", slog.Any("error", err))
-				} else {
-					t.logger.Info("APICallTracker: Successfully prepared API stats for the new day.")
-				}
-				opCancel() // Cancel the operation context
+// RecordDuration records the duration of an API call
+func (t *APITracker) RecordDuration(ctx context.Context, serviceName, endpointName string, duration time.Duration) {
+	attrs := []attribute.KeyValue{
+		attribute.String("service.name", serviceName),
+		attribute.String("endpoint.name", endpointName),
+	}
 
-				// Reset the midnight timer for the next day
-				nextMidnightIn := durationToNextMidnightUTC()
-				midnightTimer.Reset(nextMidnightIn)
-				t.logger.Info("APICallTracker: Midnight timer reset.", slog.Duration("next_midnight_in", nextMidnightIn))
-			}
-		}
+	t.metrics.apiCallDuration.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+}
+
+// InstrumentCall wraps a function call with OpenTelemetry instrumentation
+func (t *APITracker) InstrumentCall(ctx context.Context, serviceName, endpointName string, fn func(context.Context) error) error {
+	ctx, span := t.StartSpan(ctx, serviceName, endpointName)
+	defer func() {
+		t.EndSpan(span, nil, serviceName)
 	}()
+
+	t.TrackCallWithContext(ctx, serviceName, endpointName)
+
+	start := time.Now()
+	err := fn(ctx)
+	duration := time.Since(start)
+
+	t.RecordDuration(ctx, serviceName, endpointName, duration)
+
+	if err != nil {
+		t.EndSpan(span, err, serviceName)
+		return err
+	}
+
+	return nil
 }
+
+// Helper functions
+func ExtractTraceID(ctx context.Context) string {
+	span := trace.SpanFromContext(ctx)
+	if span.SpanContext().IsValid() {
+		return span.SpanContext().TraceID().String()
+	}
+	return ""
+}
+
+func LogWithTraceID(ctx context.Context, logger *slog.Logger, msg string, args ...any) {
+	if traceID := ExtractTraceID(ctx); traceID != "" {
+		args = append(args, "trace_id", traceID)
+	}
+	logger.InfoContext(ctx, msg, args...)
+}
+

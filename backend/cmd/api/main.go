@@ -32,6 +32,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres"
 	"github.com/nicolas-martin/dankfolio/backend/internal/logger"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/telemetry/otel"
 
 	// "github.com/nicolas-martin/dankfolio/backend/internal/db/postgres/schema" // Not directly needed for count if repo has Count
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
@@ -115,9 +116,31 @@ func main() {
 	}
 	slog.Info("Database store initialized successfully.")
 
-	// Initialize APICallTracker now that store is available
-	apiTracker := tracker.NewAPICallTracker(store, slogger)
-	slog.Info("API Call Tracker initialized.")
+	// Initialize OpenTelemetry
+	otelConfig := otel.Config{
+		ServiceName:    "dankfolio-backend",
+		ServiceVersion: "1.0.0",
+		Environment:    config.Env,
+		OTLPEndpoint:   config.OTLPEndpoint,
+	}
+	if otelConfig.OTLPEndpoint == "" {
+		otelConfig.OTLPEndpoint = "localhost:4317" // Default OTLP gRPC endpoint
+	}
+
+	otelTelemetry, err := otel.InitTelemetry(ctx, otelConfig)
+	if err != nil {
+		slog.Error("Failed to initialize OpenTelemetry", slog.Any("error", err))
+		os.Exit(1)
+	}
+	slog.Info("OpenTelemetry initialized successfully", slog.String("endpoint", otelConfig.OTLPEndpoint))
+
+	// Initialize APICallTracker with OpenTelemetry
+	apiTracker, err := tracker.NewAPITracker(otelTelemetry)
+	if err != nil {
+		slog.Error("Failed to create API tracker", slog.Any("error", err))
+		os.Exit(1)
+	}
+	slog.Info("API Call Tracker initialized with OpenTelemetry.")
 
 	// Now initialize all clients with the properly initialized apiTracker
 	jupiterClient := jupiter.NewClient(httpClient, config.JupiterApiUrl, config.JupiterApiKey, apiTracker)
@@ -138,16 +161,7 @@ func main() {
 
 	offchainClient := offchain.NewClient(httpClient, apiTracker)
 
-	// Load today's stats
-	if err := apiTracker.LoadStatsForToday(ctx); err != nil {
-		slog.Error("Failed to load API stats for today on startup", slog.Any("error", err))
-		// Depending on policy, might not be fatal. For now, just log.
-	} else {
-		slog.Info("Successfully loaded API stats for today on startup.")
-	}
-
-	// Start the APICallTracker's own background processing goroutine
-	go apiTracker.Start(ctx) // Use the main application context
+	// No need to load stats or start background processing with OpenTelemetry
 
 	coinServiceConfig := &coin.Config{
 		BirdEyeBaseURL:          config.BirdEyeEndpoint,
@@ -352,6 +366,8 @@ func main() {
 		config.Env,
 		config.DevAppCheckToken,
 	)
+	// Set OpenTelemetry tracer and meter
+	grpcServer.SetOtel(otelTelemetry.Tracer, otelTelemetry.Meter)
 
 	slog.Debug("Debug message")
 	slog.Info("Info message")
@@ -375,15 +391,9 @@ func main() {
 	sig := <-quit // Block until a signal is received
 	slog.Info("Received shutdown signal", slog.String("signal", sig.String()))
 
-	slog.Info("Persisting final API stats before shutdown...")
-	// Use a new context for this shutdown operation, as the app context might be canceled elsewhere.
-	// However, the main app `ctx` is `context.Background()`, which doesn't get canceled unless explicitly.
-	// For safety in shutdown, create a short-timeout context if needed, or use existing `ctx`.
-	// Given `ResetStats` has its own internal timeout, using `ctx` should be fine.
-	if err := apiTracker.ResetStats(ctx); err != nil {
-		slog.Error("Failed to persist API stats during shutdown", slog.Any("error", err))
-	} else {
-		slog.Info("Successfully persisted API stats during shutdown.")
+	slog.Info("Shutting down OpenTelemetry...")
+	if err := otelTelemetry.Shutdown(ctx); err != nil {
+		slog.Error("Failed to shutdown OpenTelemetry", slog.Any("error", err))
 	}
 
 	slog.Info("Stopping gRPC server...")
@@ -423,6 +433,7 @@ type Config struct {
 	PlatformPrivateKey         string        `envconfig:"PLATFORM_PRIVATE_KEY"`                         // Base64 encoded private key for platform account
 	DevAppCheckToken           string        `envconfig:"DEV_APP_CHECK_TOKEN"`
 	InitializeXStocksOnStartup bool          `envconfig:"INITIALIZE_XSTOCKS_ON_STARTUP" default:"false"`
+	OTLPEndpoint               string        `envconfig:"OTLP_ENDPOINT" default:"localhost:4317"`
 }
 
 func loadConfig() *Config {

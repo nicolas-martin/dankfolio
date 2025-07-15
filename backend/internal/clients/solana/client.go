@@ -25,14 +25,14 @@ import (
 	spltoken "github.com/gagliardetto/solana-go/programs/token"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/tracker"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
-	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
 )
 
 type Client struct {
 	rpcConn *rpc.Client
-	tracker telemetry.TelemetryAPI
+	tracker tracker.APITracker
 }
 
 // Comment out the interface implementation check for now until we can fix all issues
@@ -41,7 +41,7 @@ var (
 	_ clients.GenericClientAPI = (*Client)(nil)
 )
 
-func NewClient(solClient *rpc.Client, tracker telemetry.TelemetryAPI) clients.GenericClientAPI {
+func NewClient(solClient *rpc.Client, tracker tracker.APITracker) clients.GenericClientAPI {
 	return &Client{
 		rpcConn: solClient,
 		tracker: tracker,
@@ -239,7 +239,7 @@ func (c *Client) GetTransactionStatus(ctx context.Context, signature bmodel.Sign
 		"slot", txStatus.Slot,
 		"raw_confirmation_status", string(rpcStatus.ConfirmationStatus),
 		"has_error", rpcStatus.Err != nil,
-		"error_value", func() interface{} {
+		"error_value", func() any {
 			if rpcStatus.Err != nil {
 				return rpcStatus.Err
 			}
