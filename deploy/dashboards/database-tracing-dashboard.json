@@ -1,5 +1,5 @@
 {
-  "title": "Database Query Analysis",
+  "title": "Database Repository Performance",
   "uid": "database-query-analysis",
   "editable": true,
   "schemaVersion": 41,
@@ -17,7 +17,7 @@
   "panels": [
     {
       "id": 1,
-      "title": "Database Queries by Table",
+      "title": "Repository Methods Performance",
       "type": "table",
       "gridPos": {
         "h": 14,
@@ -36,20 +36,49 @@
             "uid": "P214B5B846CF3925F"
           },
           "limit": 50,
-          "query": "{span.db.query.text!=\"\"} | by(span.db.collection.name)",
+          "query": "{resource.service.name=\"dankfolio-backend\" && name=~\"repository.*\"}",
           "queryType": "traceql",
           "refId": "A"
         }
       ],
-      "description": "Database queries grouped by table. Shows only actual database operations (no RPC calls).\nClick on any trace to see the full SQL query."
+      "description": "Repository method calls with their execution times. Click on any trace to see details including SQL queries.",
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Duration",
+            "desc": true
+          }
+        ]
+      },
+      "fieldConfig": {
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Duration"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": 2,
-      "title": "Slow Database Queries (>50ms)",
-      "type": "table",
+      "title": "Repository Method Call Count",
+      "type": "stat",
       "gridPos": {
-        "h": 10,
-        "w": 24,
+        "h": 8,
+        "w": 12,
         "x": 0,
         "y": 14
       },
@@ -63,12 +92,192 @@
             "type": "tempo",
             "uid": "P214B5B846CF3925F"
           },
+          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.GetByField\"}",
+          "queryType": "traceql",
+          "refId": "GetByField"
+        },
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "P214B5B846CF3925F"
+          },
+          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.Get\"}",
+          "queryType": "traceql",
+          "refId": "Get"
+        },
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "P214B5B846CF3925F"
+          },
+          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.List\"}",
+          "queryType": "traceql",
+          "refId": "List"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "value",
+        "textMode": "name",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["count"],
+          "fields": ""
+        },
+        "orientation": "horizontal"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "transformations": [
+        {
+          "id": "renameByRegex", 
+          "options": {
+            "regex": "Duration (.+)",
+            "renamePattern": "$1"
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Average Repository Method Duration",
+      "type": "bargauge",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 14
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "P214B5B846CF3925F"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "P214B5B846CF3925F"
+          },
+          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.GetByField\"}",
+          "queryType": "traceql",
+          "refId": "GetByField"
+        },
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "P214B5B846CF3925F"
+          },
+          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.Get\"}",
+          "queryType": "traceql",
+          "refId": "Get"
+        },
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "P214B5B846CF3925F"
+          },
+          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.List\"}",
+          "queryType": "traceql",
+          "refId": "List"
+        }
+      ],
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["mean"]
+        },
+        "showUnfilled": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 2,
+          "min": 0,
+          "max": 20,
+          "noValue": "No data"
+        },
+        "overrides": []
+      },
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "Duration (.+)",
+            "renamePattern": "$1"
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Slow Repository Operations (>10ms)",
+      "type": "table",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "P214B5B846CF3925F"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "P214B5B846CF3925F"
+          },
           "limit": 20,
-          "query": "{span.db.query.text!=\"\" && duration > 50ms}",
+          "query": "{resource.service.name=\"dankfolio-backend\" && name=~\"repository.*\" && duration > 10ms}",
           "queryType": "traceql",
           "refId": "A"
         }
-      ]
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Duration",
+            "desc": true
+          }
+        ]
+      },
+      "fieldConfig": {
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Duration"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }
