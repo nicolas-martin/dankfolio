@@ -16,7 +16,7 @@
   "panels": [
     {
       "id": 1,
-      "title": "Database Queries",
+      "title": "Database Queries by Table",
       "type": "table",
       "gridPos": {
         "h": 14,
@@ -35,16 +35,56 @@
             "uid": "P214B5B846CF3925F"
           },
           "limit": 50,
-          "query": "{span.db.orm=\"gorm\"}",
+          "query": "{span.db.query.text!=\"\"} | by(span.db.collection.name)",
           "queryType": "traceql",
           "refId": "A"
         }
       ],
-      "description": "Click on any trace to see the full SQL query in span attributes:\n- db.query.text: Full SQL\n- db.collection.name: Table name\n- db.operation.name: Operation type"
+      "description": "Database queries grouped by table. Shows only actual database operations (no RPC calls).\nClick on any trace to see the full SQL query.",
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Duration",
+            "desc": true
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "spanID": "Span ID",
+              "operationName": "Query Type",
+              "serviceName": "Service",
+              "duration": "Duration",
+              "startTime": "Start Time",
+              "by(span.db.collection.name)": "Table",
+              "db.query.text": "SQL Query",
+              "db.operation.name": "Operation"
+            },
+            "indexByName": {
+              "Table": 0,
+              "Operation": 1,
+              "SQL Query": 2,
+              "Duration": 3,
+              "Start Time": 4
+            },
+            "includeByName": {
+              "Table": true,
+              "Operation": true,
+              "SQL Query": true,
+              "Duration": true,
+              "Start Time": true
+            }
+          }
+        }
+      ]
     },
     {
       "id": 2,
-      "title": "Slow Database Queries (>5ms)",
+      "title": "Slow Database Queries (>50ms)",
       "type": "table",
       "gridPos": {
         "h": 10,
@@ -63,11 +103,20 @@
             "uid": "P214B5B846CF3925F"
           },
           "limit": 20,
-          "query": "{span.db.orm=\"gorm\" && duration > 5ms}",
+          "query": "{span.db.query.text!=\"\" && duration > 50ms}",
           "queryType": "traceql",
           "refId": "A"
         }
-      ]
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Duration",
+            "desc": true
+          }
+        ]
+      }
     }
   ]
 }
