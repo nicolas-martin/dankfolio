@@ -5,37 +5,19 @@
   "version": 1,
   "refresh": "10s",
   "time": {
-    "from": "now-6h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "templating": {
-    "list": [
-      {
-        "current": {
-          "selected": false,
-          "text": "Tempo",
-          "value": "P214B5B846CF3925F"
-        },
-        "hide": 0,
-        "includeAll": false,
-        "label": "Tempo Datasource",
-        "multi": false,
-        "name": "tempo",
-        "options": [],
-        "query": "tempo",
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "type": "datasource"
-      }
-    ]
+    "list": []
   },
   "panels": [
     {
+      "id": 1,
       "title": "Database Queries",
-      "type": "traces",
+      "type": "table",
       "gridPos": {
         "h": 14,
         "w": 24,
@@ -44,13 +26,13 @@
       },
       "datasource": {
         "type": "tempo",
-        "uid": "${tempo}"
+        "uid": "P214B5B846CF3925F"
       },
       "targets": [
         {
           "datasource": {
             "type": "tempo",
-            "uid": "${tempo}"
+            "uid": "P214B5B846CF3925F"
           },
           "limit": 50,
           "query": "{span.db.orm=\"gorm\"}",
@@ -61,8 +43,9 @@
       "description": "Click on any trace to see the full SQL query in span attributes:\n- db.query.text: Full SQL\n- db.collection.name: Table name\n- db.operation.name: Operation type"
     },
     {
-      "title": "Slow Database Queries (>50ms)",
-      "type": "traces",
+      "id": 2,
+      "title": "Slow Database Queries (>5ms)",
+      "type": "table",
       "gridPos": {
         "h": 10,
         "w": 24,
@@ -71,16 +54,16 @@
       },
       "datasource": {
         "type": "tempo",
-        "uid": "${tempo}"
+        "uid": "P214B5B846CF3925F"
       },
       "targets": [
         {
           "datasource": {
             "type": "tempo",
-            "uid": "${tempo}"
+            "uid": "P214B5B846CF3925F"
           },
           "limit": 20,
-          "query": "{span.db.orm=\"gorm\" && duration > 50ms}",
+          "query": "{span.db.orm=\"gorm\" && duration > 5ms}",
           "queryType": "traceql",
           "refId": "A"
         }
