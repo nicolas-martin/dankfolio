@@ -3,16 +3,32 @@ apiVersion: 1
 datasources:
     - name: Loki
       type: loki
+      uid: P8E80F9AEF21F6940
       url: http://localhost:3100
       access: proxy
 
     - name: Tempo
       type: tempo
+      uid: P214B5B846CF3925F
       url: http://localhost:3200
       access: proxy
+      jsonData:
+          tracesToLogs:
+              datasourceUid: P8E80F9AEF21F6940
+              spanStartTimeShift: "-2m"
+              spanEndTimeShift: "2m"
+              filterByTraceID: true
+              filterBySpanID: true
+          tracesToMetrics:
+              datasourceUid: PAE45454D0EDB9216
+          nodeGraph:
+              enabled: true
+          serviceMap:
+              datasourceUid: PAE45454D0EDB9216
 
     - name: Mimir
       type: prometheus
+      uid: PAE45454D0EDB9216
       url: http://localhost:9009/prometheus
       access: proxy
       jsonData:

@@ -71,34 +71,66 @@ func (h *ColorHandler) Handle(_ context.Context, r slog.Record) error {
 
 	// Add attributes to message if any exist
 	if len(attrs) > 0 {
-		// Print each attribute
-		msg += " "
-		for i, attr := range attrs {
-			if i > 0 {
-				msg += " "
-			}
-
-			// Handle groups
-			var attrKey string
-			if len(h.groups) > 0 {
-				attrKey = fmt.Sprintf("%s.%s", h.groups[len(h.groups)-1], attr.Key)
+		// Separate trace attributes from regular attributes
+		var traceAttrs []slog.Attr
+		var regularAttrs []slog.Attr
+		
+		for _, attr := range attrs {
+			if attr.Key == "trace_id" || attr.Key == "span_id" || attr.Key == "trace_sampled" {
+				traceAttrs = append(traceAttrs, attr)
 			} else {
-				attrKey = attr.Key
+				regularAttrs = append(regularAttrs, attr)
 			}
-
-			// Format the value
-			val := attr.Value.String()
-			var valStr string
-			if attr.Value.Kind() == slog.KindString && strings.Contains(val, "\x1b[") {
-				// Has ANSI color codes, don't escape
-				valStr = val
-			} else if attr.Value.Kind() == slog.KindString {
-				valStr = fmt.Sprintf("%q", val)
-			} else {
-				valStr = val
+		}
+		
+		// Add trace attributes first with special formatting
+		if len(traceAttrs) > 0 {
+			msg += " " + color.New(color.FgMagenta).Sprint("[")
+			for i, attr := range traceAttrs {
+				if i > 0 {
+					msg += " "
+				}
+				if attr.Key == "trace_id" {
+					msg += color.New(color.FgMagenta).Sprintf("trace:%s", attr.Value.String())
+				} else if attr.Key == "span_id" {
+					msg += color.New(color.FgMagenta).Sprintf("span:%s", attr.Value.String())
+				} else if attr.Key == "trace_sampled" {
+					msg += color.New(color.FgMagenta).Sprint("sampled")
+				}
 			}
+			msg += color.New(color.FgMagenta).Sprint("]")
+		}
+		
+		// Add regular attributes
+		if len(regularAttrs) > 0 {
+			msg += " "
+			for i, attr := range regularAttrs {
+				if i > 0 {
+					msg += " "
+				}
 
-			msg += fmt.Sprintf("%s=%s", attrKey, valStr)
+				// Handle groups
+				var attrKey string
+				if len(h.groups) > 0 {
+					attrKey = fmt.Sprintf("%s.%s", h.groups[len(h.groups)-1], attr.Key)
+				} else {
+					attrKey = attr.Key
+				}
+
+				// Format the value
+				val := attr.Value.String()
+				var valStr string
+				if attr.Value.Kind() == slog.KindString && strings.Contains(val, "\x1b[") {
+					// Has ANSI color codes, don't escape
+					valStr = val
+				} else if attr.Value.Kind() == slog.KindString {
+					valStr = fmt.Sprintf("%q", val)
+				} else {
+					valStr = val
+				}
+
+				msg += fmt.Sprintf("%s=%s", attrKey, valStr)
+			}
 		}
 	}
 

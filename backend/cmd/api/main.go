@@ -54,12 +54,28 @@ func main() {
 
 	if config.Env != "development" {
 		logLevel = slog.LevelInfo
-		handler = slog.NewJSONHandler(os.Stdout, nil)
+		// Configure JSON handler with proper options for production
+		jsonOpts := &slog.HandlerOptions{
+			Level: logLevel,
+			// Add source information for better debugging
+			AddSource: false, // Set to true if you want file:line information
+			// ReplaceAttr can be used to modify attributes before logging
+			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+				// Ensure trace and span IDs are at the top level for easy Grafana querying
+				if len(groups) == 0 && (a.Key == "trace_id" || a.Key == "span_id" || a.Key == "trace_sampled") {
+					return a
+				}
+				return a
+			},
+		}
+		handler = slog.NewJSONHandler(os.Stdout, jsonOpts)
 	} else {
 		handler = logger.NewColorHandler(logLevel, os.Stdout, os.Stderr)
 	}
 
-	slogger := slog.New(handler)
+	// Wrap the handler with OpenTelemetry support
+	otelHandler := logger.NewOtelHandler(handler)
+	slogger := slog.New(otelHandler)
 	slog.SetDefault(slogger)
 
 	slog.Info("Configuration loaded successfully",
