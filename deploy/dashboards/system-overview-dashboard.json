@@ -1,153 +1,416 @@
 {
   "title": "System Overview - LGTM Stack",
-    "panels": [
-      {
-        "title": "CPU Usage",
-        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0},
-        "type": "timeseries",
-        "targets": [
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100) or rate(process_cpu_seconds_total[5m]) * 100 or up{job=\"node\"} * 50",
-            "legendFormat": "CPU Usage %"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
-            "color": {"mode": "palette-classic"}
-          }
-        }
+  "uid": "system-overview",
+  "editable": true,
+  "schemaVersion": 41,
+  "version": 1,
+  "refresh": "10s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "CPU Usage",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0},
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PAE45454D0EDB9216"
       },
-      {
-        "title": "Memory Usage",
-        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
-        "type": "timeseries",
-        "targets": [
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 or process_resident_memory_bytes / (1024*1024*1024) or up{job=\"node\"} * 30",
-            "legendFormat": "Memory Usage %"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "percent",
-            "min": 0,
-            "max": 100
-          }
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PAE45454D0EDB9216"
+          },
+          "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\",job=\"prometheus.scrape.node\"}[5m])) * 100)",
+          "legendFormat": "CPU Usage %",
+          "refId": "A"
         }
-      },
-      {
-        "title": "Disk Usage",
-        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
-        "type": "gauge",
-        "targets": [
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "(1 - (node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"})) * 100 or up{job=\"node\"} * 45"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "percent",
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {"color": "green", "value": null},
-                {"color": "yellow", "value": 70},
-                {"color": "red", "value": 85}
-              ]
-            },
-            "min": 0,
-            "max": 100
-          }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "color": {"mode": "palette-classic"}
         }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Memory Usage",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PAE45454D0EDB9216"
       },
-      {
-        "title": "Service Status",
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
-        "type": "stat",
-        "targets": [
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "up{job=\"dankfolio\"}",
-            "legendFormat": "Dankfolio"
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PAE45454D0EDB9216"
           },
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "up{job=\"tempo\"}",
-            "legendFormat": "Tempo"
+          "expr": "(1 - (node_memory_MemAvailable_bytes{job=\"prometheus.scrape.node\"} / node_memory_MemTotal_bytes{job=\"prometheus.scrape.node\"})) * 100",
+          "legendFormat": "Memory Usage %",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Disk Usage",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
+      "type": "gauge",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PAE45454D0EDB9216"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PAE45454D0EDB9216"
           },
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "up{job=\"loki\"}",
-            "legendFormat": "Loki"
-          },
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "up{job=\"mimir\"}",
-            "legendFormat": "Mimir"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {"mode": "thresholds"},
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {"color": "red", "value": null},
-                {"color": "green", "value": 1}
-              ]
-            },
-            "mappings": [
-              {"type": "value", "value": "1", "text": "UP"},
-              {"type": "value", "value": "0", "text": "DOWN"}
+          "expr": "(1 - (node_filesystem_avail_bytes{mountpoint=\"/\",job=\"prometheus.scrape.node\"} / node_filesystem_size_bytes{mountpoint=\"/\",job=\"prometheus.scrape.node\"})) * 100",
+          "legendFormat": "Disk Usage %",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 70},
+              {"color": "red", "value": 90}
             ]
           }
         }
+      }
+    },
+    {
+      "id": 4,
+      "title": "gRPC Request Rate",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8},
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PAE45454D0EDB9216"
       },
-      {
-        "title": "Network I/O",
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
-        "type": "timeseries",
-        "targets": [
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "rate(node_network_receive_bytes_total[5m]) or up{job=\"node\"} * 1000000",
-            "legendFormat": "RX {{device}}"
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PAE45454D0EDB9216"
           },
-          {
-            "datasource": {"type": "prometheus", "uid": "${datasource}"},
-            "expr": "rate(node_network_transmit_bytes_total[5m]) or up{job=\"node\"} * 800000",
-            "legendFormat": "TX {{device}}"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "binBps"
+          "expr": "rate(dankfolio_grpc_requests_total[5m])",
+          "legendFormat": "{{rpc_method}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": {"mode": "palette-classic"}
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Active Requests",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
+      "type": "gauge",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PAE45454D0EDB9216"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PAE45454D0EDB9216"
+          },
+          "expr": "sum(dankfolio_grpc_active_requests)",
+          "legendFormat": "Active gRPC",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PAE45454D0EDB9216"
+          },
+          "expr": "sum(dankfolio_active_requests)",
+          "legendFormat": "Active API",
+          "refId": "B"
+        }
+      ],
+      "options": {
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 50},
+              {"color": "red", "value": 80}
+            ]
           }
         }
       }
-    ],
-    "templating": {
-      "list": [
+    },
+    {
+      "id": 3,
+      "title": "Database Connections",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PAE45454D0EDB9216"
+      },
+      "targets": [
         {
-          "name": "datasource",
-          "type": "datasource",
-          "query": "prometheus",
-          "current": {
-            "text": "Mimir",
-            "value": "Mimir"
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PAE45454D0EDB9216"
+          },
+          "expr": "go_sql_connections_open",
+          "legendFormat": "Open",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PAE45454D0EDB9216"
+          },
+          "expr": "go_sql_connections_in_use",
+          "legendFormat": "In Use",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PAE45454D0EDB9216"
+          },
+          "expr": "go_sql_connections_idle",
+          "legendFormat": "Idle",
+          "refId": "C"
+        }
+      ],
+      "options": {
+        "graphMode": "area",
+        "colorMode": "value",
+        "textMode": "value_and_name"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "gRPC Request Duration (P95)",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PAE45454D0EDB9216"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PAE45454D0EDB9216"
+          },
+          "expr": "histogram_quantile(0.95, sum(rate(dankfolio_grpc_request_duration_seconds_bucket[5m])) by (rpc_method, le))",
+          "legendFormat": "{{rpc_method}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {"mode": "palette-classic"}
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "API Request Duration (P95)",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PAE45454D0EDB9216"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PAE45454D0EDB9216"
+          },
+          "expr": "histogram_quantile(0.95, sum(rate(dankfolio_api_call_duration_seconds_bucket[5m])) by (endpoint, le))",
+          "legendFormat": "{{endpoint}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {"mode": "palette-classic"}
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Total Requests",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 16},
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PAE45454D0EDB9216"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PAE45454D0EDB9216"
+          },
+          "expr": "sum(dankfolio_grpc_requests_total)",
+          "legendFormat": "gRPC Total",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PAE45454D0EDB9216"
+          },
+          "expr": "sum(dankfolio_api_calls_total)",
+          "legendFormat": "API Total",
+          "refId": "B"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "value",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null}
+            ]
           }
         }
-      ]
+      }
     },
-    "refresh": "10s",
-    "schemaVersion": 38,
-  "version": 1,
-  "overwrite": true
+    {
+      "id": 7,
+      "title": "Database Connection Wait Time",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 16},
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PAE45454D0EDB9216"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PAE45454D0EDB9216"
+          },
+          "expr": "rate(go_sql_connections_wait_duration_nanoseconds_total[5m]) / 1e9",
+          "legendFormat": "Wait Duration",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Service Health",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 16},
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PAE45454D0EDB9216"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PAE45454D0EDB9216"
+          },
+          "expr": "up",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "textMode": "name"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "UP",
+                  "color": "green"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
 }
