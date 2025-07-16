@@ -74,8 +74,8 @@
     },
     {
       "id": 2,
-      "title": "Repository Method Calls by Table",
-      "type": "piechart",
+      "title": "Repository Method Calls",
+      "type": "stat",
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -95,18 +95,19 @@
           "query": "{resource.service.name=\"dankfolio-backend\" && name=~\"repository.*\"}",
           "queryType": "traceql",
           "refId": "A",
-          "limit": 200
+          "limit": 200,
+          "tableType": "spans"
         }
       ],
       "options": {
-        "pieType": "donut",
-        "displayLabels": ["name", "value"],
-        "legendDisplayMode": "table",
-        "legendPlacement": "right",
-        "legendValues": ["value", "percent"],
-        "tooltip": {
-          "mode": "single"
-        }
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["count"]
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "graphMode": "none",
+        "colorMode": "value"
       },
       "fieldConfig": {
         "defaults": {
@@ -118,87 +119,24 @@
               {
                 "color": "green",
                 "value": null
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Count GetByField"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "GetByField"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Count Get"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Get"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Count List"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "List"
-              }
-            ]
-          }
-        ]
-      },
-      "transformations": [
-        {
-          "id": "extractFields",
-          "options": {
-            "source": "attributes",
-            "fields": {
-              "db.table": "Table",
-              "name": "Method"
-            }
-          }
-        },
-        {
-          "id": "concatenateFields",
-          "options": {
-            "sourceFields": ["Name", "Table"],
-            "targetField": "Method_Table",
-            "separator": " - "
-          }
-        },
-        {
-          "id": "groupBy",
-          "options": {
-            "fields": {
-              "Method_Table": {
-                "operation": "groupby"
               },
-              "Duration": {
-                "operation": "count"
+              {
+                "color": "yellow", 
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 500
               }
-            }
+            ]
           }
         }
-      ]
+      }
     },
     {
       "id": 3,
-      "title": "Average Repository Method Duration by Table",
-      "type": "bargauge",
+      "title": "Average Repository Method Duration",
+      "type": "stat",
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -218,61 +156,44 @@
           "query": "{resource.service.name=\"dankfolio-backend\" && name=~\"repository.*\"}",
           "queryType": "traceql",
           "refId": "A",
-          "limit": 200
+          "limit": 200,
+          "tableType": "spans"
         }
       ],
       "options": {
-        "displayMode": "gradient",
-        "orientation": "horizontal",
         "reduceOptions": {
           "values": false,
           "calcs": ["mean"]
         },
-        "showUnfilled": true
+        "orientation": "auto",
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "value"
       },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
           "decimals": 2,
-          "min": 0,
-          "max": 20,
-          "noValue": "No data"
-        },
-        "overrides": []
-      },
-      "transformations": [
-        {
-          "id": "extractFields",
-          "options": {
-            "source": "attributes",
-            "fields": {
-              "db.table": "Table"
-            }
-          }
-        },
-        {
-          "id": "concatenateFields",
-          "options": {
-            "sourceFields": ["Name", "Table"],
-            "targetField": "Method_Table",
-            "separator": " - "
-          }
-        },
-        {
-          "id": "groupBy",
-          "options": {
-            "fields": {
-              "Method_Table": {
-                "operation": "groupby"
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
               },
-              "Duration": {
-                "operation": "mean",
-                "aggregations": ["mean"]
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 10
               }
-            }
+            ]
           }
         }
-      ]
+      }
     },
     {
       "id": 4,
