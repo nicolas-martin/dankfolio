@@ -144,7 +144,7 @@
     },
     {
       "title": "External API Response Times",
-      "type": "stat",
+      "type": "gauge",
       "gridPos": {
         "h": 10,
         "w": 24,
@@ -189,22 +189,18 @@
         }
       },
       "options": {
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
         "reduceOptions": {
           "values": false,
           "calcs": ["lastNotNull"],
           "fields": ""
-        },
-        "orientation": "horizontal",
-        "textMode": "value_and_name",
-        "wideLayout": true,
-        "showPercentChange": false,
-        "graphMode": "area",
-        "colorMode": "value"
+        }
       }
     },
     {
       "title": "gRPC Endpoint Response Times",
-      "type": "stat",
+      "type": "gauge",
       "gridPos": {
         "h": 10,
         "w": 24,
@@ -249,17 +245,13 @@
         }
       },
       "options": {
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
         "reduceOptions": {
           "values": false,
           "calcs": ["lastNotNull"],
           "fields": ""
-        },
-        "orientation": "horizontal",
-        "textMode": "value_and_name",
-        "wideLayout": true,
-        "showPercentChange": false,
-        "graphMode": "area",
-        "colorMode": "value"
+        }
       }
     },
     {
@@ -274,35 +266,76 @@
       "collapsed": false
     },
     {
-      "title": "Database Query Rate",
-      "type": "timeseries",
+      "title": "Repository Method Calls",
+      "type": "stat",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 37
       },
+      "datasource": {
+        "type": "tempo",
+        "uid": "P214B5B846CF3925F"
+      },
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
+            "type": "tempo",
+            "uid": "P214B5B846CF3925F"
           },
-          "expr": "rate(dankfolio_database_operations_total[5m])",
-          "legendFormat": "{{table_name}} - {{operation}}"
+          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.GetByField\"}",
+          "queryType": "traceql",
+          "refId": "GetByField"
+        },
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "P214B5B846CF3925F"
+          },
+          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.Get\"}",
+          "queryType": "traceql",
+          "refId": "Get"
+        },
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "P214B5B846CF3925F"
+          },
+          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.List\"}",
+          "queryType": "traceql",
+          "refId": "List"
         }
       ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "value",
+        "textMode": "name",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["count"]
+        }
+      },
       "fieldConfig": {
         "defaults": {
-          "unit": "ops",
+          "unit": "short",
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
           }
         }
       }
     },
     {
-      "title": "Database Response Time (p95)",
+      "title": "Repository Method Duration",
       "type": "gauge",
       "gridPos": {
         "h": 8,
@@ -310,16 +343,47 @@
         "x": 12,
         "y": 37
       },
+      "datasource": {
+        "type": "tempo",
+        "uid": "P214B5B846CF3925F"
+      },
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
+            "type": "tempo",
+            "uid": "P214B5B846CF3925F"
           },
-          "expr": "histogram_quantile(0.95, rate(dankfolio_database_operation_duration_seconds_bucket[5m]))",
-          "legendFormat": "{{table_name}}"
+          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.GetByField\"}",
+          "queryType": "traceql",
+          "refId": "GetByField"
+        },
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "P214B5B846CF3925F"
+          },
+          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.Get\"}",
+          "queryType": "traceql",
+          "refId": "Get"
+        },
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "P214B5B846CF3925F"
+          },
+          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.List\"}",
+          "queryType": "traceql",
+          "refId": "List"
         }
       ],
+      "options": {
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["mean"]
+        }
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "s",
