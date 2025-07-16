@@ -132,6 +132,19 @@ func (s *Service) DeleteTrade(ctx context.Context, id string) error {
 
 // PrepareSwap prepares an unsigned swap transaction and creates a trade record
 func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapRequestData) (*PrepareSwapResponse, error) {
+	// Check if this is a meme-to-meme swap (neither coin is SOL)
+	isMemeToMeme := params.FromCoinMintAddress != model.NativeSolMint && 
+	                params.FromCoinMintAddress != model.SolMint &&
+	                params.ToCoinMintAddress != model.NativeSolMint && 
+	                params.ToCoinMintAddress != model.SolMint
+
+	if isMemeToMeme {
+		slog.Info("Detected meme-to-meme swap in PrepareSwap, routing to specialized handler",
+			"from", params.FromCoinMintAddress,
+			"to", params.ToCoinMintAddress)
+		return s.PrepareMemeToMemeSwap(ctx, params)
+	}
+
 	if !util.IsValidSolanaAddress(params.UserWalletAddress) {
 		return nil, fmt.Errorf("invalid user_wallet_address: %s", params.UserWalletAddress)
 	}
@@ -559,6 +572,19 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 
 // GetSwapQuote gets a quote for a potential trade
 func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinMintAddress string, inputAmount string, slippageBsp string, includeFeeBreakdown bool, userPublicKey string) (*TradeQuote, error) {
+	// Check if this is a meme-to-meme swap (neither coin is SOL)
+	isMemeToMeme := fromCoinMintAddress != model.NativeSolMint && 
+	                fromCoinMintAddress != model.SolMint &&
+	                toCoinMintAddress != model.NativeSolMint && 
+	                toCoinMintAddress != model.SolMint
+
+	if isMemeToMeme {
+		slog.Info("Detected meme-to-meme swap, routing to specialized handler",
+			"from", fromCoinMintAddress,
+			"to", toCoinMintAddress)
+		return s.GetMemeToMemeQuote(ctx, fromCoinMintAddress, toCoinMintAddress, inputAmount, slippageBsp, includeFeeBreakdown, userPublicKey)
+	}
+
 	if !util.IsValidSolanaAddress(fromCoinMintAddress) {
 		return nil, fmt.Errorf("invalid from_coin_mint_address: %s", fromCoinMintAddress)
 	}
@@ -1338,4 +1364,325 @@ func (s *Service) calculateSolFeeBreakdownFromQuote(
 	)
 
 	return bd, bd.Total, bd.TradingFee, nil
+}
+
+// GetMemeToMemeQuote handles direct meme coin to meme coin quotes
+func (s *Service) GetMemeToMemeQuote(ctx context.Context, fromCoinMintAddress, toCoinMintAddress string, inputAmount string, slippageBps string, includeFeeBreakdown bool, userPublicKey string) (*TradeQuote, error) {
+
+	// Validate addresses
+	if !util.IsValidSolanaAddress(fromCoinMintAddress) {
+		return nil, fmt.Errorf("invalid from_coin_mint_address: %s", fromCoinMintAddress)
+	}
+	if !util.IsValidSolanaAddress(toCoinMintAddress) {
+		return nil, fmt.Errorf("invalid to_coin_mint_address: %s", toCoinMintAddress)
+	}
+
+	// Validate amount
+	amountInt, err := strconv.ParseUint(inputAmount, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid input_amount (must be positive integer in raw units): %w", err)
+	}
+	if amountInt == 0 {
+		return nil, fmt.Errorf("input_amount must be positive: %s", inputAmount)
+	}
+
+	// Validate slippage
+	slippageBpsInt, err := strconv.Atoi(slippageBps)
+	if err != nil {
+		return nil, fmt.Errorf("invalid slippage_bps: %w", err)
+	}
+	if slippageBpsInt < 0 || slippageBpsInt > 5000 { // 5000 bps = 50%
+		return nil, fmt.Errorf("slippage_bps out of range (0-5000): %d", slippageBpsInt)
+	}
+
+	// Get coin details
+	fromCoin, err := s.coinService.GetCoinByAddress(ctx, fromCoinMintAddress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get from coin %s: %w", fromCoinMintAddress, err)
+	}
+
+	toCoin, err := s.coinService.GetCoinByAddress(ctx, toCoinMintAddress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get to coin %s: %w", toCoinMintAddress, err)
+	}
+
+	// Get quote from Jupiter with onlyDirectRoutes=true for meme-to-meme
+	quote, err := s.jupiterClient.GetQuote(ctx, jupiter.QuoteParams{
+		InputMint:           fromCoinMintAddress,
+		OutputMint:          toCoinMintAddress,
+		Amount:              inputAmount,
+		SlippageBps:         slippageBpsInt,
+		PlatformFeeBps:      s.platformFeeBps,
+		SwapMode:            "ExactIn",
+		OnlyDirectRoutes:    true, // Force direct routes for meme-to-meme
+	})
+	if err != nil {
+		// Check if error indicates no direct route
+		if strings.Contains(err.Error(), "no route found") || strings.Contains(err.Error(), "insufficient liquidity") {
+			return nil, fmt.Errorf("no direct swap route available between %s and %s", fromCoin.Symbol, toCoin.Symbol)
+		}
+		return nil, fmt.Errorf("failed to get Jupiter quote: %w", err)
+	}
+
+	// Calculate fees including potential ATA creation (both tokens for meme-to-meme)
+	var feeBreakdown *SolFeeBreakdown
+	var totalSolRequired, tradingFeeSol string
+
+	if includeFeeBreakdown {
+		if userPublicKey == "" {
+			return nil, fmt.Errorf("user_public_key is required when includeFeeBreakdown=true")
+		}
+
+		if !util.IsValidSolanaAddress(userPublicKey) {
+			return nil, fmt.Errorf("invalid user_public_key: %s", userPublicKey)
+		}
+
+		// For meme-to-meme, we may need ATAs for both tokens
+		atasToCreate, err := s.checkRequiredATAs(ctx, userPublicKey, fromCoinMintAddress, toCoinMintAddress)
+		if err != nil {
+			slog.Warn("Failed to check required ATAs for meme-to-meme swap", "error", err)
+			atasToCreate = 2 // Conservative estimate
+		}
+
+		// Calculate fee breakdown with potentially 2 ATAs
+		const (
+			ataRentLamports  = 2_039_280 // rent-exempt minimum per ATA
+			priorityLamports = 1_000_000 // tip per tx
+			baseTransactionFee = 5000    // lamports per transaction
+		)
+
+		netRent := uint64(atasToCreate) * ataRentLamports
+		baseFee := uint64(baseTransactionFee)
+		prioFee := uint64(priorityLamports)
+		
+		// Extract trading fees from quote
+		var routeFee uint64
+		for _, route := range quote.RoutePlan {
+			if route.SwapInfo.FeeAmount != "" {
+				if feeAmount, err := strconv.ParseUint(route.SwapInfo.FeeAmount, 10, 64); err == nil {
+					routeFee += feeAmount
+				}
+			}
+		}
+
+		totalLam := routeFee + baseFee + prioFee + netRent
+
+		// Format lamports to SOL strings
+		fmtSol := func(v uint64) string {
+			return TruncateAndFormatFloat(float64(v)/1e9, 9)
+		}
+
+		feeBreakdown = &SolFeeBreakdown{
+			TradingFee:         fmtSol(routeFee),
+			TransactionFee:     fmtSol(baseFee),
+			AccountCreationFee: fmtSol(netRent),
+			PriorityFee:        fmtSol(prioFee),
+			Total:              fmtSol(totalLam),
+			AccountsToCreate:   atasToCreate,
+		}
+		
+		totalSolRequired = feeBreakdown.Total
+		tradingFeeSol = feeBreakdown.TradingFee
+
+		slog.Info("Meme-to-meme swap fee breakdown",
+			"from", fromCoin.Symbol,
+			"to", toCoin.Symbol,
+			"atas_needed", atasToCreate,
+			"total_sol_required", totalSolRequired)
+	} else {
+		feeBreakdown = nil
+		totalSolRequired = "0"
+		tradingFeeSol = "0"
+	}
+
+	// Convert amounts and build response
+	outAmount, err := strconv.ParseFloat(quote.OutAmount, 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse out amount: %w", err)
+	}
+
+	estimatedAmountInCoin := outAmount / math.Pow10(int(toCoin.Decimals))
+	initialAmount := float64(amountInt)
+	exchangeRate := outAmount / initialAmount
+
+	// Extract route summary
+	var routeSummary []string
+	for _, route := range quote.RoutePlan {
+		routeSummary = append(routeSummary, route.SwapInfo.Label)
+	}
+
+	// Verify we got a direct route
+	if len(quote.RoutePlan) > 1 {
+		slog.Warn("Meme-to-meme swap returned multi-hop route despite onlyDirectRoutes=true",
+			"route_count", len(quote.RoutePlan),
+			"routes", routeSummary)
+	}
+
+	return &TradeQuote{
+		EstimatedAmount:  TruncateAndFormatFloat(estimatedAmountInCoin, 6),
+		ExchangeRate:     TruncateAndFormatFloat(exchangeRate, 6),
+		Fee:              "0", // Simplified for meme-to-meme
+		PriceImpact:      quote.PriceImpactPct,
+		RoutePlan:        routeSummary,
+		InputMint:        quote.InputMint,
+		OutputMint:       quote.OutputMint,
+		Raw:              quote.RawPayload,
+		SolFeeBreakdown:  feeBreakdown,
+		TotalSolRequired: totalSolRequired,
+		TradingFeeSol:    tradingFeeSol,
+	}, nil
+}
+
+// PrepareMemeToMemeSwap prepares a direct meme coin to meme coin swap
+func (s *Service) PrepareMemeToMemeSwap(ctx context.Context, params model.PrepareSwapRequestData) (*PrepareSwapResponse, error) {
+
+	// Basic validation
+	if !util.IsValidSolanaAddress(params.UserWalletAddress) {
+		return nil, fmt.Errorf("invalid user_wallet_address: %s", params.UserWalletAddress)
+	}
+	if !util.IsValidSolanaAddress(params.FromCoinMintAddress) {
+		return nil, fmt.Errorf("invalid from_coin_mint_address: %s", params.FromCoinMintAddress)
+	}
+	if !util.IsValidSolanaAddress(params.ToCoinMintAddress) {
+		return nil, fmt.Errorf("invalid to_coin_mint_address: %s", params.ToCoinMintAddress)
+	}
+
+	// Get coin details
+	fromCoinModel, err := s.coinService.GetCoinByAddress(ctx, params.FromCoinMintAddress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get fromCoin details for %s: %w", params.FromCoinMintAddress, err)
+	}
+	toCoinModel, err := s.coinService.GetCoinByAddress(ctx, params.ToCoinMintAddress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get toCoin details for %s: %w", params.ToCoinMintAddress, err)
+	}
+
+	// Validate amount
+	rawAmount := params.Amount
+	amountInt, err := strconv.ParseUint(rawAmount, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid amount (must be positive integer in raw units): %w", err)
+	}
+	if amountInt == 0 {
+		return nil, fmt.Errorf("amount must be positive: %s", rawAmount)
+	}
+
+	// Validate slippage
+	slippageBpsInt, err := strconv.Atoi(params.SlippageBps)
+	if err != nil {
+		return nil, fmt.Errorf("invalid slippage_bps: %w", err)
+	}
+	if slippageBpsInt < 0 || slippageBpsInt > 5000 {
+		return nil, fmt.Errorf("slippage_bps out of range (0-5000): %d", slippageBpsInt)
+	}
+
+	// Parse user public key
+	fromPubKey, err := solanago.PublicKeyFromBase58(params.UserWalletAddress)
+	if err != nil {
+		return nil, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	// Get quote with onlyDirectRoutes=true for meme-to-meme
+	tradeQuote, err := s.GetMemeToMemeQuote(ctx, params.FromCoinMintAddress, params.ToCoinMintAddress, rawAmount, params.SlippageBps, false, "")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get meme-to-meme quote: %w", err)
+	}
+
+	// For meme-to-meme swaps, we don't collect platform fees in SOL
+	// The fee would need to be collected in one of the traded tokens
+	var feeAccount string
+	slog.Info("Meme-to-meme swap - platform fee collection disabled",
+		"from", fromCoinModel.Symbol,
+		"to", toCoinModel.Symbol,
+		"reason", "no SOL involved in swap")
+
+	// Create swap transaction
+	swapResponse, err := s.jupiterClient.CreateSwapTransaction(ctx, tradeQuote.Raw, fromPubKey, feeAccount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create meme-to-meme swap transaction: %w", err)
+	}
+
+	// Calculate comprehensive fee breakdown
+	feeBreakdown, totalSolRequired, tradingFeeSol, err := s.calculateSolFeeBreakdown(ctx, tradeQuote, swapResponse, params.UserWalletAddress, params.FromCoinMintAddress, params.ToCoinMintAddress)
+	if err != nil {
+		slog.Warn("Failed to calculate SOL fee breakdown for meme-to-meme swap", "error", err)
+		// Use conservative estimates
+		const ataRentLamports = 2_039_280
+		const priorityLamports = 1_000_000
+		const baseTransactionFee = 5000
+		
+		totalLamports := uint64(2*ataRentLamports + priorityLamports + baseTransactionFee)
+		totalSolRequired = TruncateAndFormatFloat(float64(totalLamports)/1e9, 9)
+		tradingFeeSol = "0"
+		
+		feeBreakdown = &SolFeeBreakdown{
+			TradingFee:         "0",
+			TransactionFee:     TruncateAndFormatFloat(float64(baseTransactionFee)/1e9, 9),
+			AccountCreationFee: TruncateAndFormatFloat(float64(2*ataRentLamports)/1e9, 9),
+			PriorityFee:        TruncateAndFormatFloat(float64(priorityLamports)/1e9, 9),
+			Total:              totalSolRequired,
+			AccountsToCreate:   2,
+		}
+	}
+
+	// Create trade record
+	price, err := strconv.ParseFloat(tradeQuote.ExchangeRate, 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse exchange rate: %w", err)
+	}
+	
+	amount := float64(amountInt) / math.Pow(10, float64(fromCoinModel.Decimals))
+
+	trade := &model.Trade{
+		UserID:              fromPubKey.String(),
+		FromCoinMintAddress: params.FromCoinMintAddress,
+		FromCoinPKID:        fromCoinModel.ID,
+		ToCoinMintAddress:   params.ToCoinMintAddress,
+		ToCoinPKID:          toCoinModel.ID,
+		CoinSymbol:          fromCoinModel.Symbol,
+		Type:                "meme_to_meme_swap",
+		Amount:              amount,
+		Price:               price,
+		Fee:                 0, // No platform fee for meme-to-meme
+		Status:              "prepared",
+		UnsignedTransaction: swapResponse.SwapTransaction,
+		CreatedAt:           time.Now(),
+		Confirmations:       0,
+		Finalized:           false,
+	}
+
+	// Set fee information
+	if totalSolFee, err := strconv.ParseFloat(totalSolRequired, 64); err == nil {
+		trade.TotalFeeAmount = totalSolFee
+		trade.TotalFeeMint = model.SolMint // Fees are always in SOL
+	}
+
+	// Store fee breakdown
+	if feeBreakdownJSON, err := json.Marshal(feeBreakdown); err == nil {
+		trade.RouteFeeDetails = string(feeBreakdownJSON)
+	}
+
+	// Set price impact
+	if priceImpact, err := strconv.ParseFloat(tradeQuote.PriceImpact, 64); err == nil {
+		trade.PriceImpactPercent = priceImpact
+	}
+
+	if err := s.store.Trades().Create(ctx, trade); err != nil {
+		return nil, fmt.Errorf("failed to create trade record: %w", err)
+	}
+
+	slog.Info("Meme-to-meme swap prepared",
+		"from", fromCoinModel.Symbol,
+		"to", toCoinModel.Symbol,
+		"amount", amount,
+		"exchange_rate", price,
+		"total_sol_required", totalSolRequired,
+		"route", strings.Join(tradeQuote.RoutePlan, " -> "))
+
+	return &PrepareSwapResponse{
+		UnsignedTransaction: swapResponse.SwapTransaction,
+		SolFeeBreakdown:     feeBreakdown,
+		TotalSolRequired:    totalSolRequired,
+		TradingFeeSol:       tradingFeeSol,
+	}, nil
 }
