@@ -5,27 +5,11 @@
   "version": 1,
   "refresh": "10s",
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
-  "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
-  },
   "templating": {
     "list": [
       {
@@ -45,33 +29,15 @@
         "regex": "",
         "skipUrlSync": false,
         "type": "datasource"
-      },
-      {
-        "current": {
-          "selected": false,
-          "text": "Mimir",
-          "value": "mimir"
-        },
-        "hide": 0,
-        "includeAll": false,
-        "label": "Metrics Datasource",
-        "multi": false,
-        "name": "metrics",
-        "options": [],
-        "query": "prometheus",
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "type": "datasource"
       }
     ]
   },
   "panels": [
     {
-      "title": "Recent Database Queries",
-      "type": "table",
+      "title": "Database Queries",
+      "type": "traces",
       "gridPos": {
-        "h": 12,
+        "h": 14,
         "w": 24,
         "x": 0,
         "y": 0
@@ -86,157 +52,22 @@
             "type": "tempo",
             "uid": "${tempo}"
           },
-          "limit": 100,
-          "query": "{span.db.orm=\"gorm\"} | select(span.db.query.text, span.db.collection.name, span.db.operation.name, duration)",
-          "queryType": "traceql",
-          "refId": "A",
-          "tableType": "spans"
-        }
-      ],
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Start time"
-          }
-        ]
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "displayMode": "auto"
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "span.db.query.text"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 600
-              },
-              {
-                "id": "displayName",
-                "value": "SQL Query"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "span.db.collection.name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Table"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "span.db.operation.name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Operation"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "duration"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "ms"
-              },
-              {
-                "id": "displayName",
-                "value": "Duration"
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "title": "Query Performance by Table",
-      "type": "stat",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 12
-      },
-      "datasource": {
-        "type": "tempo",
-        "uid": "${tempo}"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "${tempo}"
-          },
-          "limit": 1000,
-          "query": "{span.db.orm=\"gorm\"} | avg(duration) by (span.db.collection.name)",
+          "limit": 50,
+          "query": "{span.db.orm=\"gorm\"}",
           "queryType": "traceql",
           "refId": "A"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ms",
-          "displayName": "${__field.labels.span.db.collection.name}",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 50
-              },
-              {
-                "color": "red",
-                "value": 100
-              }
-            ]
-          }
-        }
-      },
-      "options": {
-        "reduceOptions": {
-          "values": false,
-          "calcs": ["lastNotNull"],
-          "fields": ""
-        },
-        "orientation": "horizontal",
-        "textMode": "value_and_name",
-        "colorMode": "value",
-        "graphMode": "area"
-      }
+      "description": "Click on any trace to see the full SQL query in span attributes:\n- db.query.text: Full SQL\n- db.collection.name: Table name\n- db.operation.name: Operation type"
     },
     {
-      "title": "Slowest Queries",
-      "type": "table",
+      "title": "Slow Database Queries (>50ms)",
+      "type": "traces",
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 12
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 14
       },
       "datasource": {
         "type": "tempo",
@@ -249,173 +80,11 @@
             "uid": "${tempo}"
           },
           "limit": 20,
-          "query": "{span.db.orm=\"gorm\" && duration > 50ms} | select(span.db.query.text, duration, span.db.collection.name)",
-          "queryType": "traceql",
-          "refId": "A",
-          "tableType": "spans"
-        }
-      ],
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "duration"
-          }
-        ]
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "displayMode": "auto"
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "span.db.query.text"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 500
-              },
-              {
-                "id": "displayName",
-                "value": "SQL Query"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "duration"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "ms"
-              },
-              {
-                "id": "displayName",
-                "value": "Duration"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "span.db.collection.name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Table"
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "title": "Query Types Distribution",
-      "type": "piechart",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 20
-      },
-      "datasource": {
-        "type": "tempo",
-        "uid": "${tempo}"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "${tempo}"
-          },
-          "limit": 1000,
-          "query": "{span.db.orm=\"gorm\"} | count() by (span.db.operation.name)",
+          "query": "{span.db.orm=\"gorm\" && duration > 50ms}",
           "queryType": "traceql",
           "refId": "A"
         }
-      ],
-      "options": {
-        "pieType": "donut",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "values": ["value", "percent"]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "color": {
-            "mode": "palette-classic"
-          },
-          "unit": "short"
-        }
-      }
-    },
-    {
-      "title": "Database Load Over Time",
-      "type": "timeseries",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 20
-      },
-      "datasource": {
-        "type": "tempo",
-        "uid": "${tempo}"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "${tempo}"
-          },
-          "limit": 1000,
-          "query": "{span.db.orm=\"gorm\"} | rate()",
-          "queryType": "traceql",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "showPoints": "auto"
-          },
-          "unit": "ops"
-        }
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      }
+      ]
     }
   ]
 }
