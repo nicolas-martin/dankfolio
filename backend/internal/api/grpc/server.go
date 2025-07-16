@@ -66,13 +66,15 @@ func (s *Server) SetOtel(tracer trace.Tracer, meter metric.Meter) {
 
 // Start starts the Connect RPC server
 func (s *Server) Start(port int) error {
-	// Create logger interceptor
+	// Create interceptors
+	panicRecoveryInterceptor := middleware.PanicRecoveryInterceptor()
 	logInterceptor := middleware.GRPCLoggerInterceptor()
 	debugModeInterceptor := middleware.GRPCDebugModeInterceptor()
 
 	// Create OpenTelemetry interceptor if tracer and meter are set
 	var interceptors []connect.Interceptor
-	interceptors = append(interceptors, debugModeInterceptor, logInterceptor)
+	// Panic recovery should be first to catch panics from all other interceptors
+	interceptors = append(interceptors, panicRecoveryInterceptor, debugModeInterceptor, logInterceptor)
 	
 	if s.tracer != nil && s.meter != nil {
 		otelInterceptor, err := middleware.NewOtelConnectInterceptor(s.tracer, s.meter)
