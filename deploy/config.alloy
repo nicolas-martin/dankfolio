@@ -1,4 +1,3 @@
-
   // ─── OTLP Receiver (Single Ingestion Point) ─────────────────────
   otelcol.receiver.otlp "default" {
     grpc { endpoint = "0.0.0.0:4317" }
@@ -33,6 +32,12 @@
   }
 
   // ─── Prometheus Scraping → Mimir ────────────────────────────────
+  prometheus.scrape "dankfolio" {
+    targets = [ { __address__ = "localhost:8080" } ]
+    forward_to = [prometheus.remote_write.mimir.receiver]
+    metrics_path = "/metrics"
+  }
+
   prometheus.scrape "node" {
     targets = [ { __address__ = "localhost:9100" } ]
     forward_to = [prometheus.remote_write.mimir.receiver]
