@@ -155,11 +155,18 @@ func (t *Telemetry) Shutdown(ctx context.Context) error {
 
 // NewNoOpTelemetry creates a no-op telemetry instance for development environments
 func NewNoOpTelemetry(serviceName string) *Telemetry {
-	// Use the global providers which are no-op by default
+	// Create no-op providers explicitly
+	tracerProvider := sdktrace.NewTracerProvider()
+	meterProvider := sdkmetric.NewMeterProvider()
+	
+	// Set them as global providers
+	otel.SetTracerProvider(tracerProvider)
+	otel.SetMeterProvider(meterProvider)
+	
 	return &Telemetry{
-		TracerProvider: nil,
-		MeterProvider:  nil,
-		Tracer:         otel.Tracer(serviceName),
-		Meter:          otel.Meter(serviceName),
+		TracerProvider: tracerProvider,
+		MeterProvider:  meterProvider,
+		Tracer:         tracerProvider.Tracer(serviceName),
+		Meter:          meterProvider.Meter(serviceName),
 	}
 }

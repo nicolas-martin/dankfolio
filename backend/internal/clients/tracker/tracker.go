@@ -38,6 +38,12 @@ func NewAPITracker(telemetry *otel.Telemetry) (*APITracker, error) {
 }
 
 func (t *APITracker) initMetrics() error {
+	// Check if we have a valid meter
+	if t.telemetry == nil || t.telemetry.Meter == nil {
+		slog.Warn("APITracker: No meter available, metrics will be disabled")
+		return nil
+	}
+
 	var err error
 
 	t.metrics.apiCallCounter, err = t.telemetry.Meter.Int64Counter(
@@ -46,7 +52,8 @@ func (t *APITracker) initMetrics() error {
 		metric.WithUnit("{call}"),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create api call counter: %w", err)
+		slog.Warn("Failed to create api call counter", "error", err)
+		// Continue without this metric rather than failing completely
 	}
 
 	t.metrics.apiCallDuration, err = t.telemetry.Meter.Float64Histogram(
@@ -56,7 +63,7 @@ func (t *APITracker) initMetrics() error {
 		metric.WithExplicitBucketBoundaries(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create api call duration histogram: %w", err)
+		slog.Warn("Failed to create api call duration histogram", "error", err)
 	}
 
 	t.metrics.activeRequests, err = t.telemetry.Meter.Int64UpDownCounter(
@@ -65,7 +72,7 @@ func (t *APITracker) initMetrics() error {
 		metric.WithUnit("{request}"),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create active requests counter: %w", err)
+		slog.Warn("Failed to create active requests counter", "error", err)
 	}
 
 	t.metrics.errorCounter, err = t.telemetry.Meter.Int64Counter(
@@ -74,7 +81,7 @@ func (t *APITracker) initMetrics() error {
 		metric.WithUnit("{error}"),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create error counter: %w", err)
+		slog.Warn("Failed to create error counter", "error", err)
 	}
 
 	return nil
@@ -82,6 +89,10 @@ func (t *APITracker) initMetrics() error {
 
 // TrackCall tracks an API call (for backward compatibility)
 func (t *APITracker) TrackCall(serviceName, endpointName string) {
+	if t == nil || t.metrics.apiCallCounter == nil {
+		return
+	}
+
 	attrs := []attribute.KeyValue{
 		attribute.String("service.name", serviceName),
 		attribute.String("endpoint.name", endpointName),
@@ -92,6 +103,10 @@ func (t *APITracker) TrackCall(serviceName, endpointName string) {
 
 // TrackCallWithContext tracks an API call with context
 func (t *APITracker) TrackCallWithContext(ctx context.Context, serviceName, endpointName string) {
+	if t == nil || t.metrics.apiCallCounter == nil {
+		return
+	}
+
 	attrs := []attribute.KeyValue{
 		attribute.String("service.name", serviceName),
 		attribute.String("endpoint.name", endpointName),
@@ -109,6 +124,12 @@ func (t *APITracker) TrackCallWithContext(ctx context.Context, serviceName, endp
 
 // StartSpan starts a new span for an API call
 func (t *APITracker) StartSpan(ctx context.Context, serviceName, endpointName string) (context.Context, trace.Span) {
+	// Handle nil telemetry or tracer gracefully
+	if t == nil || t.telemetry == nil || t.telemetry.Tracer == nil {
+		// Return a no-op span
+		return ctx, trace.SpanFromContext(ctx)
+	}
+
 	spanName := fmt.Sprintf("%s.%s", serviceName, endpointName)
 	ctx, span := t.telemetry.Tracer.Start(ctx, spanName,
 		trace.WithAttributes(
@@ -118,29 +139,40 @@ func (t *APITracker) StartSpan(ctx context.Context, serviceName, endpointName st
 		trace.WithSpanKind(trace.SpanKindClient),
 	)
 
-	t.metrics.activeRequests.Add(ctx, 1, metric.WithAttributes(
-		attribute.String("service.name", serviceName),
-	))
+	if t.metrics.activeRequests != nil {
+		t.metrics.activeRequests.Add(ctx, 1, metric.WithAttributes(
+			attribute.String("service.name", serviceName),
+		))
+	}
 
 	return ctx, span
 }
 
 // EndSpan ends a span and records any error
 func (t *APITracker) EndSpan(span trace.Span, err error, serviceName string) {
+	// Handle nil span gracefully
+	if span == nil {
+		return
+	}
+
 	ctx := context.Background()
 
-	t.metrics.activeRequests.Add(ctx, -1, metric.WithAttributes(
-		attribute.String("service.name", serviceName),
-	))
+	if t != nil && t.metrics.activeRequests != nil {
+		t.metrics.activeRequests.Add(ctx, -1, metric.WithAttributes(
+			attribute.String("service.name", serviceName),
+		))
+	}
 
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 
-		t.metrics.errorCounter.Add(ctx, 1, metric.WithAttributes(
-			attribute.String("service.name", serviceName),
-			attribute.String("error.type", fmt.Sprintf("%T", err)),
-		))
+		if t != nil && t.metrics.errorCounter != nil {
+			t.metrics.errorCounter.Add(ctx, 1, metric.WithAttributes(
+				attribute.String("service.name", serviceName),
+				attribute.String("error.type", fmt.Sprintf("%T", err)),
+			))
+		}
 	} else {
 		span.SetStatus(codes.Ok, "")
 	}
@@ -150,6 +182,10 @@ func (t *APITracker) EndSpan(span trace.Span, err error, serviceName string) {
 
 // RecordDuration records the duration of an API call
 func (t *APITracker) RecordDuration(ctx context.Context, serviceName, endpointName string, duration time.Duration) {
+	if t == nil || t.metrics.apiCallDuration == nil {
+		return
+	}
+
 	attrs := []attribute.KeyValue{
 		attribute.String("service.name", serviceName),
 		attribute.String("endpoint.name", endpointName),
