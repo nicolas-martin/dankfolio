@@ -1,0 +1,378 @@
+{
+  "title": "Database Repository Performance",
+  "uid": "database-repository-perf111",
+  "overwrite": true,
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {
+          "text": "Mimir",
+          "value": "Mimir"
+        }
+      },
+      {
+        "name": "tempoDatasource",
+        "type": "datasource",
+        "query": "tempo",
+        "current": {
+          "text": "Tempo",
+          "value": "Tempo"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "Repository Operations by Method",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "${tempoDatasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "${tempoDatasource}"
+          },
+          "query": "{ .db.repository.method != \"\" }",
+          "queryType": "traceql",
+          "refId": "A",
+          "tableType": "spans"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "db.repository.method": {
+                "aggregations": [
+                  "count"
+                ],
+                "operation": "aggregate"
+              },
+              "Time": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      }
+    },
+    {
+      "title": "Database Operations by Table",
+      "type": "piechart",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "${tempoDatasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "${tempoDatasource}"
+          },
+          "query": "{ .db.table != \"\" }",
+          "queryType": "traceql",
+          "refId": "A",
+          "tableType": "spans",
+          "limit": 1000
+        }
+      ],
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "db.table": {
+                "aggregations": [
+                  "count"
+                ],
+                "operation": "aggregate"
+              }
+            }
+          }
+        }
+      ],
+      "options": {
+        "pieType": "donut",
+        "displayLabels": [
+          "name",
+          "percent"
+        ]
+      }
+    },
+    {
+      "title": "Repository Method Duration (p95)",
+      "type": "gauge",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "${tempoDatasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "${tempoDatasource}"
+          },
+          "query": "{ .db.repository.method != \"\" }",
+          "queryType": "traceql",
+          "refId": "A",
+          "tableType": "spans"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "db.repository.method": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "duration": {
+                "aggregations": [
+                  "p95"
+                ],
+                "operation": "aggregate"
+              }
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ns",
+          "displayName": "${__field.labels.db.repository.method}",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50000000
+              },
+              {
+                "color": "red",
+                "value": 100000000
+              }
+            ]
+          },
+          "min": 0,
+          "max": 200000000
+        }
+      },
+      "options": {
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      }
+    },
+    {
+      "title": "GORM Query Performance",
+      "type": "table",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "${tempoDatasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "${tempoDatasource}"
+          },
+          "query": "{ .db.statement != \"\" }",
+          "queryType": "traceql",
+          "refId": "A",
+          "tableType": "spans",
+          "limit": 100
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "traceID": true,
+              "spanID": true,
+              "parentSpanID": true,
+              "serviceName": true
+            },
+            "renameByName": {
+              "db.statement": "SQL Query",
+              "db.rows_affected": "Rows",
+              "duration": "Duration",
+              "db.sql.table": "Table",
+              "startTime": "Time"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Duration"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ns"
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SQL Query"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 500
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Duration"
+          }
+        ]
+      }
+    },
+    {
+      "title": "Slow Queries (>100ms)",
+      "type": "logs",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "${tempoDatasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "${tempoDatasource}"
+          },
+          "query": "{ .db.statement != \"\" && duration > 100ms }",
+          "queryType": "traceql",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "prettifyLogMessage": false,
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "title": "Repository Operations Heatmap",
+      "type": "heatmap",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 36
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "${tempoDatasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "${tempoDatasource}"
+          },
+          "query": "{ .db.repository.method != \"\" }",
+          "queryType": "traceql",
+          "refId": "A",
+          "tableType": "spans"
+        }
+      ],
+      "options": {
+        "calculate": true,
+        "yAxis": {
+          "axisLabel": "Duration",
+          "axisPlacement": "left",
+          "unit": "ns"
+        },
+        "cellGap": 1,
+        "color": {
+          "scheme": "Spectral"
+        }
+      }
+    }
+  ]
+}
