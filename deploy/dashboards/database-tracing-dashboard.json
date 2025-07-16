@@ -74,8 +74,8 @@
     },
     {
       "id": 2,
-      "title": "Repository Method Call Count",
-      "type": "stat",
+      "title": "Repository Method Calls by Table",
+      "type": "piechart",
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -92,39 +92,21 @@
             "type": "tempo",
             "uid": "P214B5B846CF3925F"
           },
-          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.GetByField\"}",
+          "query": "{resource.service.name=\"dankfolio-backend\" && name=~\"repository.*\"}",
           "queryType": "traceql",
-          "refId": "GetByField"
-        },
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "P214B5B846CF3925F"
-          },
-          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.Get\"}",
-          "queryType": "traceql",
-          "refId": "Get"
-        },
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "P214B5B846CF3925F"
-          },
-          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.List\"}",
-          "queryType": "traceql",
-          "refId": "List"
+          "refId": "A",
+          "limit": 200
         }
       ],
       "options": {
-        "graphMode": "none",
-        "colorMode": "value",
-        "textMode": "name",
-        "reduceOptions": {
-          "values": false,
-          "calcs": ["count"],
-          "fields": ""
-        },
-        "orientation": "horizontal"
+        "pieType": "donut",
+        "displayLabels": ["name", "value"],
+        "legendDisplayMode": "table",
+        "legendPlacement": "right",
+        "legendValues": ["value", "percent"],
+        "tooltip": {
+          "mode": "single"
+        }
       },
       "fieldConfig": {
         "defaults": {
@@ -139,21 +121,83 @@
               }
             ]
           }
-        }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Count GetByField"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "GetByField"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Count Get"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Get"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Count List"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "List"
+              }
+            ]
+          }
+        ]
       },
       "transformations": [
         {
-          "id": "renameByRegex", 
+          "id": "extractFields",
           "options": {
-            "regex": "Duration (.+)",
-            "renamePattern": "$1"
+            "source": "attributes",
+            "fields": {
+              "db.table": "Table",
+              "name": "Method"
+            }
+          }
+        },
+        {
+          "id": "concatenateFields",
+          "options": {
+            "sourceFields": ["Name", "Table"],
+            "targetField": "Method_Table",
+            "separator": " - "
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "Method_Table": {
+                "operation": "groupby"
+              },
+              "Duration": {
+                "operation": "count"
+              }
+            }
           }
         }
       ]
     },
     {
       "id": 3,
-      "title": "Average Repository Method Duration",
+      "title": "Average Repository Method Duration by Table",
       "type": "bargauge",
       "gridPos": {
         "h": 8,
@@ -171,27 +215,10 @@
             "type": "tempo",
             "uid": "P214B5B846CF3925F"
           },
-          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.GetByField\"}",
+          "query": "{resource.service.name=\"dankfolio-backend\" && name=~\"repository.*\"}",
           "queryType": "traceql",
-          "refId": "GetByField"
-        },
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "P214B5B846CF3925F"
-          },
-          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.Get\"}",
-          "queryType": "traceql",
-          "refId": "Get"
-        },
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "P214B5B846CF3925F"
-          },
-          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.List\"}",
-          "queryType": "traceql",
-          "refId": "List"
+          "refId": "A",
+          "limit": 200
         }
       ],
       "options": {
@@ -215,10 +242,34 @@
       },
       "transformations": [
         {
-          "id": "renameByRegex",
+          "id": "extractFields",
           "options": {
-            "regex": "Duration (.+)",
-            "renamePattern": "$1"
+            "source": "attributes",
+            "fields": {
+              "db.table": "Table"
+            }
+          }
+        },
+        {
+          "id": "concatenateFields",
+          "options": {
+            "sourceFields": ["Name", "Table"],
+            "targetField": "Method_Table",
+            "separator": " - "
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "Method_Table": {
+                "operation": "groupby"
+              },
+              "Duration": {
+                "operation": "mean",
+                "aggregations": ["mean"]
+              }
+            }
           }
         }
       ]
