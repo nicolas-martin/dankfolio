@@ -193,7 +193,9 @@
         "showThresholdMarkers": true,
         "reduceOptions": {
           "values": false,
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": ""
         }
       }
@@ -249,167 +251,11 @@
         "showThresholdMarkers": true,
         "reduceOptions": {
           "values": false,
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": ""
         }
-      }
-    },
-    {
-      "title": "Database Operations",
-      "type": "row",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 36
-      },
-      "collapsed": false
-    },
-    {
-      "title": "Repository Method Calls",
-      "type": "stat",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 37
-      },
-      "datasource": {
-        "type": "tempo",
-        "uid": "P214B5B846CF3925F"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "P214B5B846CF3925F"
-          },
-          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.GetByField\"}",
-          "queryType": "traceql",
-          "refId": "GetByField"
-        },
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "P214B5B846CF3925F"
-          },
-          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.Get\"}",
-          "queryType": "traceql",
-          "refId": "Get"
-        },
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "P214B5B846CF3925F"
-          },
-          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.List\"}",
-          "queryType": "traceql",
-          "refId": "List"
-        }
-      ],
-      "options": {
-        "graphMode": "none",
-        "colorMode": "value",
-        "textMode": "name",
-        "reduceOptions": {
-          "values": false,
-          "calcs": ["count"]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "title": "Repository Method Duration",
-      "type": "gauge",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 37
-      },
-      "datasource": {
-        "type": "tempo",
-        "uid": "P214B5B846CF3925F"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "P214B5B846CF3925F"
-          },
-          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.GetByField\"}",
-          "queryType": "traceql",
-          "refId": "GetByField"
-        },
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "P214B5B846CF3925F"
-          },
-          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.Get\"}",
-          "queryType": "traceql",
-          "refId": "Get"
-        },
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "P214B5B846CF3925F"
-          },
-          "query": "{resource.service.name=\"dankfolio-backend\" && name=\"repository.List\"}",
-          "queryType": "traceql",
-          "refId": "List"
-        }
-      ],
-      "options": {
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "reduceOptions": {
-          "values": false,
-          "calcs": ["mean"]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "displayName": "${__field.labels.table_name}",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 0.05
-              },
-              {
-                "color": "red",
-                "value": 0.1
-              }
-            ]
-          }
-        }
-      },
-      "options": {
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
       }
     },
     {
@@ -419,7 +265,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 45
+        "y": 36
       },
       "datasource": {
         "type": "loki",
