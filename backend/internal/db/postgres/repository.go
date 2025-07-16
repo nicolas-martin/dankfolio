@@ -8,6 +8,7 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/lib/pq"
 
@@ -39,6 +40,10 @@ func NewRepository[S interface {
 
 // Get retrieves an entity by its ID.
 func (r *Repository[S, M]) Get(ctx context.Context, id string) (*M, error) {
+	// Add repository-level tracing
+	ctx, span := withRepositorySpan(ctx, "get", getTableName[S]())
+	defer span.End()
+	
 	var schemaItem S
 	// Default to "id" as primary key column name.
 	// Specific types like schema.Coin might override GetID() to return a different value
@@ -61,6 +66,11 @@ func (r *Repository[S, M]) Get(ctx context.Context, id string) (*M, error) {
 
 // GetByField retrieves an entity by a specific field value.
 func (r *Repository[S, M]) GetByField(ctx context.Context, field string, value any) (*M, error) {
+	// Add repository-level tracing
+	ctx, span := withRepositorySpan(ctx, "get_by_field", getTableName[S]())
+	defer span.End()
+	span.SetAttributes(attribute.String("db.query.field", field))
+	
 	var schemaItem S
 	if err := r.db.WithContext(ctx).Where(field+" = ?", value).First(&schemaItem).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -77,6 +87,15 @@ func (r *Repository[S, M]) GetByField(ctx context.Context, field string, value a
 // It now uses ListWithOpts internally, passing through the options.
 // If no specific filters are needed for a simple List call, opts can be empty or have only pagination/sorting.
 func (r *Repository[S, M]) List(ctx context.Context, opts db.ListOptions) ([]M, int32, error) {
+	// Add repository-level tracing
+	ctx, span := withRepositorySpan(ctx, "list", getTableName[S]())
+	defer span.End()
+	if opts.Limit != nil {
+		span.SetAttributes(attribute.Int("db.query.limit", *opts.Limit))
+	}
+	if opts.Offset != nil {
+		span.SetAttributes(attribute.Int("db.query.offset", *opts.Offset))
+	}
 	// This effectively makes List an alias for ListWithOpts.
 	// If List was intended to have some default filters that ListWithOpts doesn't,
 	// those would be applied here before calling ListWithOpts.

@@ -1,5 +1,6 @@
 {
   "title": "Database Query Analysis",
+  "uid": "database-query-analysis",
   "editable": true,
   "schemaVersion": 41,
   "version": 1,
@@ -40,47 +41,7 @@
           "refId": "A"
         }
       ],
-      "description": "Database queries grouped by table. Shows only actual database operations (no RPC calls).\nClick on any trace to see the full SQL query.",
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "displayName": "Duration",
-            "desc": true
-          }
-        ]
-      },
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "renameByName": {
-              "spanID": "Span ID",
-              "operationName": "Query Type",
-              "serviceName": "Service",
-              "duration": "Duration",
-              "startTime": "Start Time",
-              "by(span.db.collection.name)": "Table",
-              "db.query.text": "SQL Query",
-              "db.operation.name": "Operation"
-            },
-            "indexByName": {
-              "Table": 0,
-              "Operation": 1,
-              "SQL Query": 2,
-              "Duration": 3,
-              "Start Time": 4
-            },
-            "includeByName": {
-              "Table": true,
-              "Operation": true,
-              "SQL Query": true,
-              "Duration": true,
-              "Start Time": true
-            }
-          }
-        }
-      ]
+      "description": "Database queries grouped by table. Shows only actual database operations (no RPC calls).\nClick on any trace to see the full SQL query."
     },
     {
       "id": 2,
@@ -107,16 +68,7 @@
           "queryType": "traceql",
           "refId": "A"
         }
-      ],
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "displayName": "Duration",
-            "desc": true
-          }
-        ]
-      }
+      ]
     }
   ]
 }
