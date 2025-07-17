@@ -1,8 +1,9 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
+import { View, ScrollView, RefreshControl, SafeAreaView, useWindowDimensions } from 'react-native';
 import { Text, Button, Icon, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
+import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import { 
 	handleTokenPress, 
 	formatAddress, 
@@ -15,6 +16,7 @@ import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions';
 import { useStyles } from './profile_styles';
 import TokenListCard from '@/components/Home/TokenListCard';
+import TransactionsList from '@/components/Profile/TransactionsList';
 import {
 	ProfileIcon,
 	WalletIcon,
@@ -30,8 +32,13 @@ const Profile = () => {
 	const { showToast } = useToast();
 	const { wallet, tokens, fetchPortfolioBalance, isLoading: isPortfolioLoading } = usePortfolioStore();
 	const styles = useStyles();
+	const layout = useWindowDimensions();
 
-
+	const [index, setIndex] = useState(0);
+	const [routes] = useState([
+		{ key: 'tokens', title: 'Tokens' },
+		{ key: 'transactions', title: 'Transactions' },
+	]);
 
 	const sendButtonIcon = useCallback(() => (
 		<SendIcon size={20} color={styles.colors.onPrimary} />
@@ -152,7 +159,7 @@ const Profile = () => {
 		</View>
 	);
 
-	const renderTokensSection = () => (
+	const TokensTab = () => (
 		<View style={styles.tokensSection} accessible={false}>
 			{sortedTokens.length === 0 ? (
 				<>
@@ -192,6 +199,11 @@ const Profile = () => {
 			)}
 		</View>
 	);
+
+	const renderScene = SceneMap({
+		tokens: TokensTab,
+		transactions: TransactionsList,
+	});
 
 	const renderNoWalletState = () => (
 		<View style={styles.noWalletContainer}>
@@ -235,7 +247,13 @@ const Profile = () => {
 					<View style={styles.contentPadding} accessible={false}>
 						{renderHeader()}
 						{renderPortfolioCard()}
-						{renderTokensSection()}
+						<TabView
+							navigationState={{ index, routes }}
+							renderScene={renderScene}
+							onIndexChange={setIndex}
+							initialLayout={{ width: layout.width }}
+							renderTabBar={props => <TabBar {...props} style={{ backgroundColor: 'transparent' }} />}
+						/>
 					</View>
 				</ScrollView>
 			</View>
