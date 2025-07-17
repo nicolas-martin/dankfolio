@@ -7,10 +7,10 @@ import { Transaction, TransactionType, TransactionStatus } from '@/types';
  */
 export const calculatePortfolioStats = (tokens: PortfolioToken[], transactions: Transaction[]): PortfolioStats => {
 	const totalValue = tokens.reduce((sum, token) => sum + token.value, 0);
-	
+
 	// Calculate cost basis from transactions
 	let totalCostBasis = 0;
-	
+
 	// Group transactions by coin
 	const transactionsByCoin: Record<string, Transaction[]> = {};
 	transactions.forEach(tx => {
@@ -28,7 +28,7 @@ export const calculatePortfolioStats = (tokens: PortfolioToken[], transactions: 
 		const costBasis = calculateCostBasisForToken(token, coinTransactions);
 		totalCostBasis += costBasis;
 	});
-	
+
 	const totalUnrealizedPnL = totalValue - totalCostBasis;
 	const totalPnLPercentage = totalCostBasis > 0 ? (totalUnrealizedPnL / totalCostBasis) * 100 : 0;
 
@@ -47,10 +47,10 @@ export const calculatePortfolioStats = (tokens: PortfolioToken[], transactions: 
 const calculateCostBasisForToken = (token: PortfolioToken, transactions: Transaction[]): number => {
 	// Filter only completed swap transactions where this token was bought
 	const buyTransactions = transactions.filter(
-		tx => tx.type === TransactionType.SWAP && 
-		tx.status === TransactionStatus.COMPLETED && 
-		tx.price && 
-		tx.amount
+		tx => tx.type === TransactionType.SWAP &&
+			tx.status === TransactionStatus.COMPLETED &&
+			tx.price &&
+			tx.amount
 	);
 
 	if (buyTransactions.length === 0) {
@@ -70,13 +70,7 @@ const calculateCostBasisForToken = (token: PortfolioToken, transactions: Transac
 		}
 	});
 
-	// If we have more tokens than we bought (e.g., from airdrops), 
-	// use the average price for the remaining
-	if (totalAmount < token.amount && totalAmount > 0) {
-		const avgPrice = totalCost / totalAmount;
-		const remainingAmount = token.amount - totalAmount;
-		totalCost += remainingAmount * avgPrice;
-	} else if (totalAmount === 0) {
+	if (totalAmount === 0) {
 		// No valid transactions, use current value
 		return token.value;
 	}
@@ -89,7 +83,7 @@ const calculateCostBasisForToken = (token: PortfolioToken, transactions: Transac
  */
 export const calculateTokenStats = (token: PortfolioToken, transactions: Transaction[]): PnLData => {
 	const currentValue = token.value;
-	
+
 	// Log all transactions to debug
 	console.log(`[PnL] All transactions for debugging:`, transactions.slice(0, 3).map(tx => ({
 		id: tx.id,
@@ -101,14 +95,14 @@ export const calculateTokenStats = (token: PortfolioToken, transactions: Transac
 		price: tx.price,
 		totalValue: tx.totalValue,
 	})));
-	
+
 	// Find transactions for this specific token
 	const tokenTransactions = transactions.filter(
-		tx => tx.type === TransactionType.SWAP && 
-		tx.toCoinMintAddress === token.mintAddress &&
-		tx.status === TransactionStatus.COMPLETED
+		tx => tx.type === TransactionType.SWAP &&
+			tx.toCoinMintAddress === token.mintAddress &&
+			tx.status === TransactionStatus.COMPLETED
 	);
-	
+
 	console.log(`[PnL] Calculating stats for ${token.coin.symbol}:`, {
 		mintAddress: token.mintAddress,
 		totalTransactions: transactions.length,
@@ -123,13 +117,13 @@ export const calculateTokenStats = (token: PortfolioToken, transactions: Transac
 			status: tx.status,
 		}))
 	});
-	
+
 	const costBasis = calculateCostBasisForToken(token, tokenTransactions);
 	const unrealizedPnL = currentValue - costBasis;
 	const pnlPercentage = costBasis > 0 ? (unrealizedPnL / costBasis) * 100 : 0;
-	
+
 	const hasPurchaseData = tokenTransactions.length > 0 && tokenTransactions.some(tx => tx.price !== undefined);
-	
+
 	console.log(`[PnL] Stats for ${token.coin.symbol}:`, {
 		currentValue,
 		costBasis,
@@ -148,16 +142,4 @@ export const calculateTokenStats = (token: PortfolioToken, transactions: Transac
 		pnlPercentage,
 		hasPurchaseData,
 	};
-};
-
-/**
- * Format token amount based on its value
- */
-export const formatTokenAmount = (amount: number, decimals: number = 4): string => {
-	if (amount === 0) return '0';
-	if (amount < 0.0001) return '<0.0001';
-	if (amount < 1) return amount.toFixed(decimals);
-	if (amount < 1000) return amount.toFixed(2);
-	if (amount < 1000000) return `${(amount / 1000).toFixed(2)}K`;
-	return `${(amount / 1000000).toFixed(2)}M`;
 };

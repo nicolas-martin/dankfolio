@@ -3,9 +3,9 @@ import { Text, IconButton } from 'react-native-paper';
 import { usePortfolioStore } from '@/store/portfolio';
 import { useTransactionsStore } from '@/store/transactions';
 import { useStyles } from './pnlview_styles';
-import { formatPrice, formatPercentage } from '@/utils/numberFormat';
+import { formatTokenBalance, formatPrice, formatPercentage } from '@/utils/numberFormat';
 import { useCallback, useState, useMemo } from 'react';
-import { calculatePortfolioStats, calculateTokenStats } from './pnlview_scripts';
+import { calculateTokenStats } from './pnlview_scripts';
 import { PnLData } from './pnlview_types';
 import CachedImage from '@/components/Common/CachedImage';
 
@@ -17,8 +17,8 @@ const PnLView = () => {
 
 	const refreshControlColors = useMemo(() => [styles.colors.primary], [styles.colors.primary]);
 
-	const portfolioStats = useMemo(() => calculatePortfolioStats(tokens, transactions), [tokens, transactions]);
 	const tokenStats = useMemo(() => tokens.map(token => calculateTokenStats(token, transactions)), [tokens, transactions]);
+	tokenStats.sort((a, b) => b.unrealizedPnL - a.unrealizedPnL);
 
 	const handleRefresh = useCallback(async () => {
 		if (!wallet?.address) return;
@@ -34,6 +34,9 @@ const PnLView = () => {
 		const { token } = data;
 		const isPositive = data.unrealizedPnL >= 0;
 		const isLastItem = index === tokenStats.length - 1;
+		if (!data.hasPurchaseData) {
+			return null
+		}
 
 		return (
 			<View key={token.mintAddress} style={[styles.tokenItem, isLastItem && styles.tokenItemLast]}>
@@ -48,9 +51,8 @@ const PnLView = () => {
 						</View>
 						<View style={styles.tokenInfo}>
 							<Text style={styles.tokenSymbol}>{token.coin.symbol}</Text>
-							<Text style={styles.tokenName}>{token.coin.name}</Text>
 							<Text style={styles.tokenAmount}>
-								{token.amount.toFixed(4)} tokens
+								{formatTokenBalance(token.amount)}
 							</Text>
 						</View>
 					</View>
@@ -61,18 +63,14 @@ const PnLView = () => {
 						<Text style={styles.currentPrice}>
 							@ {formatPrice(token.price, false)}
 						</Text>
-						{data.hasPurchaseData ? (
-							<View style={styles.pnlContainer}>
-								<Text style={isPositive ? styles.pnlValuePositive : styles.pnlValueNegative}>
-									{isPositive ? '+' : ''}{formatPrice(data.unrealizedPnL, true)}
-								</Text>
-								<Text style={isPositive ? styles.pnlPercentagePositive : styles.pnlPercentageNegative}>
-									({isPositive ? '+' : ''}{formatPercentage(data.pnlPercentage)})
-								</Text>
-							</View>
-						) : (
-							<Text style={styles.noPnlData}>No purchase data</Text>
-						)}
+						<View style={styles.pnlContainer}>
+							<Text style={isPositive ? styles.pnlValuePositive : styles.pnlValueNegative}>
+								{isPositive ? '+' : ''}{formatPrice(data.unrealizedPnL, true)}
+							</Text>
+							<Text style={isPositive ? styles.pnlPercentagePositive : styles.pnlPercentageNegative}>
+								({formatPercentage(data.pnlPercentage)})
+							</Text>
+						</View>
 					</View>
 				</View>
 			</View>
