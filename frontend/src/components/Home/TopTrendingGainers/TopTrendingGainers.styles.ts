@@ -37,9 +37,15 @@ export const useStyles = () => {
 				fontWeight: '600',
 			},
 			titleContainer: {
+				flexDirection: 'row',
+				alignItems: 'center',
+				gap: theme.spacing.sm,
 				paddingBottom: theme.spacing.sm,
 				paddingHorizontal: theme.spacing.lg,
 				paddingTop: theme.spacing.lg,
+			},
+			infoIcon: {
+				color: theme.colors.onSurfaceVariant,
 			},
 			titleShimmer: {
 				backgroundColor: theme.colors.surface,
