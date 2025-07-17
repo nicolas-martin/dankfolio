@@ -72,7 +72,7 @@ func (s *tradeServiceHandler) GetSwapQuote(ctx context.Context, req *connect.Req
 		userPublicKey = *req.Msg.UserPublicKey
 	}
 
-	quote, err := s.tradeService.GetSwapQuote(requestCtx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, slippageBps, req.Msg.IncludeFeeBreakdown, userPublicKey)
+	quote, err := s.tradeService.GetSwapQuote(requestCtx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, slippageBps, req.Msg.IncludeFeeBreakdown, userPublicKey, req.Msg.AllowMultiHop)
 	if err != nil {
 		slog.Error("Failed to fetch trade quote", "error", err)
 		// Check for Jupiter TOKEN_NOT_TRADABLE error and provide friendly message
@@ -129,6 +129,7 @@ func (s *tradeServiceHandler) PrepareSwap(ctx context.Context, req *connect.Requ
 		Amount:              req.Msg.Amount,
 		SlippageBps:         req.Msg.SlippageBps,
 		UserWalletAddress:   req.Msg.UserPublicKey,
+		AllowMultiHop:       req.Msg.AllowMultiHop,
 	}
 
 	prepareResponse, err := s.tradeService.PrepareSwap(ctx, params)

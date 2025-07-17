@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, ScrollView, SafeAreaView } from 'react-native';
-import { Text, IconButton, Icon, Card } from 'react-native-paper'; // Button removed
+import { Text, IconButton, Icon, Card, Switch } from 'react-native-paper'; // Button removed
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { useStyles } from './styles';
@@ -62,6 +62,7 @@ const Trade: React.FC = () => {
 	const [isNavigating, setIsNavigating] = useState(false); // This one IS used by TradeStatusModal
 	const [hasSufficientSolBalance, setHasSufficientSolBalance] = useState<boolean>(true); // Track SOL balance validation
 	const [hasDetailedFeeBreakdown, setHasDetailedFeeBreakdown] = useState<boolean>(false); // Track if we've fetched detailed fees for current pair
+	const [allowMultiHop, setAllowMultiHop] = useState<boolean>(false); // Allow multi-hop routing
 
 
 	// Memoize polling callbacks to prevent hook recreation
@@ -98,6 +99,19 @@ const Trade: React.FC = () => {
 	useEffect(() => {
 		setPollingError(currentPollingErrorFromHook);
 	}, [currentPollingErrorFromHook]);
+
+	// Auto-enable multi-hop for meme-to-meme swaps
+	useEffect(() => {
+		if (fromCoin && toCoin) {
+			const isMemeToMeme = 
+				fromCoin.mintAddress !== NATIVE_SOL_ADDRESS && 
+				fromCoin.mintAddress !== SOLANA_ADDRESS &&
+				toCoin.mintAddress !== NATIVE_SOL_ADDRESS && 
+				toCoin.mintAddress !== SOLANA_ADDRESS;
+			
+			setAllowMultiHop(isMemeToMeme);
+		}
+	}, [fromCoin, toCoin]);
 
 	// Use currentPollingConfirmationsFromHook directly if pollingConfirmations state is removed
 	const currentPollingConfirmations = currentPollingConfirmationsFromHook;
@@ -180,7 +194,8 @@ const Trade: React.FC = () => {
 					direction === 'from' ? currentFromCoin : currentToCoin, // actual fromCoin for API
 					direction === 'from' ? currentToCoin : currentFromCoin,  // actual toCoin for API
 					shouldIncludeFeeBreakdown, // includeFeeBreakdown - only first call or when needed
-					wallet?.address // userPublicKey - needed for accurate fee calculation
+					wallet?.address, // userPublicKey - needed for accurate fee calculation
+					allowMultiHop // Allow multi-hop routing
 				);
 
 				// Mark that we've fetched detailed breakdown for this pair
@@ -373,7 +388,8 @@ const Trade: React.FC = () => {
 				toCoinId: toCoin.address,
 				amount: rawAmount.toString(),
 				slippageBps: (1 * 100).toString(), // Default 1% slippage
-				userPublicKey: wallet.address
+				userPublicKey: wallet.address,
+				allowMultiHop: allowMultiHop
 			});
 
 			// Sign the prepared transaction
@@ -650,6 +666,27 @@ const Trade: React.FC = () => {
 						<View style={styles.detailRow}>
 							<Text style={styles.detailLabel}>Route</Text>
 							<Text testID="trade-details-route" style={styles.detailValue}>{tradeDetails.route}</Text>
+						</View>
+					)}
+
+					{/* Multi-hop toggle for meme-to-meme swaps */}
+					{fromCoin?.mintAddress !== NATIVE_SOL_ADDRESS && 
+					 fromCoin?.mintAddress !== SOLANA_ADDRESS &&
+					 toCoin?.mintAddress !== NATIVE_SOL_ADDRESS && 
+					 toCoin?.mintAddress !== SOLANA_ADDRESS && (
+						<View style={styles.detailRow}>
+							<Text style={styles.detailLabel}>Multi-hop Routing</Text>
+							<Switch
+								value={allowMultiHop}
+								onValueChange={(value) => {
+									setAllowMultiHop(value);
+									// Re-fetch quote with new multi-hop setting
+									if (fromAmount && fromCoin && toCoin) {
+										handleFromAmountChange(fromAmount);
+									}
+								}}
+								testID="multi-hop-toggle"
+							/>
 						</View>
 					)}
 				</Card.Content>

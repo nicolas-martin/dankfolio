@@ -53,7 +53,8 @@ export const prepareSwapRequest = async (
 	toCoinId: string,
 	amount: number,
 	slippage: number,
-	userPublicKey: string
+	userPublicKey: string,
+	allowMultiHop: boolean = false
 ): Promise<string> => {
 	try {
 		if (!userPublicKey) {
@@ -74,7 +75,8 @@ export const prepareSwapRequest = async (
 			toCoinId,
 			amount: amount.toString(),
 			slippageBps: (slippage * 100).toString(),
-			userPublicKey: userPublicKey
+			userPublicKey: userPublicKey,
+			allowMultiHop: allowMultiHop
 		};
 		const prepareResponse = await grpcApi.prepareSwap(prepareSwapRequest);
 

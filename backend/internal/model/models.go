@@ -128,6 +128,7 @@ type PrepareSwapRequestData struct {
 	Amount              string `json:"amount"` // Amount in smallest unit (e.g. lamports for SOL)
 	SlippageBps         string `json:"slippage_bps"`
 	UserWalletAddress   string `json:"user_wallet_address"`
+	AllowMultiHop       bool   `json:"allow_multi_hop"` // Allow routing through multiple pools
 }
 
 // FilterAndSortCoins filters and sorts a list of coins based on search criteria
