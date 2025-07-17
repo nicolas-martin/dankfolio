@@ -3,26 +3,16 @@ import { View, ScrollView, RefreshControl, SafeAreaView, useWindowDimensions } f
 import { Text, Button, Icon, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
-import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
-import { 
-	handleTokenPress, 
-	formatAddress, 
-	sortTokensByValue, 
-	calculateTotalPortfolioValue,
-	createCoinCardProps 
-} from './profile_scripts';
+import { TabView, SceneMap } from 'react-native-tab-view';
+import { SegmentedButtons } from 'react-native-paper';
+import { handleTokenPress, formatAddress, sortTokensByValue, calculateTotalPortfolioValue, createCoinCardProps } from './profile_scripts';
 import CopyToClipboard from '@/components/Common/CopyToClipboard';
 import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions';
 import { useStyles } from './profile_styles';
 import TokenListCard from '@/components/Home/TokenListCard';
 import TransactionsList from '@/components/Profile/TransactionsList';
-import {
-	ProfileIcon,
-	WalletIcon,
-	CoinsIcon,
-	SendIcon,
-} from '@components/Common/Icons';
+import { ProfileIcon, WalletIcon, CoinsIcon, SendIcon, } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
 import type { ProfileScreenNavigationProp } from './profile_types';
 import { formatPrice } from 'utils/numberFormat';
@@ -34,11 +24,14 @@ const Profile = () => {
 	const styles = useStyles();
 	const layout = useWindowDimensions();
 
+	const tabs = [
+		{ key: 'tokens', title: 'Tokens', icon: 'coin' },
+		{ key: 'transactions', title: 'Transactions', icon: 'swap-horizontal' },
+		{ key: 'pnl', title: 'PnL', icon: 'chart-line' },
+	];
+
 	const [index, setIndex] = useState(0);
-	const [routes] = useState([
-		{ key: 'tokens', title: 'Tokens' },
-		{ key: 'transactions', title: 'Transactions' },
-	]);
+	const [routes] = useState(tabs.map(tab => ({ key: tab.key, title: tab.title })));
 
 	const sendButtonIcon = useCallback(() => (
 		<SendIcon size={20} color={styles.colors.onPrimary} />
@@ -200,9 +193,16 @@ const Profile = () => {
 		</View>
 	);
 
+	const PnLTab = () => (
+		<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+			<Text>PnL Tab Content</Text>
+		</View>
+	);
+
 	const renderScene = SceneMap({
 		tokens: TokensTab,
 		transactions: TransactionsList,
+		pnl: PnLTab,
 	});
 
 	const renderNoWalletState = () => (
@@ -247,12 +247,24 @@ const Profile = () => {
 					<View style={styles.contentPadding} accessible={false}>
 						{renderHeader()}
 						{renderPortfolioCard()}
+						<View style={styles.tabContainer}>
+							<SegmentedButtons
+								value={tabs[index].key}
+								onValueChange={(value) => {
+									const newIndex = tabs.findIndex(tab => tab.key === value);
+									setIndex(newIndex);
+								}}
+								buttons={tabs.map(tab => ({ value: tab.key, label: tab.title, icon: tab.icon }))}
+								style={styles.segmentedButtons}
+							/>
+						</View>
 						<TabView
 							navigationState={{ index, routes }}
 							renderScene={renderScene}
 							onIndexChange={setIndex}
 							initialLayout={{ width: layout.width }}
-							renderTabBar={props => <TabBar {...props} style={styles.tabBar} />}
+							renderTabBar={() => null}
+							swipeEnabled={true}
 						/>
 					</View>
 				</ScrollView>

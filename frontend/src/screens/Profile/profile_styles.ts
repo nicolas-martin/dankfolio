@@ -193,6 +193,9 @@ export const useStyles = () => {
 				flexGrow: 1,
 				paddingBottom: 100, // No exact match
 			},
+			segmentedButtons: {
+				marginBottom: theme.spacing.lg,
+			},
 			sendButton: {
 				backgroundColor: theme.colors.primary,
 				borderRadius: theme.borderRadius.md,
@@ -215,6 +218,16 @@ export const useStyles = () => {
 			},
 			tabBar: {
 				backgroundColor: 'transparent',
+			},
+			tabContainer: {
+				marginBottom: theme.spacing.md,
+			},
+			tabIndicator: {
+				backgroundColor: theme.colors.primary,
+			},
+			tabLabel: {
+				fontSize: theme.typography.fontSize.sm,
+				fontWeight: '600',
 			},
 			themeToggleContainer: {
 				alignItems: 'center',
