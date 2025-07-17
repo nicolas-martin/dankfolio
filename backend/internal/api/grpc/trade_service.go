@@ -376,6 +376,11 @@ func (s *tradeServiceHandler) ListTrades(ctx context.Context, req *connect.Reque
 		opts.Filters = append(opts.Filters, db.FilterOption{Field: "to_coin_mint_address", Operator: db.FilterOpEqual, Value: toCoin})
 	}
 
+	// Exclude failed trades unless specifically requested
+	if status := req.Msg.GetStatus(); status != "failed" {
+		opts.Filters = append(opts.Filters, db.FilterOption{Field: "status", Operator: db.FilterOpNotEqual, Value: "failed"})
+	}
+
 	trades, total, err := s.tradeService.ListTrades(ctx, opts)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to list trades: %w", err))

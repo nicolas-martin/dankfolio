@@ -103,7 +103,7 @@ const SearchScreen: React.FC = () => {
 					<View style={styles.searchCardStyle}>
 						<TextInput
 							style={styles.searchInput}
-							placeholder="Search tokens..."
+							placeholder="Search tokens by name, tag or address"
 							value={state.filters.query}
 							onChangeText={handleQueryChange}
 							autoCapitalize="none"
