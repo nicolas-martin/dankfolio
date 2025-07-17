@@ -17,15 +17,6 @@ export const useStyles = () => {
 				marginTop: theme.spacing.md,
 				overflow: 'hidden',
 			},
-			tokenItem: {
-				borderBottomColor: theme.colors.surfaceVariant,
-				borderBottomWidth: StyleSheet.hairlineWidth,
-				paddingHorizontal: theme.spacing.md,
-				paddingVertical: theme.spacing.md,
-			},
-			tokenItemLast: {
-				borderBottomWidth: 0,
-			},
 			currentPrice: {
 				color: theme.colors.onSurfaceVariant,
 				fontSize: theme.typography.fontSize.xs,
@@ -183,6 +174,15 @@ export const useStyles = () => {
 			},
 			tokenInfo: {
 				flex: 1,
+			},
+			tokenItem: {
+				borderBottomColor: theme.colors.surfaceVariant,
+				borderBottomWidth: StyleSheet.hairlineWidth,
+				paddingHorizontal: theme.spacing.md,
+				paddingVertical: theme.spacing.md,
+			},
+			tokenItemLast: {
+				borderBottomWidth: 0,
 			},
 			tokenLeft: {
 				alignItems: 'center',

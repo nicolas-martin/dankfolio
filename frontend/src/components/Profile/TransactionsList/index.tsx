@@ -1,16 +1,16 @@
-import { View, ScrollView, ActivityIndicator, RefreshControl, TouchableOpacity, Linking } from 'react-native';
+import { View, ScrollView, ActivityIndicator, RefreshControl, Linking } from 'react-native';
 import { Text, Chip, IconButton } from 'react-native-paper';
 import { useTransactionsStore } from '@/store/transactions';
 import { Transaction, TransactionType, TransactionStatus } from '@/types';
 import { logger } from '@/utils/logger';
 import { useStyles } from './transactionslist_styles';
 import { formatPrice } from '@/utils/numberFormat';
-import { formatRelativeDate } from '@/utils/dateFormat';
 import { useCallback, useState, useMemo, useEffect } from 'react';
 import { usePortfolioStore } from '@/store/portfolio';
 import { useCoinStore } from '@/store/coins';
 import CachedImage from '@/components/Common/CachedImage';
 import { Coin } from '@/types';
+import { formatTransactionDate, getTransactionIcon, getSolscanUrl } from './transactionslist_scripts';
 
 const TransactionsList = () => {
 	const { transactions, isLoading, error, fetchRecentTransactions } = useTransactionsStore();
@@ -52,16 +52,6 @@ const TransactionsList = () => {
 		}
 	}, [transactions, getCoinByID]); // Remove coinMap and coinData from dependencies
 
-	const getTransactionIcon = (type: Transaction['type']) => {
-		switch (type) {
-			case TransactionType.SWAP:
-				return 'swap-horizontal';
-			case TransactionType.TRANSFER:
-				return 'arrow-top-right';
-			default:
-				return 'help-circle-outline';
-		}
-	};
 
 	const getStatusChipStyle = (status: Transaction['status']) => {
 		switch (status) {
@@ -78,7 +68,7 @@ const TransactionsList = () => {
 
 	const handleStatusPress = (transaction: Transaction) => {
 		if (transaction.status === TransactionStatus.COMPLETED && transaction.transactionHash) {
-			const solscanUrl = `https://solscan.io/tx/${transaction.transactionHash}`;
+			const solscanUrl = getSolscanUrl(transaction.transactionHash);
 			Linking.openURL(solscanUrl);
 		}
 	};
@@ -107,9 +97,10 @@ const TransactionsList = () => {
 		}
 
 		const isLastItem = index === transactions.length - 1;
+		const transactionStyles = isLastItem ? [styles.transactionItem, styles.transactionItemLast] : [styles.transactionItem];
 
 		return (
-			<View key={item.id} style={[styles.transactionItem, isLastItem && styles.transactionItemLast]}>
+			<View key={item.id} style={transactionStyles}>
 				<View style={styles.transactionMainRow}>
 					<View style={styles.transactionLeft}>
 						<View style={styles.transactionHeader}>
@@ -164,6 +155,7 @@ const TransactionsList = () => {
 							compact
 							textStyle={styles.statusChipText}
 							style={getStatusChipStyle(item.status)}
+							onPress={() => handleStatusPress(item)}
 						>
 							{item.status}
 						</Chip>

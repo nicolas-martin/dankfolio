@@ -30,21 +30,20 @@ message Trade {
   string user_id = 2;
   string from_coin_id = 3; // Note: This will likely be FromCoinMintAddress in backend model
   string to_coin_id = 4;   // Note: This will likely be ToCoinMintAddress in backend model
-  string coin_symbol = 5;
-  string type = 6;
-  double amount = 7;
-  double price = 8;
-  double fee = 9;
-  string status = 10;
-  string transaction_hash = 11;
-  google.protobuf.Timestamp created_at = 12;
-  optional google.protobuf.Timestamp completed_at = 13;
-  int32 confirmations = 14;
-  bool finalized = 15;
-  optional string error = 16;
-  optional double platform_fee_amount = 19;
-  optional double platform_fee_percent = 20;
-  optional string platform_fee_destination = 21;
+  string type = 5;
+  double amount = 6;
+  double price = 7;
+  double fee = 8;
+  string status = 9;
+  string transaction_hash = 10;
+  google.protobuf.Timestamp created_at = 11;
+  optional google.protobuf.Timestamp completed_at = 12;
+  int32 confirmations = 13;
+  bool finalized = 14;
+  optional string error = 15;
+  optional double platform_fee_amount = 18;
+  optional double platform_fee_percent = 19;
+  optional string platform_fee_destination = 20;
 }
 
 // GetSwapQuoteRequest is the request for getting a trade quote

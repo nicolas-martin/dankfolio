@@ -145,8 +145,6 @@ export interface PrepareSwapRequest {
 export interface Transaction {
 	id: string;
 	type: TransactionType;
-	fromCoinSymbol: string;
-	toCoinSymbol: string;
 	fromCoinMintAddress?: string;
 	toCoinMintAddress?: string;
 	amount: number;

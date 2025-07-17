@@ -14,8 +14,6 @@ export enum TransactionStatus {
 export interface Transaction {
 	id: string;
 	type: TransactionType;
-	fromCoinSymbol: string; // Placeholder, was fromCoinId from backend
-	toCoinSymbol: string; // Placeholder, was toCoinId from backend
 	fromCoinMintAddress?: string; // Mint address of the from coin
 	toCoinMintAddress?: string; // Mint address of the to coin
 	fromCoinIconUrl?: string; // Optional, for later enhancement

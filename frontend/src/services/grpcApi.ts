@@ -656,46 +656,24 @@ export const grpcApi: grpcModel.API = {
 
 			// Log all trades for debugging
 			console.log('[grpcApi.listTrades] Total trades received:', response.trades?.length || 0);
-			
-			if (response.trades && response.trades.length > 0) {
-				response.trades.forEach((trade, index) => {
-					console.log(`[grpcApi.listTrades] Trade ${index + 1} raw data:`, {
-						id: trade.id,
-						type: trade.type,
-						fromCoinId: trade.fromCoinId,
-						toCoinId: trade.toCoinId,
-						coinSymbol: trade.coinSymbol,
-						amount: trade.amount,
-						price: trade.price,
-						fee: trade.fee,
-						status: trade.status,
-						platformFeeAmount: trade.platformFeeAmount,
-						createdAt: trade.createdAt,
-						// Log all fields to see what's available
-						allFields: Object.keys(trade),
-					});
-				});
-			}
 
 			const transactions: grpcModel.Transaction[] = response.trades.map((trade: Trade) => {
 				// Map backend type to enum
 				const backendType = trade.type?.toLowerCase();
 				const type = backendType === 'swap' ? grpcModel.TransactionType.SWAP :
 					backendType === 'transfer' ? grpcModel.TransactionType.TRANSFER :
-					grpcModel.TransactionType.UNKNOWN;
+						grpcModel.TransactionType.UNKNOWN;
 
 				// Map backend status to enum - backend uses finalized/confirmed for completed transactions
 				const backendStatus = trade.status?.toLowerCase();
 				const status = ['pending', 'prepared', 'submitted'].includes(backendStatus) ? grpcModel.TransactionStatus.PENDING :
 					['finalized', 'confirmed', 'processed', 'completed'].includes(backendStatus) ? grpcModel.TransactionStatus.COMPLETED :
-					backendStatus === 'failed' ? grpcModel.TransactionStatus.FAILED :
-					grpcModel.TransactionStatus.UNKNOWN;
+						backendStatus === 'failed' ? grpcModel.TransactionStatus.FAILED :
+							grpcModel.TransactionStatus.UNKNOWN;
 
 				const mappedTransaction = {
 					id: trade.id,
 					type,
-					fromCoinSymbol: trade.coinSymbol || trade.fromCoinId, // Use coinSymbol if available
-					toCoinSymbol: trade.toCoinId, // Will need to look up symbol from coin data
 					fromCoinMintAddress: trade.fromCoinId, // fromCoinId is the mint address
 					toCoinMintAddress: trade.toCoinId, // toCoinId is the mint address
 					amount: trade.amount,
@@ -707,18 +685,6 @@ export const grpcApi: grpcModel.API = {
 					fee: trade.fee,
 					platformFeeAmount: trade.platformFeeAmount,
 				};
-
-				// Log mapped transaction for debugging
-				console.log('[grpcApi.listTrades] Mapped transaction:', {
-					id: mappedTransaction.id,
-					type: mappedTransaction.type,
-					fromCoinMintAddress: mappedTransaction.fromCoinMintAddress,
-					toCoinMintAddress: mappedTransaction.toCoinMintAddress,
-					amount: mappedTransaction.amount,
-					price: mappedTransaction.price,
-					totalValue: mappedTransaction.totalValue,
-					status: mappedTransaction.status,
-				});
 
 				return mappedTransaction;
 			});

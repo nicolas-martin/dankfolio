@@ -26,38 +26,20 @@ export const useStyles = () => {
 				fontSize: theme.typography.fontSize.xs,
 				marginTop: 2,
 			},
+			coinColumn: {
+				alignItems: 'center',
+				flex: 1,
+			},
 			coinIcon: {
 				borderRadius: theme.spacing.xl,
 				height: 32,
 				width: 32,
-			},
-			coinColumn: {
-				alignItems: 'center',
-				flex: 1,
 			},
 			coinSymbol: {
 				color: theme.colors.onSurface,
 				fontSize: theme.typography.fontSize.sm,
 				fontWeight: '600',
 				marginTop: theme.spacing.xs,
-			},
-			swapArrow: {
-				color: theme.colors.onSurfaceVariant,
-				fontSize: theme.typography.fontSize.sm,
-				marginHorizontal: theme.spacing.xs,
-			},
-			transactionTop: {
-				alignItems: 'center',
-				flexDirection: 'row',
-				justifyContent: 'space-between',
-			},
-			transactionBottom: {
-				flexDirection: 'row',
-				marginTop: theme.spacing.xs,
-			},
-			transactionDate: {
-				color: theme.colors.onSurfaceVariant,
-				fontSize: theme.typography.fontSize.xs,
 			},
 			container: {
 				flex: 1,
@@ -109,15 +91,6 @@ export const useStyles = () => {
 				marginTop: theme.spacing.md,
 				overflow: 'hidden',
 			},
-			transactionItem: {
-				borderBottomColor: theme.colors.surfaceVariant,
-				borderBottomWidth: StyleSheet.hairlineWidth,
-				paddingHorizontal: theme.spacing.md,
-				paddingVertical: theme.spacing.sm,
-			},
-			transactionItemLast: {
-				borderBottomWidth: 0,
-			},
 			loadingText: {
 				color: theme.colors.onSurface,
 				fontSize: theme.typography.fontSize.base,
@@ -147,14 +120,27 @@ export const useStyles = () => {
 				fontWeight: '600',
 				textTransform: 'capitalize',
 			},
+			swapArrow: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: theme.typography.fontSize.sm,
+				marginHorizontal: theme.spacing.xs,
+			},
 			transactionAmount: {
 				color: theme.colors.onSurface,
 				fontSize: theme.typography.fontSize.base,
 				fontWeight: '700',
 				textAlign: 'right',
 			},
+			transactionBottom: {
+				flexDirection: 'row',
+				marginTop: theme.spacing.xs,
+			},
 			transactionCard: {
 				marginBottom: theme.spacing.md,
+			},
+			transactionDate: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: theme.typography.fontSize.xs,
 			},
 			transactionDetails: {
 				color: theme.colors.onSurfaceVariant,
@@ -171,6 +157,15 @@ export const useStyles = () => {
 			transactionInfo: {
 				flex: 1,
 			},
+			transactionItem: {
+				borderBottomColor: theme.colors.surfaceVariant,
+				borderBottomWidth: StyleSheet.hairlineWidth,
+				paddingHorizontal: theme.spacing.md,
+				paddingVertical: theme.spacing.sm,
+			},
+			transactionItemLast: {
+				borderBottomWidth: 0,
+			},
 			transactionLeft: {
 				flex: 1,
 			},
@@ -183,6 +178,11 @@ export const useStyles = () => {
 				justifyContent: 'center',
 			},
 			transactionRow: {
+				flexDirection: 'row',
+				justifyContent: 'space-between',
+			},
+			transactionTop: {
+				alignItems: 'center',
 				flexDirection: 'row',
 				justifyContent: 'space-between',
 			},
