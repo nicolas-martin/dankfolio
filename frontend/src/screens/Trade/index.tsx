@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { View, ScrollView, SafeAreaView } from 'react-native';
+import { View, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Text, IconButton, Icon, Card, Switch } from 'react-native-paper'; // Button removed
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
@@ -33,6 +33,8 @@ import { toRawAmount } from '@/utils/numberFormat';
 import ScreenActionButton from '@components/Common/ScreenActionButton'; // Import the new button
 import { TradeStatusResponse } from '@/services/grpc/model';
 import { getUserFriendlyTradeError, isRetryableTradeError } from '@/utils/errorUtils';
+import { InfoIcon } from '@/components/Common/Icons';
+import InfoModal from '@/components/Common/InfoModal';
 
 
 const QUOTE_DEBOUNCE_MS = 1000;
@@ -63,6 +65,7 @@ const Trade: React.FC = () => {
 	const [hasSufficientSolBalance, setHasSufficientSolBalance] = useState<boolean>(true); // Track SOL balance validation
 	const [hasDetailedFeeBreakdown, setHasDetailedFeeBreakdown] = useState<boolean>(false); // Track if we've fetched detailed fees for current pair
 	const [allowMultiHop, setAllowMultiHop] = useState<boolean>(false); // Allow multi-hop routing
+	const [isMultiHopInfoVisible, setIsMultiHopInfoVisible] = useState(false);
 
 
 	// Memoize polling callbacks to prevent hook recreation
@@ -743,17 +746,9 @@ const Trade: React.FC = () => {
 									<View style={styles.routingTextContainer}>
 										<View style={styles.routingLabelContainer}>
 											<Text style={styles.routingLabel}>Allow Multi-Hop</Text>
-											<IconButton
-												icon="information-outline"
-												size={18}
-												onPress={() => {
-													showToast({ 
-														type: 'info', 
-														message: 'Multi-hop routing can find better rates by routing through multiple pools, but may increase transaction costs and complexity. Direct routes are simpler but might have less liquidity.'
-													});
-												}}
-												style={styles.infoIcon}
-											/>
+											<TouchableOpacity onPress={() => setIsMultiHopInfoVisible(true)}>
+												<InfoIcon size={18} color={styles.infoIcon.color} />
+											</TouchableOpacity>
 										</View>
 										<Text style={styles.routingDescription}>
 											{allowMultiHop 
@@ -813,6 +808,12 @@ const Trade: React.FC = () => {
 				status={currentPollingStatus as PollingStatus}
 				confirmations={currentPollingConfirmations}
 				error={pollingError}
+			/>
+			<InfoModal
+				visible={isMultiHopInfoVisible}
+				onClose={() => setIsMultiHopInfoVisible(false)}
+				title="Allow Multi-Hop"
+				message="Multi-hop routing can find better rates by routing through multiple pools, but may increase transaction costs and complexity. Direct routes are simpler but might have less liquidity."
 			/>
 		</SafeAreaView>
 	);

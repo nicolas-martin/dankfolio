@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/types/navigation';
@@ -7,8 +7,6 @@ import ShimmerPlaceholder from '@/components/Common/ShimmerPlaceholder';
 import HorizontalScrollContainer from '@/components/Common/HorizontalScrollContainer';
 import TrendingGainerCard from '@/components/Home/TrendingGainerCard';
 import TrendingGainerPlaceholderCard from '@/components/Home/TrendingGainerCard/PlaceholderCard';
-import { InfoIcon } from '@/components/Common/Icons';
-import InfoModal from '@/components/Common/InfoModal';
 import { useStyles } from './TopTrendingGainers.styles';
 import { Coin } from '@/types';
 
@@ -29,7 +27,6 @@ const TopTrendingGainers: React.FC<TopTrendingGainersProps> = ({
 }) => {
 	const styles = useStyles();
 	const navigation = useNavigation<TopTrendingGainersNavigationProp>();
-	const [isModalVisible, setModalVisible] = useState(false);
 
 	const handleCoinPress = useCallback(
 		(coin: Coin) => {
@@ -81,17 +78,8 @@ const TopTrendingGainers: React.FC<TopTrendingGainersProps> = ({
 					) : (
 						<Text style={styles.title}>24h Volume</Text>
 					)}
-					<TouchableOpacity onPress={() => setModalVisible(true)} testID="info-icon">
-						<InfoIcon size={18} color={styles.infoIcon.color} />
-					</TouchableOpacity>
 				</View>
 				<View style={styles.scrollContent}>
-					<InfoModal
-						visible={isModalVisible}
-						onClose={() => setModalVisible(false)}
-						title="24h Volume"
-						message="This section shows the coins with the highest trading volume in the last 24 hours."
-					/>
 					<HorizontalScrollContainer
 						data={topTrendingGainers}
 						renderItem={renderTrendingGainerCard}
