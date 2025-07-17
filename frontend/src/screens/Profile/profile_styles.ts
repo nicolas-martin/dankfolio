@@ -213,6 +213,9 @@ export const useStyles = () => {
 			settingsButton: {
 				marginRight: -8, // No exact match
 			},
+			tabBar: {
+				backgroundColor: 'transparent',
+			},
 			themeToggleContainer: {
 				alignItems: 'center',
 				backgroundColor: theme.colors.surface,

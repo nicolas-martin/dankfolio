@@ -7,17 +7,38 @@ export const useStyles = () => {
 
   return StyleSheet.create({
     centeredView: {
-      flex: 1,
-      justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      flex: 1,
+      justifyContent: 'center',
+    },
+    closeIcon: {
+        color: theme.colors.onSurface,
+    },
+    header: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 15,
+      width: '100%',
+    },
+    modalText: {
+      color: theme.colors.onSurface,
+      marginBottom: 15,
+      textAlign: 'center',
+    },
+    modalTitle: {
+      color: theme.colors.onSurface,
+      fontSize: 20,
+      fontWeight: 'bold',
     },
     modalView: {
-      margin: 20,
+      alignItems: 'center',
       backgroundColor: theme.colors.surface,
       borderRadius: 20,
+      elevation: 5,
+      margin: 20,
       padding: 20,
-      alignItems: 'center',
       shadowColor: '#000',
       shadowOffset: {
         width: 0,
@@ -25,27 +46,6 @@ export const useStyles = () => {
       },
       shadowOpacity: 0.25,
       shadowRadius: 4,
-      elevation: 5,
-    },
-    header: {
-      width: '100%',
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 15,
-    },
-    modalTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: theme.colors.onSurface,
-    },
-    modalText: {
-      marginBottom: 15,
-      textAlign: 'center',
-      color: theme.colors.onSurface,
-    },
-    closeIcon: {
-        color: theme.colors.onSurface,
     }
   });
 };

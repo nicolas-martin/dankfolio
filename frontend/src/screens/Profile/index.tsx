@@ -252,7 +252,7 @@ const Profile = () => {
 							renderScene={renderScene}
 							onIndexChange={setIndex}
 							initialLayout={{ width: layout.width }}
-							renderTabBar={props => <TabBar {...props} style={{ backgroundColor: 'transparent' }} />}
+							renderTabBar={props => <TabBar {...props} style={styles.tabBar} />}
 						/>
 					</View>
 				</ScrollView>
