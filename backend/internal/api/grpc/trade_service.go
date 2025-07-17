@@ -316,8 +316,8 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 			// Handle explicit error from status
 			if status.Error != "" && trade.Error == "" {
 				trade.Error = status.Error
-				if trade.Status != model.TradeStatusFailed {
-					trade.Status = model.TradeStatusFailed
+				if trade.Status != model.TradeStatusFailed.String() {
+					trade.Status = model.TradeStatusFailed.String()
 					trade.CompletedAt = now
 					trade.Finalized = true
 				}
