@@ -52,7 +52,7 @@ const Profile = () => {
 	useEffect(() => {
 		if (wallet?.address && !transactionsHasFetched) {
 			logger.info('ProfileScreen: Wallet address available, fetching recent transactions.');
-			fetchRecentTransactions(wallet.address, 5); // Fetch top 5 recent transactions
+			fetchRecentTransactions(wallet.address);
 		}
 	}, [wallet?.address, fetchRecentTransactions, transactionsHasFetched]);
 

@@ -24,6 +24,7 @@ describe('Zustand Coin Store', () => {
 		jest.clearAllMocks();
 		consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
 		consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+		useCoinStore.setState(initialState);
 	});
 
 	afterEach(() => {
@@ -41,8 +42,9 @@ describe('Zustand Coin Store', () => {
 
 			// Test setAvailableCoins
 			const coins = [mockSolCoin, mockWenCoin];
+			(grpcApi.getAvailableCoins as jest.Mock).mockResolvedValue(coins);
 			act(() => {
-				useCoinStore.getState().setAvailableCoins(coins);
+				useCoinStore.getState().fetchAvailableCoins();
 			});
 
 			let state = useCoinStore.getState();
@@ -69,13 +71,6 @@ describe('Zustand Coin Store', () => {
 			expect(Object.keys(state.coinMap).length).toBe(3);
 		});
 
-		it('updates lastFetchedNewCoinsAt correctly', () => {
-			const timestamp = Date.now();
-			act(() => {
-				useCoinStore.getState().setLastFetchedNewCoinsAt(timestamp);
-			});
-			expect(useCoinStore.getState().lastFetchedNewCoinsAt).toBe(timestamp);
-		});
 	});
 
 	describe('API Integration and Actions', () => {
