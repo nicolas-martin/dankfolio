@@ -220,6 +220,7 @@ type GetSwapQuoteRequest struct {
 	SlippageBps         string                 `protobuf:"bytes,4,opt,name=slippage_bps,json=slippageBps,proto3" json:"slippage_bps,omitempty"`
 	IncludeFeeBreakdown bool                   `protobuf:"varint,5,opt,name=include_fee_breakdown,json=includeFeeBreakdown,proto3" json:"include_fee_breakdown,omitempty"` // Whether to include detailed SOL fee breakdown (requires CreateSwapTransaction call)
 	UserPublicKey       *string                `protobuf:"bytes,6,opt,name=user_public_key,json=userPublicKey,proto3,oneof" json:"user_public_key,omitempty"`              // Required when include_fee_breakdown=true
+	AllowMultiHop       bool                   `protobuf:"varint,7,opt,name=allow_multi_hop,json=allowMultiHop,proto3" json:"allow_multi_hop,omitempty"`                   // Allow routing through multiple pools for better rates
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -294,6 +295,13 @@ func (x *GetSwapQuoteRequest) GetUserPublicKey() string {
 		return *x.UserPublicKey
 	}
 	return ""
+}
+
+func (x *GetSwapQuoteRequest) GetAllowMultiHop() bool {
+	if x != nil {
+		return x.AllowMultiHop
+	}
+	return false
 }
 
 // SolFeeBreakdown provides detailed breakdown of all SOL costs
@@ -498,6 +506,8 @@ type PrepareSwapRequest struct {
 	Amount        string                 `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	SlippageBps   string                 `protobuf:"bytes,4,opt,name=slippage_bps,json=slippageBps,proto3" json:"slippage_bps,omitempty"`
 	UserPublicKey string                 `protobuf:"bytes,5,opt,name=user_public_key,json=userPublicKey,proto3" json:"user_public_key,omitempty"` // This is the wallet address of the user initiating the swap
+	// from_address field was removed as user_public_key serves this purpose.
+	AllowMultiHop bool `protobuf:"varint,6,opt,name=allow_multi_hop,json=allowMultiHop,proto3" json:"allow_multi_hop,omitempty"` // Allow routing through multiple pools for better rates
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -565,6 +575,13 @@ func (x *PrepareSwapRequest) GetUserPublicKey() string {
 		return x.UserPublicKey
 	}
 	return ""
+}
+
+func (x *PrepareSwapRequest) GetAllowMultiHop() bool {
+	if x != nil {
+		return x.AllowMultiHop
+	}
+	return false
 }
 
 // PrepareSwapResponse is the response with the unsigned transaction
@@ -1045,7 +1062,7 @@ const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"\x06_errorB\x16\n" +
 	"\x14_platform_fee_amountB\x17\n" +
 	"\x15_platform_fee_percentB\x1b\n" +
-	"\x19_platform_fee_destination\"\x85\x02\n" +
+	"\x19_platform_fee_destination\"\xad\x02\n" +
 	"\x13GetSwapQuoteRequest\x12 \n" +
 	"\ffrom_coin_id\x18\x01 \x01(\tR\n" +
 	"fromCoinId\x12\x1c\n" +
@@ -1054,7 +1071,8 @@ const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"\x06amount\x18\x03 \x01(\tR\x06amount\x12!\n" +
 	"\fslippage_bps\x18\x04 \x01(\tR\vslippageBps\x122\n" +
 	"\x15include_fee_breakdown\x18\x05 \x01(\bR\x13includeFeeBreakdown\x12+\n" +
-	"\x0fuser_public_key\x18\x06 \x01(\tH\x00R\ruserPublicKey\x88\x01\x01B\x12\n" +
+	"\x0fuser_public_key\x18\x06 \x01(\tH\x00R\ruserPublicKey\x88\x01\x01\x12&\n" +
+	"\x0fallow_multi_hop\x18\a \x01(\bR\rallowMultiHopB\x12\n" +
 	"\x10_user_public_key\"\xf4\x01\n" +
 	"\x0fSolFeeBreakdown\x12\x1f\n" +
 	"\vtrading_fee\x18\x01 \x01(\tR\n" +
@@ -1077,7 +1095,7 @@ const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"\x11sol_fee_breakdown\x18\a \x01(\v2\x1d.dankfolio.v1.SolFeeBreakdownH\x00R\x0fsolFeeBreakdown\x88\x01\x01\x12,\n" +
 	"\x12total_sol_required\x18\b \x01(\tR\x10totalSolRequired\x12&\n" +
 	"\x0ftrading_fee_sol\x18\t \x01(\tR\rtradingFeeSolB\x14\n" +
-	"\x12_sol_fee_breakdown\"\xb7\x01\n" +
+	"\x12_sol_fee_breakdown\"\xdf\x01\n" +
 	"\x12PrepareSwapRequest\x12 \n" +
 	"\ffrom_coin_id\x18\x01 \x01(\tR\n" +
 	"fromCoinId\x12\x1c\n" +
@@ -1085,7 +1103,8 @@ const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"to_coin_id\x18\x02 \x01(\tR\btoCoinId\x12\x16\n" +
 	"\x06amount\x18\x03 \x01(\tR\x06amount\x12!\n" +
 	"\fslippage_bps\x18\x04 \x01(\tR\vslippageBps\x12&\n" +
-	"\x0fuser_public_key\x18\x05 \x01(\tR\ruserPublicKey\"\x84\x02\n" +
+	"\x0fuser_public_key\x18\x05 \x01(\tR\ruserPublicKey\x12&\n" +
+	"\x0fallow_multi_hop\x18\x06 \x01(\bR\rallowMultiHop\"\x84\x02\n" +
 	"\x13PrepareSwapResponse\x121\n" +
 	"\x14unsigned_transaction\x18\x01 \x01(\tR\x13unsignedTransaction\x12N\n" +
 	"\x11sol_fee_breakdown\x18\x02 \x01(\v2\x1d.dankfolio.v1.SolFeeBreakdownH\x00R\x0fsolFeeBreakdown\x88\x01\x01\x12,\n" +

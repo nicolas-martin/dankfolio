@@ -55,6 +55,7 @@ message GetSwapQuoteRequest {
   string slippage_bps = 4;
   bool include_fee_breakdown = 5; // Whether to include detailed SOL fee breakdown (requires CreateSwapTransaction call)
   optional string user_public_key = 6; // Required when include_fee_breakdown=true
+  bool allow_multi_hop = 7; // Allow routing through multiple pools for better rates
 }
 
 // SolFeeBreakdown provides detailed breakdown of all SOL costs
@@ -88,6 +89,7 @@ message PrepareSwapRequest {
   string slippage_bps = 4;
   string user_public_key = 5; // This is the wallet address of the user initiating the swap
   // from_address field was removed as user_public_key serves this purpose.
+  bool allow_multi_hop = 6; // Allow routing through multiple pools for better rates
 }
 
 // PrepareSwapResponse is the response with the unsigned transaction

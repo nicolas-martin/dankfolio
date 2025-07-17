@@ -94,18 +94,19 @@ export const grpcApi: grpcModel.API = {
 		}
 	},
 
-	getSwapQuote: async (fromCoin: string, toCoin: string, amount: string, includeFeeBreakdown: boolean = false, userPublicKey?: string): Promise<grpcModel.SwapQuoteResponse> => {
+	getSwapQuote: async (fromCoin: string, toCoin: string, amount: string, includeFeeBreakdown: boolean = false, userPublicKey?: string, allowMultiHop: boolean = false): Promise<grpcModel.SwapQuoteResponse> => {
 		const serviceName = 'TradeService';
 		const methodName = 'getTradeQuote';
 		try {
-			grpcUtils.logRequest(serviceName, methodName, { fromCoin, toCoin, amount, includeFeeBreakdown, userPublicKey });
+			grpcUtils.logRequest(serviceName, methodName, { fromCoin, toCoin, amount, includeFeeBreakdown, userPublicKey, allowMultiHop });
 
 			const response = await tradeClient.getSwapQuote({
 				fromCoinId: fromCoin,
 				toCoinId: toCoin,
 				amount: amount,
 				includeFeeBreakdown: includeFeeBreakdown,
-				userPublicKey: userPublicKey
+				userPublicKey: userPublicKey,
+				allowMultiHop: allowMultiHop
 			}, { headers: grpcUtils.getRequestHeaders() });
 
 			grpcUtils.logResponse(serviceName, methodName, response);
@@ -595,23 +596,25 @@ export const grpcApi: grpcModel.API = {
 		}
 	},
 
-	prepareSwap: async ({ fromCoinId, toCoinId, amount, slippageBps, userPublicKey }: {
+	prepareSwap: async ({ fromCoinId, toCoinId, amount, slippageBps, userPublicKey, allowMultiHop = false }: {
 		fromCoinId: string;
 		toCoinId: string;
 		amount: string;
 		slippageBps: string;
 		userPublicKey: string;
+		allowMultiHop?: boolean;
 	}): Promise<{ unsignedTransaction: string; solFeeBreakdown?: grpcModel.SolFeeBreakdown; totalSolRequired: string; tradingFeeSol: string }> => {
 		const serviceName = 'TradeService';
 		const methodName = 'prepareSwap';
 		try {
-			grpcUtils.logRequest(serviceName, methodName, { fromCoinId, toCoinId, amount, slippageBps, userPublicKey });
+			grpcUtils.logRequest(serviceName, methodName, { fromCoinId, toCoinId, amount, slippageBps, userPublicKey, allowMultiHop });
 			const response = await tradeClient.prepareSwap({
 				fromCoinId,
 				toCoinId,
 				amount,
 				slippageBps,
-				userPublicKey
+				userPublicKey,
+				allowMultiHop
 			}, { headers: grpcUtils.getRequestHeaders() });
 			grpcUtils.logResponse(serviceName, methodName, response);
 			return {
@@ -688,11 +691,11 @@ export const grpcApi: grpcModel.API = {
 	},
 
 	// New method to orchestrate fetching full swap quote details
-	getFullSwapQuoteOrchestrated: async (amount: string, fromCoin: grpcModel.Coin, toCoin: grpcModel.Coin, includeFeeBreakdown: boolean = false, userPublicKey?: string): Promise<grpcModel.FullSwapQuoteDetails> => {
+	getFullSwapQuoteOrchestrated: async (amount: string, fromCoin: grpcModel.Coin, toCoin: grpcModel.Coin, includeFeeBreakdown: boolean = false, userPublicKey?: string, allowMultiHop: boolean = false): Promise<grpcModel.FullSwapQuoteDetails> => {
 		const serviceName = 'TradeService';
 		const methodName = 'getFullSwapQuoteOrchestrated';
 		try {
-			grpcUtils.logRequest(serviceName, methodName, { amount, fromCoinSymbol: fromCoin.symbol, toCoinSymbol: toCoin.symbol, includeFeeBreakdown, userPublicKey });
+			grpcUtils.logRequest(serviceName, methodName, { amount, fromCoinSymbol: fromCoin.symbol, toCoinSymbol: toCoin.symbol, includeFeeBreakdown, userPublicKey, allowMultiHop });
 
 			if (!fromCoin || !toCoin || !amount || parseFloat(amount) <= 0) {
 				throw new Error("Invalid parameters for getFullSwapQuoteOrchestrated");
@@ -715,7 +718,7 @@ export const grpcApi: grpcModel.API = {
 			// Normalize addresses for Jupiter API (native SOL -> wSOL)
 			const fromAddress = updatedFromCoin.address === '11111111111111111111111111111111' ? 'So11111111111111111111111111111111111111112' : updatedFromCoin.address;
 			const toAddress = updatedToCoin.address === '11111111111111111111111111111111' ? 'So11111111111111111111111111111111111111112' : updatedToCoin.address;
-			const quoteResponse = await grpcApi.getSwapQuote(fromAddress, toAddress, rawAmount, includeFeeBreakdown, userPublicKey);
+			const quoteResponse = await grpcApi.getSwapQuote(fromAddress, toAddress, rawAmount, includeFeeBreakdown, userPublicKey, allowMultiHop);
 
 			// 3. Format and return the combined result
 			const fullQuote: grpcModel.FullSwapQuoteDetails = {
