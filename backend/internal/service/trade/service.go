@@ -584,15 +584,35 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 	}
 
 	// Parse addresses
+	slog.InfoContext(ctx, "Fetching coin details for swap quote",
+		slog.String("from_mint_address", fromCoinMintAddress),
+		slog.String("to_mint_address", toCoinMintAddress),
+		slog.String("amount", inputAmount),
+		slog.Bool("allow_multi_hop", allowMultiHop))
+		
 	fromCoin, err := s.coinService.GetCoinByAddress(ctx, fromCoinMintAddress) // Use new method
 	if err != nil {
+		slog.ErrorContext(ctx, "Failed to get from coin", 
+			slog.String("mint_address", fromCoinMintAddress),
+			slog.Any("error", err))
 		return nil, fmt.Errorf("failed to get from coin %s: %w", fromCoinMintAddress, err)
 	}
+	slog.InfoContext(ctx, "Successfully fetched from coin",
+		slog.String("symbol", fromCoin.Symbol),
+		slog.String("name", fromCoin.Name),
+		slog.String("address", fromCoin.Address))
 
 	toCoin, err := s.coinService.GetCoinByAddress(ctx, toCoinMintAddress) // Use new method
 	if err != nil {
+		slog.ErrorContext(ctx, "Failed to get to coin", 
+			slog.String("mint_address", toCoinMintAddress),
+			slog.Any("error", err))
 		return nil, fmt.Errorf("failed to get to coin %s: %w", toCoinMintAddress, err)
 	}
+	slog.InfoContext(ctx, "Successfully fetched to coin",
+		slog.String("symbol", toCoin.Symbol),
+		slog.String("name", toCoin.Name),
+		slog.String("address", toCoin.Address))
 
 	// Normalize native SOL addresses to wSOL for Jupiter API
 	jupiterInputMint := fromCoinMintAddress
