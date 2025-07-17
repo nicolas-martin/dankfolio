@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Transaction } from '@/types';
 import { grpcApi } from '@/services/grpcApi';
+import { logger } from '@/utils/logger';
 
 interface TransactionsState {
 	transactions: Transaction[];
@@ -23,6 +24,7 @@ const initialState = {
 export const useTransactionsStore = create<TransactionsState>((set) => ({
 	...initialState,
 	fetchRecentTransactions: async (userId: string) => {
+		logger.info(`[TransactionsStore] Fetching recent transactions for user: ${userId}`);
 		set({ isLoading: true, error: null });
 		try {
 			const response = await grpcApi.listTrades({
@@ -31,6 +33,7 @@ export const useTransactionsStore = create<TransactionsState>((set) => ({
 				sortBy: 'created_at',
 				sortDesc: true,
 			});
+			logger.info(`[TransactionsStore] Received ${response.transactions.length} transactions`);
 			set({
 				transactions: response.transactions,
 				totalCount: response.totalCount,
@@ -38,11 +41,16 @@ export const useTransactionsStore = create<TransactionsState>((set) => ({
 				hasFetched: true,
 			});
 		} catch (error: unknown) {
+			logger.error('[TransactionsStore] Error fetching recent transactions:', error);
 			if (error instanceof Error) {
 				set({ error: error.message, isLoading: false, hasFetched: true });
 			} else {
 				set({ error: 'An unknown error occurred', isLoading: false, hasFetched: true });
 			}
 		}
+	},
+	clearTransactions: () => {
+		logger.info('[TransactionsStore] Clearing transactions');
+		set(initialState);
 	},
 }));

@@ -15,6 +15,7 @@ import TransactionsList from '@/components/Profile/TransactionsList';
 import { ProfileIcon, WalletIcon, CoinsIcon, SendIcon, } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
 import type { ProfileScreenNavigationProp } from './profile_types';
+import PnLView from '@/components/Profile/PnLView';
 import { formatPrice } from 'utils/numberFormat';
 
 const Profile = () => {
@@ -25,7 +26,7 @@ const Profile = () => {
 	const layout = useWindowDimensions();
 
 	const tabs = [
-		{ key: 'tokens', title: 'Tokens', icon: 'coin' },
+		{ key: 'tokens', title: 'Tokens', icon: 'wallet-outline' },
 		{ key: 'transactions', title: 'Transactions', icon: 'swap-horizontal' },
 		{ key: 'pnl', title: 'PnL', icon: 'chart-line' },
 	];
@@ -193,17 +194,27 @@ const Profile = () => {
 		</View>
 	);
 
-	const PnLTab = () => (
-		<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-			<Text>PnL Tab Content</Text>
-		</View>
-	);
+	
 
-	const renderScene = SceneMap({
-		tokens: TokensTab,
-		transactions: TransactionsList,
-		pnl: PnLTab,
-	});
+	const renderScene = ({ route }) => {
+		logger.info(`Rendering scene for route: ${route.key}`);
+		switch (route.key) {
+			case 'tokens':
+				logger.info('Rendering TokensTab');
+				return <TokensTab />;
+			case 'transactions':
+				logger.info('Rendering TransactionsList');
+				return <TransactionsList />;
+			case 'pnl':
+				logger.info('Rendering PnLView');
+				return <PnLView />;
+			default:
+				logger.warn(`Unknown route key: ${route.key}`);
+				return null;
+		}
+	};
+
+
 
 	const renderNoWalletState = () => (
 		<View style={styles.noWalletContainer}>
@@ -258,14 +269,16 @@ const Profile = () => {
 								style={styles.segmentedButtons}
 							/>
 						</View>
-						<TabView
-							navigationState={{ index, routes }}
-							renderScene={renderScene}
-							onIndexChange={setIndex}
-							initialLayout={{ width: layout.width }}
-							renderTabBar={() => null}
-							swipeEnabled={true}
-						/>
+						<View style={{ height: 500 }}>
+							<TabView
+								navigationState={{ index, routes }}
+								renderScene={renderScene}
+								onIndexChange={setIndex}
+								initialLayout={{ width: layout.width }}
+								renderTabBar={() => null}
+								swipeEnabled={true}
+							/>
+						</View>
 					</View>
 				</ScrollView>
 			</View>

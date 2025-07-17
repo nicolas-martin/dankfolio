@@ -89,24 +89,26 @@ const TransactionsList = () => {
 								<Text style={styles.transactionDetails}>
 									{isSwap ? `${item.fromCoinSymbol} → ${item.toCoinSymbol}` : item.fromCoinSymbol}
 								</Text>
-								<Text style={styles.transactionDate}>
-									{formatTransactionDate(item.date)}
-								</Text>
 							</View>
 						</View>
 						<View style={styles.transactionRight}>
 							<Text style={styles.transactionAmount}>
 								{formatPrice(item.amount, false)} {item.fromCoinSymbol}
 							</Text>
-							<Chip
-								mode="flat"
-								compact
-								textStyle={styles.statusChipText}
-								style={getStatusChipStyle(item.status)}
-							>
-								{item.status}
-							</Chip>
+							<Text style={styles.transactionDate}>
+								{formatTransactionDate(item.date)}
+							</Text>
 						</View>
+					</View>
+					<View style={styles.statusContainer}>
+						<Chip
+							mode="flat"
+							compact
+							textStyle={styles.statusChipText}
+							style={getStatusChipStyle(item.status)}
+						>
+							{item.status}
+						</Chip>
 					</View>
 				</Card.Content>
 			</Card>

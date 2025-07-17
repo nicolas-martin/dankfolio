@@ -25,7 +25,7 @@ interface PortfolioState {
 	fetchPortfolioBalance: (address: string, forceRefresh?: boolean) => Promise<void>;
 }
 
-export const usePortfolioStore = create<PortfolioState>((set, _get) => ({
+export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 	wallet: null, // Initialized with null
 	isLoading: false,
 	error: null,
@@ -98,6 +98,10 @@ export const usePortfolioStore = create<PortfolioState>((set, _get) => ({
 		}
 	},
 
+	clearWallet: () => {
+		log.info('[PortfolioStore] Clearing wallet and tokens');
+		set({ wallet: null, tokens: [], error: null });
+	},
 
 	fetchPortfolioBalance: async (address: string, forceRefresh?: boolean) => {
 		log.info('🔄 [PortfolioStore] fetchPortfolioBalance called for address:', address);
