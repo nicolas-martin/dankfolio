@@ -236,10 +236,20 @@ const Trade: React.FC = () => {
 				// Check if this is a "no route found" error by checking the friendly message
 				const isNoRouteError = userFriendlyMessage.includes('No trading route available');
 
+				// Enhance error message if it's a routing error and multi-hop is disabled
+				let enhancedMessage = userFriendlyMessage;
+				if (isNoRouteError && !allowMultiHop && 
+					currentFromCoin.address !== NATIVE_SOL_ADDRESS && 
+					currentFromCoin.address !== SOLANA_ADDRESS &&
+					currentToCoin.address !== NATIVE_SOL_ADDRESS && 
+					currentToCoin.address !== SOLANA_ADDRESS) {
+					enhancedMessage = 'No direct route found. Try enabling multi-hop routing for better liquidity.';
+				}
+
 				// Show appropriate toast - warning for routing issues, error for other issues
 				showToast({
 					type: isNoRouteError ? 'warning' : 'error',
-					message: isRetryable ? `${userFriendlyMessage} Tap to retry.` : userFriendlyMessage
+					message: isRetryable ? `${enhancedMessage} Tap to retry.` : enhancedMessage
 				});
 
 				// Reset relevant states on error
@@ -669,26 +679,6 @@ const Trade: React.FC = () => {
 						</View>
 					)}
 
-					{/* Multi-hop toggle for meme-to-meme swaps */}
-					{fromCoin?.mintAddress !== NATIVE_SOL_ADDRESS && 
-					 fromCoin?.mintAddress !== SOLANA_ADDRESS &&
-					 toCoin?.mintAddress !== NATIVE_SOL_ADDRESS && 
-					 toCoin?.mintAddress !== SOLANA_ADDRESS && (
-						<View style={styles.detailRow}>
-							<Text style={styles.detailLabel}>Multi-hop Routing</Text>
-							<Switch
-								value={allowMultiHop}
-								onValueChange={(value) => {
-									setAllowMultiHop(value);
-									// Re-fetch quote with new multi-hop setting
-									if (fromAmount && fromCoin && toCoin) {
-										handleFromAmountChange(fromAmount);
-									}
-								}}
-								testID="multi-hop-toggle"
-							/>
-						</View>
-					)}
 				</Card.Content>
 			</Card>
 		);
@@ -740,6 +730,54 @@ const Trade: React.FC = () => {
 							)}
 						</View>
 					</View>
+
+					{/* Routing Options for meme-to-meme swaps */}
+					{fromCoin && toCoin &&
+					 fromCoin.mintAddress !== NATIVE_SOL_ADDRESS && 
+					 fromCoin.mintAddress !== SOLANA_ADDRESS &&
+					 toCoin.mintAddress !== NATIVE_SOL_ADDRESS && 
+					 toCoin.mintAddress !== SOLANA_ADDRESS && (
+						<Card style={styles.routingCard}>
+							<Card.Content>
+								<View style={styles.routingRow}>
+									<View style={styles.routingTextContainer}>
+										<View style={styles.routingLabelContainer}>
+											<Text style={styles.routingLabel}>Allow Multi-Hop</Text>
+											<IconButton
+												icon="information-outline"
+												size={18}
+												onPress={() => {
+													showToast({ 
+														type: 'info', 
+														message: 'Multi-hop routing can find better rates by routing through multiple pools, but may increase transaction costs and complexity. Direct routes are simpler but might have less liquidity.'
+													});
+												}}
+												style={styles.infoIcon}
+											/>
+										</View>
+										<Text style={styles.routingDescription}>
+											{allowMultiHop 
+												? 'Route through multiple pools' 
+												: 'Direct routes only'}
+										</Text>
+									</View>
+									<Switch
+										value={allowMultiHop}
+										onValueChange={(value) => {
+											setAllowMultiHop(value);
+											// Reset fee breakdown flag to force new calculation
+											setHasDetailedFeeBreakdown(false);
+											// Re-fetch quote with new routing setting and fee breakdown
+											if (fromAmount && fromCoin && toCoin) {
+												handleFromAmountChange(fromAmount);
+											}
+										}}
+										testID="multi-hop-toggle"
+									/>
+								</View>
+							</Card.Content>
+						</Card>
+					)}
 
 					{renderTradeDetails()}
 
