@@ -64,30 +64,48 @@ func (s *Service) GetCoinByID(ctx context.Context, idStr string) (*model.Coin, e
 }
 
 func (s *Service) GetCoinByAddress(ctx context.Context, address string) (*model.Coin, error) {
+	slog.InfoContext(ctx, "GetCoinByAddress called", slog.String("address", address))
+	
 	// Special handling for native SOL - it's not a real Solana address
 	if address == model.NativeSolMint {
+		slog.InfoContext(ctx, "Fetching native SOL coin", slog.String("address", address))
 		return s.getNativeSolCoin(ctx)
 	}
 	
 	if !util.IsValidSolanaAddress(address) {
+		slog.ErrorContext(ctx, "Invalid Solana address", slog.String("address", address))
 		return nil, fmt.Errorf("invalid address: %s", address)
 	}
 
 	// Step 1: Always check database first
 	coin, err := s.store.Coins().GetByField(ctx, "address", address)
 	if err == nil {
+		slog.InfoContext(ctx, "Coin found in database", 
+			slog.String("address", address),
+			slog.String("symbol", coin.Symbol),
+			slog.String("name", coin.Name),
+			slog.Uint64("id", coin.ID))
+		
 		// Check if market data is fresh (< 24 hours old)
 		if s.isCoinMarketDataFresh(coin) {
-			slog.DebugContext(ctx, "Coin found with fresh market data", slog.String("address", address), slog.String("lastUpdated", coin.LastUpdated))
+			slog.DebugContext(ctx, "Coin found with fresh market data", 
+				slog.String("address", address), 
+				slog.String("lastUpdated", coin.LastUpdated),
+				slog.Float64("price", coin.Price))
 			return coin, nil
 		}
 
 		// Market data is stale, refresh with market data only
-		slog.DebugContext(ctx, "Coin found but market data is stale, refreshing", slog.String("address", address), slog.String("lastUpdated", coin.LastUpdated))
+		slog.InfoContext(ctx, "Coin found but market data is stale, refreshing", 
+			slog.String("address", address), 
+			slog.String("lastUpdated", coin.LastUpdated))
 		return s.updateCoinMarketData(ctx, coin)
 	}
 
 	if !errors.Is(err, db.ErrNotFound) {
+		slog.ErrorContext(ctx, "Database error when fetching coin", 
+			slog.String("address", address), 
+			slog.Any("error", err))
 		return nil, fmt.Errorf("error fetching coin %s from database: %w", address, err)
 	}
 
