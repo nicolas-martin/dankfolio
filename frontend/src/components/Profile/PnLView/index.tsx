@@ -1,6 +1,7 @@
 import { View, ScrollView, RefreshControl } from 'react-native';
 import { Text, Card, IconButton, Divider } from 'react-native-paper';
 import { usePortfolioStore } from '@/store/portfolio';
+import { useTransactionsStore } from '@/store/transactions';
 import { useStyles } from './pnlview_styles';
 import { formatPrice, formatPercentage } from '@/utils/numberFormat';
 import { useCallback, useState, useMemo } from 'react';
@@ -10,13 +11,14 @@ import CachedImage from '@/components/Common/CachedImage';
 
 const PnLView = () => {
 	const { tokens, fetchPortfolioBalance, wallet } = usePortfolioStore();
+	const { transactions } = useTransactionsStore();
 	const styles = useStyles();
 	const [isRefreshing, setIsRefreshing] = useState(false);
 
 	const refreshControlColors = useMemo(() => [styles.colors.primary], [styles.colors.primary]);
 
-	const portfolioStats = useMemo(() => calculatePortfolioStats(tokens), [tokens]);
-	const tokenStats = useMemo(() => tokens.map(token => calculateTokenStats(token)), [tokens]);
+	const portfolioStats = useMemo(() => calculatePortfolioStats(tokens, transactions), [tokens, transactions]);
+	const tokenStats = useMemo(() => tokens.map(token => calculateTokenStats(token, transactions)), [tokens, transactions]);
 
 	const handleRefresh = useCallback(async () => {
 		if (!wallet?.address) return;
@@ -38,22 +40,37 @@ const PnLView = () => {
 						<Text style={styles.statValue}>{formatPrice(portfolioStats.totalValue, true)}</Text>
 					</View>
 					<View style={styles.statItem}>
-						<Text style={styles.statLabel}>Holdings</Text>
-						<Text style={styles.statValue}>{portfolioStats.totalHoldings}</Text>
+						<Text style={styles.statLabel}>Total P&L</Text>
+						<Text style={[
+							styles.statValue,
+							portfolioStats.totalUnrealizedPnL >= 0 ? styles.pnlPositive : styles.pnlNegative
+						]}>
+							{portfolioStats.totalUnrealizedPnL >= 0 ? '+' : ''}{formatPrice(portfolioStats.totalUnrealizedPnL, true)}
+						</Text>
+						<Text style={[
+							styles.statSubtext,
+							portfolioStats.totalUnrealizedPnL >= 0 ? styles.pnlPositive : styles.pnlNegative
+						]}>
+							({portfolioStats.totalUnrealizedPnL >= 0 ? '+' : ''}{formatPercentage(portfolioStats.totalPnLPercentage)})
+						</Text>
 					</View>
 				</View>
-				<Divider style={styles.divider} />
-				<View style={styles.noteContainer}>
-					<IconButton 
-						icon="information-outline" 
-						size={20} 
-						iconColor={styles.colors.onSurfaceVariant}
-						style={styles.infoIcon}
-					/>
-					<Text style={styles.noteText}>
-						P&L tracking requires purchase price data. This feature will be available soon.
-					</Text>
-				</View>
+				{portfolioStats.totalCostBasis === 0 && (
+					<>
+						<Divider style={styles.divider} />
+						<View style={styles.noteContainer}>
+							<IconButton
+								icon="information-outline"
+								size={20}
+								iconColor={styles.colors.onSurfaceVariant}
+								style={styles.infoIcon}
+							/>
+							<Text style={styles.noteText}>
+								P&L tracking is based on your transaction history. Tokens without transaction data show current value.
+							</Text>
+						</View>
+					</>
+				)}
 			</Card.Content>
 		</Card>
 	);
@@ -61,7 +78,7 @@ const PnLView = () => {
 	const renderTokenItem = (data: PnLData) => {
 		const { token } = data;
 		const isPositive = data.unrealizedPnL >= 0;
-		
+
 		return (
 			<Card key={token.mintAddress} style={styles.tokenCard} mode="outlined">
 				<Card.Content style={styles.tokenContent}>
@@ -69,7 +86,7 @@ const PnLView = () => {
 						<View style={styles.tokenLeft}>
 							<View style={styles.tokenIconContainer}>
 								<CachedImage
-									source={{ uri: token.coin.iconUrl }}
+									uri={token.coin.logoURI}
 									style={styles.tokenIcon}
 									testID={`pnl-token-icon-${token.coin.symbol}`}
 								/>
@@ -99,7 +116,7 @@ const PnLView = () => {
 									</Text>
 								</View>
 							) : (
-								<Text style={styles.noPnlData}>P&L data unavailable</Text>
+								<Text style={styles.noPnlData}>No purchase data</Text>
 							)}
 						</View>
 					</View>
@@ -111,10 +128,10 @@ const PnLView = () => {
 	if (tokens.length === 0) {
 		return (
 			<View style={styles.emptyContainer}>
-				<IconButton 
-					icon="chart-line" 
-					size={48} 
-					iconColor={styles.colors.onSurfaceVariant} 
+				<IconButton
+					icon="chart-line"
+					size={48}
+					iconColor={styles.colors.onSurfaceVariant}
 					style={styles.emptyIcon}
 				/>
 				<Text style={styles.emptyTitle}>No Holdings</Text>
@@ -139,8 +156,6 @@ const PnLView = () => {
 			}
 		>
 			<View style={styles.contentContainer}>
-				{renderPortfolioSummary()}
-				<Text style={styles.sectionTitle}>Holdings</Text>
 				{tokenStats.map(renderTokenItem)}
 			</View>
 		</ScrollView>

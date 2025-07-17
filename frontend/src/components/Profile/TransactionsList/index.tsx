@@ -4,16 +4,47 @@ import { useTransactionsStore } from '@/store/transactions';
 import { Transaction } from '@/types';
 import { useStyles } from './transactionslist_styles';
 import { formatPrice } from '@/utils/numberFormat';
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useState, useMemo, useEffect } from 'react';
 import { usePortfolioStore } from '@/store/portfolio';
+import { useCoinStore } from '@/store/coins';
+import CachedImage from '@/components/Common/CachedImage';
+import { Coin } from '@/types';
 
 const TransactionsList = () => {
 	const { transactions, isLoading, error, fetchRecentTransactions } = useTransactionsStore();
 	const { wallet } = usePortfolioStore();
+	const { getCoinByID, coinMap } = useCoinStore();
 	const styles = useStyles();
 	const [isRefreshing, setIsRefreshing] = useState(false);
-	
+	const [coinData, setCoinData] = useState<Record<string, Coin>>({});
+
 	const refreshControlColors = useMemo(() => [styles.colors.primary], [styles.colors.primary]);
+
+	// Fetch coin data for transactions
+	useEffect(() => {
+		const fetchCoinData = async () => {
+			const mintAddresses = new Set<string>();
+			transactions.forEach(tx => {
+				if (tx.fromCoinMintAddress) mintAddresses.add(tx.fromCoinMintAddress);
+				if (tx.toCoinMintAddress) mintAddresses.add(tx.toCoinMintAddress);
+			});
+
+			const newCoinData: Record<string, Coin> = {};
+			for (const address of mintAddresses) {
+				if (!coinMap[address]) {
+					const coin = await getCoinByID(address);
+					if (coin) newCoinData[address] = coin;
+				} else {
+					newCoinData[address] = coinMap[address];
+				}
+			}
+			setCoinData(prev => ({ ...prev, ...newCoinData }));
+		};
+
+		if (transactions.length > 0) {
+			fetchCoinData();
+		}
+	}, [transactions, getCoinByID, coinMap]);
 
 	const getTransactionIcon = (type: Transaction['type']) => {
 		switch (type) {
@@ -68,47 +99,74 @@ const TransactionsList = () => {
 
 	const renderTransaction = (item: Transaction) => {
 		const isSwap = item.type === 'SWAP';
-		
+		const fromCoin = item.fromCoinMintAddress ? (coinData[item.fromCoinMintAddress] || coinMap[item.fromCoinMintAddress]) : null;
+		const toCoin = item.toCoinMintAddress ? (coinData[item.toCoinMintAddress] || coinMap[item.toCoinMintAddress]) : null;
+
+		// Fallback icon URLs if coin data not found
+		const fromIconURI = fromCoin?.logoURI
+		const toIconURI = toCoin?.logoURI
+
 		return (
 			<Card key={item.id} style={styles.transactionCard} mode="outlined">
 				<Card.Content style={styles.cardContent}>
-					<View style={styles.transactionRow}>
+					<View style={styles.transactionMainRow}>
 						<View style={styles.transactionLeft}>
-							<View style={styles.iconContainer}>
+							<View style={styles.transactionHeader}>
 								<IconButton
 									icon={getTransactionIcon(item.type)}
-									size={24}
-									iconColor={styles.colors.primary}
-									style={styles.transactionIcon}
+									size={20}
+									iconColor={styles.colors.onSurfaceVariant}
+									style={styles.transactionTypeIcon}
 								/>
-							</View>
-							<View style={styles.transactionInfo}>
 								<Text style={styles.transactionType}>
 									{item.type === 'SWAP' ? 'Swap' : item.type === 'TRANSFER' ? 'Transfer' : 'Transaction'}
 								</Text>
-								<Text style={styles.transactionDetails}>
-									{isSwap ? `${item.fromCoinSymbol} → ${item.toCoinSymbol}` : item.fromCoinSymbol}
-								</Text>
+							</View>
+							<View style={styles.coinIconsRow}>
+								<View style={styles.coinItem}>
+									<CachedImage
+										uri={fromIconURI}
+										style={styles.coinIcon}
+									/>
+									<View style={styles.coinTextContainer}>
+										<Text style={styles.coinAmount}>
+											{formatPrice(item.amount, false)}
+										</Text>
+										<Text style={styles.coinSymbol}>{item.fromCoinSymbol}</Text>
+									</View>
+								</View>
+								{isSwap && (
+									<>
+										<IconButton
+											icon="arrow-right"
+											size={16}
+											iconColor={styles.colors.onSurfaceVariant}
+											style={styles.arrowIcon}
+										/>
+										<View style={styles.coinItem}>
+											<CachedImage
+												uri={toIconURI}
+												style={styles.coinIcon}
+											/>
+											<Text style={styles.coinSymbol}>{item.toCoinSymbol}</Text>
+										</View>
+									</>
+								)}
 							</View>
 						</View>
 						<View style={styles.transactionRight}>
-							<Text style={styles.transactionAmount}>
-								{formatPrice(item.amount, false)} {item.fromCoinSymbol}
-							</Text>
 							<Text style={styles.transactionDate}>
 								{formatTransactionDate(item.date)}
 							</Text>
+							<Chip
+								mode="flat"
+								compact
+								textStyle={styles.statusChipText}
+								style={getStatusChipStyle(item.status)}
+							>
+								{item.status}
+							</Chip>
 						</View>
-					</View>
-					<View style={styles.statusContainer}>
-						<Chip
-							mode="flat"
-							compact
-							textStyle={styles.statusChipText}
-							style={getStatusChipStyle(item.status)}
-						>
-							{item.status}
-						</Chip>
 					</View>
 				</Card.Content>
 			</Card>

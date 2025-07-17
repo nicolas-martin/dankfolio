@@ -126,6 +126,10 @@ export const useStyles = () => {
 				fontSize: theme.typography.fontSize.sm,
 				marginBottom: theme.spacing.xs,
 			},
+			statSubtext: {
+				fontSize: theme.typography.fontSize.sm,
+				marginTop: theme.spacing.xs,
+			},
 			statValue: {
 				color: theme.colors.onSurface,
 				fontSize: theme.typography.fontSize.xl,

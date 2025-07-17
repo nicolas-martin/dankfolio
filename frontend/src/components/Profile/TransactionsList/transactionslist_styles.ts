@@ -7,15 +7,46 @@ export const useStyles = () => {
 
 	return {
 		...StyleSheet.create({
+			arrowIcon: {
+				margin: 0,
+				marginHorizontal: theme.spacing.xs,
+			},
 			cardContent: {
 				paddingHorizontal: theme.spacing.md,
-				paddingVertical: theme.spacing.md,
+				paddingVertical: theme.spacing.sm,
 			},
 			centerContainer: {
 				alignItems: 'center',
 				flex: 1,
 				justifyContent: 'center',
 				paddingVertical: theme.spacing['4xl'],
+			},
+			coinAmount: {
+				color: theme.colors.onSurface,
+				fontSize: theme.typography.fontSize.sm,
+				fontWeight: '600',
+			},
+			coinIcon: {
+				borderRadius: theme.spacing.md,
+				height: 24,
+				marginRight: theme.spacing.xs,
+				width: 24,
+			},
+			coinIconsRow: {
+				alignItems: 'center',
+				flexDirection: 'row',
+				marginTop: theme.spacing.xs,
+			},
+			coinItem: {
+				alignItems: 'center',
+				flexDirection: 'row',
+			},
+			coinSymbol: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: theme.typography.fontSize.xs,
+			},
+			coinTextContainer: {
+				flexDirection: 'column',
 			},
 			container: {
 				flex: 1,
@@ -104,12 +135,16 @@ export const useStyles = () => {
 			transactionDate: {
 				color: theme.colors.onSurfaceVariant,
 				fontSize: theme.typography.fontSize.xs,
-				marginTop: theme.spacing.xs,
+				textAlign: 'right',
 			},
 			transactionDetails: {
 				color: theme.colors.onSurfaceVariant,
 				fontSize: theme.typography.fontSize.sm,
 				marginTop: 2,
+			},
+			transactionHeader: {
+				alignItems: 'center',
+				flexDirection: 'row',
 			},
 			transactionIcon: {
 				margin: 0,
@@ -118,9 +153,11 @@ export const useStyles = () => {
 				flex: 1,
 			},
 			transactionLeft: {
-				alignItems: 'center',
-				flexDirection: 'row',
 				flex: 1,
+			},
+			transactionMainRow: {
+				flexDirection: 'row',
+				justifyContent: 'space-between',
 			},
 			transactionRight: {
 				alignItems: 'flex-end',
@@ -132,8 +169,13 @@ export const useStyles = () => {
 			},
 			transactionType: {
 				color: theme.colors.onSurface,
-				fontSize: theme.typography.fontSize.base,
+				fontSize: theme.typography.fontSize.sm,
 				fontWeight: '600',
+			},
+			transactionTypeIcon: {
+				margin: 0,
+				marginLeft: -8,
+				marginRight: theme.spacing.xs,
 			},
 		}),
 		colors: theme.colors,

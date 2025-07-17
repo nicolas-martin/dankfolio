@@ -3,7 +3,7 @@ import { View, ScrollView, RefreshControl, SafeAreaView, useWindowDimensions } f
 import { Text, Button, Icon, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
-import { TabView, SceneMap } from 'react-native-tab-view';
+import { TabView } from 'react-native-tab-view';
 import { SegmentedButtons } from 'react-native-paper';
 import { handleTokenPress, formatAddress, sortTokensByValue, calculateTotalPortfolioValue, createCoinCardProps } from './profile_scripts';
 import CopyToClipboard from '@/components/Common/CopyToClipboard';
@@ -154,44 +154,46 @@ const Profile = () => {
 	);
 
 	const TokensTab = () => (
-		<View style={styles.tokensSection} accessible={false}>
-			{sortedTokens.length === 0 ? (
-				<>
-					<View style={styles.tokensHeader} accessible={false}>
-						<View style={styles.tokensIcon}>
-							<CoinsIcon size={24} color={styles.colors.onSurface} />
+		<ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+			<View style={styles.tokensSection} accessible={false}>
+				{sortedTokens.length === 0 ? (
+					<>
+						<View style={styles.tokensHeader} accessible={false}>
+							<View style={styles.tokensIcon}>
+								<CoinsIcon size={24} color={styles.colors.onSurface} />
+							</View>
+							<Text style={styles.tokensTitle} accessible={true} testID="your-tokens-title">Your Tokens</Text>
 						</View>
-						<Text style={styles.tokensTitle} accessible={true} testID="your-tokens-title">Your Tokens</Text>
-					</View>
-					<View style={styles.emptyStateContainer} accessible={false}>
-						<View style={styles.emptyStateIcon}>
-							<Icon source="wallet-outline" size={48} color={styles.colors.onSurfaceVariant} />
+						<View style={styles.emptyStateContainer} accessible={false}>
+							<View style={styles.emptyStateIcon}>
+								<Icon source="wallet-outline" size={48} color={styles.colors.onSurfaceVariant} />
+							</View>
+							<Text style={styles.emptyStateTitle} accessible={true}>No Tokens Found</Text>
+							<Text style={styles.emptyStateText} accessible={true}>
+								Your wallet doesn&apos;t contain any tokens yet. Start trading to build your portfolio!
+							</Text>
 						</View>
-						<Text style={styles.emptyStateTitle} accessible={true}>No Tokens Found</Text>
-						<Text style={styles.emptyStateText} accessible={true}>
-							Your wallet doesn&apos;t contain any tokens yet. Start trading to build your portfolio!
-						</Text>
-					</View>
-				</>
-			) : (
-				<TokenListCard
-					title="Your Tokens"
-					coins={sortedTokens.map(token => createCoinCardProps(token))}
-					showSparkline={false}
-					showBalanceAndValue={true}
-					noHorizontalMargin={true}
-					onCoinPress={(coin) => {
-						logger.breadcrumb({
-							category: 'ui',
-							message: 'Pressed token card on ProfileScreen',
-							data: { tokenSymbol: coin.symbol, tokenMint: coin.address }
-						});
-						handleTokenPress(coin, navigation.navigate);
-					}}
-					testIdPrefix="profile-token"
-				/>
-			)}
-		</View>
+					</>
+				) : (
+					<TokenListCard
+						title="Your Tokens"
+						coins={sortedTokens.map(token => createCoinCardProps(token))}
+						showSparkline={false}
+						showBalanceAndValue={true}
+						noHorizontalMargin={true}
+						onCoinPress={(coin) => {
+							logger.breadcrumb({
+								category: 'ui',
+								message: 'Pressed token card on ProfileScreen',
+								data: { tokenSymbol: coin.symbol, tokenMint: coin.address }
+							});
+							handleTokenPress(coin, navigation.navigate);
+						}}
+						testIdPrefix="profile-token"
+					/>
+				)}
+			</View>
+		</ScrollView>
 	);
 
 	

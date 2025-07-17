@@ -667,12 +667,18 @@ export const grpcApi: grpcModel.API = {
 				return {
 					id: trade.id,
 					type,
-					fromCoinSymbol: trade.fromCoinId, // Placeholder
-					toCoinSymbol: trade.toCoinId, // Placeholder
+					fromCoinSymbol: trade.coinSymbol || trade.fromCoinId, // Use coinSymbol if available
+					toCoinSymbol: trade.toCoinId, // Will need to look up symbol from coin data
+					fromCoinMintAddress: trade.fromCoinId, // fromCoinId is the mint address
+					toCoinMintAddress: trade.toCoinId, // toCoinId is the mint address
 					amount: trade.amount,
+					price: trade.price, // Price per token at transaction time
+					totalValue: trade.amount * trade.price, // Calculate total value
 					status,
 					date: trade.createdAt ? new Date(Number(trade.createdAt.seconds) * 1000).toISOString() : "",
 					transactionHash: trade.transactionHash,
+					fee: trade.fee,
+					platformFeeAmount: trade.platformFeeAmount,
 				};
 			});
 
