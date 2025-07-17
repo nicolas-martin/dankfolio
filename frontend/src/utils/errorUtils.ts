@@ -7,7 +7,7 @@ import { logger } from '@/utils/logger';
 export const TRADE_ERROR_MESSAGES = {
 	// Jupiter/Route specific errors
 	COULD_NOT_FIND_ANY_ROUTE: 'No trading route available for this token pair. Try a different amount or token.',
-	NO_ROUTE_FOUND: 'No trading route available for this token pair. Try a different amount or token.',
+	NO_ROUTE_FOUND: 'No trading route available. Try enabling multi-hop routing or use a different token pair.',
 	INSUFFICIENT_LIQUIDITY: 'Insufficient liquidity for this trade. Try a smaller amount.',
 	SLIPPAGE_TOO_HIGH: 'Price impact is too high. Try a smaller amount or adjust slippage tolerance.',
 
@@ -50,8 +50,10 @@ export const getUserFriendlyTradeError = (error: unknown): string => {
 
 	// Check for Jupiter route errors (case-insensitive)
 	if (errorMessage.toLowerCase().includes('could not find any route') ||
-		errorMessage.toLowerCase().includes('could_not_find_any_route')) {
-		return TRADE_ERROR_MESSAGES.COULD_NOT_FIND_ANY_ROUTE;
+		errorMessage.toLowerCase().includes('could_not_find_any_route') ||
+		errorMessage.toLowerCase().includes('no routes found') ||
+		errorMessage.toLowerCase().includes('no_routes_found')) {
+		return TRADE_ERROR_MESSAGES.NO_ROUTE_FOUND;
 	}
 
 	// Check for Jupiter token not tradable error
