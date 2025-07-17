@@ -1,7 +1,8 @@
 import { View, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { Text, Card, Chip, IconButton } from 'react-native-paper';
 import { useTransactionsStore } from '@/store/transactions';
-import { Transaction } from '@/types';
+import { Transaction, TransactionType, TransactionStatus } from '@/types';
+import { logger } from '@/utils/logger';
 import { useStyles } from './transactionslist_styles';
 import { formatPrice } from '@/utils/numberFormat';
 import { useCallback, useState, useMemo, useEffect } from 'react';
@@ -31,26 +32,30 @@ const TransactionsList = () => {
 
 			const newCoinData: Record<string, Coin> = {};
 			for (const address of mintAddresses) {
-				if (!coinMap[address]) {
-					const coin = await getCoinByID(address);
-					if (coin) newCoinData[address] = coin;
-				} else {
-					newCoinData[address] = coinMap[address];
+				// Skip if we already have this coin data
+				if (coinData[address] || coinMap[address]) {
+					continue;
 				}
+				const coin = await getCoinByID(address);
+				if (coin) newCoinData[address] = coin;
 			}
-			setCoinData(prev => ({ ...prev, ...newCoinData }));
+
+			// Only update if we have new data
+			if (Object.keys(newCoinData).length > 0) {
+				setCoinData(prev => ({ ...prev, ...newCoinData }));
+			}
 		};
 
 		if (transactions.length > 0) {
 			fetchCoinData();
 		}
-	}, [transactions, getCoinByID, coinMap]);
+	}, [transactions, getCoinByID]); // Remove coinMap and coinData from dependencies
 
 	const getTransactionIcon = (type: Transaction['type']) => {
 		switch (type) {
-			case 'SWAP':
+			case TransactionType.SWAP:
 				return 'swap-horizontal';
-			case 'TRANSFER':
+			case TransactionType.TRANSFER:
 				return 'arrow-top-right';
 			default:
 				return 'help-circle-outline';
@@ -59,11 +64,11 @@ const TransactionsList = () => {
 
 	const getStatusChipStyle = (status: Transaction['status']) => {
 		switch (status) {
-			case 'COMPLETED':
+			case TransactionStatus.COMPLETED:
 				return styles.statusChipCompleted;
-			case 'PENDING':
+			case TransactionStatus.PENDING:
 				return styles.statusChipPending;
-			case 'FAILED':
+			case TransactionStatus.FAILED:
 				return styles.statusChipFailed;
 			default:
 				return styles.statusChip;
@@ -98,13 +103,17 @@ const TransactionsList = () => {
 	}, [wallet?.address, fetchRecentTransactions]);
 
 	const renderTransaction = (item: Transaction) => {
-		const isSwap = item.type === 'SWAP';
+		const isSwap = item.type === TransactionType.SWAP;
 		const fromCoin = item.fromCoinMintAddress ? (coinData[item.fromCoinMintAddress] || coinMap[item.fromCoinMintAddress]) : null;
 		const toCoin = item.toCoinMintAddress ? (coinData[item.toCoinMintAddress] || coinMap[item.toCoinMintAddress]) : null;
 
 		// Fallback icon URLs if coin data not found
 		const fromIconURI = fromCoin?.logoURI
 		const toIconURI = toCoin?.logoURI
+		if (fromCoin && !fromIconURI) {
+			logger.warn(`No icon found for fromCoinMintAddress: ${item.fromCoinMintAddress}`);
+			return null;
+		}
 
 		return (
 			<Card key={item.id} style={styles.transactionCard} mode="outlined">
@@ -119,7 +128,7 @@ const TransactionsList = () => {
 									style={styles.transactionTypeIcon}
 								/>
 								<Text style={styles.transactionType}>
-									{item.type === 'SWAP' ? 'Swap' : item.type === 'TRANSFER' ? 'Transfer' : 'Transaction'}
+									{item.type === TransactionType.SWAP ? 'Swap' : item.type === TransactionType.TRANSFER ? 'Transfer' : 'Transaction'}
 								</Text>
 							</View>
 							<View style={styles.coinIconsRow}>

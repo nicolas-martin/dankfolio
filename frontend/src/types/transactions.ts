@@ -1,6 +1,19 @@
+export enum TransactionType {
+	SWAP = 'swap',
+	TRANSFER = 'transfer',
+	UNKNOWN = 'unknown'
+}
+
+export enum TransactionStatus {
+	PENDING = 'pending',
+	COMPLETED = 'completed',
+	FAILED = 'failed',
+	UNKNOWN = 'unknown'
+}
+
 export interface Transaction {
 	id: string;
-	type: 'SWAP' | 'TRANSFER' | 'UNKNOWN'; // Using string literal union for known types
+	type: TransactionType;
 	fromCoinSymbol: string; // Placeholder, was fromCoinId from backend
 	toCoinSymbol: string; // Placeholder, was toCoinId from backend
 	fromCoinMintAddress?: string; // Mint address of the from coin
@@ -10,7 +23,7 @@ export interface Transaction {
 	amount: number; // Representing the amount of fromCoinSymbol or toCoinSymbol
 	price?: number; // Price per token at the time of transaction
 	totalValue?: number; // Total value of the transaction (amount * price)
-	status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'UNKNOWN'; // Using string literal union for known statuses
+	status: TransactionStatus;
 	date: string; // ISO date string
 	transactionHash?: string; // Optional
 	fee?: number; // Transaction fee

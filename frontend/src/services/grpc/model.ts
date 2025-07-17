@@ -1,3 +1,6 @@
+// Import transaction enums from types
+export { TransactionType, TransactionStatus } from '@/types/transactions';
+
 export interface Coin {
 	address: string;                    // Was: mintAddress (aligned with BirdEye)
 	name: string;
@@ -141,13 +144,19 @@ export interface PrepareSwapRequest {
 
 export interface Transaction {
 	id: string;
-	type: 'SWAP' | 'TRANSFER' | 'UNKNOWN';
+	type: TransactionType;
 	fromCoinSymbol: string;
 	toCoinSymbol: string;
+	fromCoinMintAddress?: string;
+	toCoinMintAddress?: string;
 	amount: number;
-	status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'UNKNOWN';
+	price?: number;
+	totalValue?: number;
+	status: TransactionStatus;
 	date: string;
-	transactionHash: string;
+	transactionHash?: string;
+	fee?: number;
+	platformFeeAmount?: number;
 }
 
 export interface ListTradesRequest {

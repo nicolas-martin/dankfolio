@@ -1,6 +1,6 @@
 import { PortfolioToken } from '@/store/portfolio';
 import { PnLData, PortfolioStats } from './pnlview_types';
-import { Transaction } from '@/types';
+import { Transaction, TransactionType, TransactionStatus } from '@/types';
 
 /**
  * Calculate portfolio-level statistics
@@ -14,7 +14,7 @@ export const calculatePortfolioStats = (tokens: PortfolioToken[], transactions: 
 	// Group transactions by coin
 	const transactionsByCoin: Record<string, Transaction[]> = {};
 	transactions.forEach(tx => {
-		if (tx.type === 'SWAP' && tx.toCoinMintAddress) {
+		if (tx.type === TransactionType.SWAP && tx.toCoinMintAddress) {
 			if (!transactionsByCoin[tx.toCoinMintAddress]) {
 				transactionsByCoin[tx.toCoinMintAddress] = [];
 			}
@@ -47,8 +47,8 @@ export const calculatePortfolioStats = (tokens: PortfolioToken[], transactions: 
 const calculateCostBasisForToken = (token: PortfolioToken, transactions: Transaction[]): number => {
 	// Filter only completed swap transactions where this token was bought
 	const buyTransactions = transactions.filter(
-		tx => tx.type === 'SWAP' && 
-		tx.status === 'COMPLETED' && 
+		tx => tx.type === TransactionType.SWAP && 
+		tx.status === TransactionStatus.COMPLETED && 
 		tx.price && 
 		tx.amount
 	);
@@ -90,16 +90,55 @@ const calculateCostBasisForToken = (token: PortfolioToken, transactions: Transac
 export const calculateTokenStats = (token: PortfolioToken, transactions: Transaction[]): PnLData => {
 	const currentValue = token.value;
 	
+	// Log all transactions to debug
+	console.log(`[PnL] All transactions for debugging:`, transactions.slice(0, 3).map(tx => ({
+		id: tx.id,
+		type: tx.type,
+		status: tx.status,
+		fromCoinMintAddress: tx.fromCoinMintAddress,
+		toCoinMintAddress: tx.toCoinMintAddress,
+		amount: tx.amount,
+		price: tx.price,
+		totalValue: tx.totalValue,
+	})));
+	
 	// Find transactions for this specific token
 	const tokenTransactions = transactions.filter(
-		tx => tx.type === 'SWAP' && 
+		tx => tx.type === TransactionType.SWAP && 
 		tx.toCoinMintAddress === token.mintAddress &&
-		tx.status === 'COMPLETED'
+		tx.status === TransactionStatus.COMPLETED
 	);
+	
+	console.log(`[PnL] Calculating stats for ${token.coin.symbol}:`, {
+		mintAddress: token.mintAddress,
+		totalTransactions: transactions.length,
+		matchingTransactions: tokenTransactions.length,
+		transactions: tokenTransactions.map(tx => ({
+			id: tx.id,
+			fromCoinMintAddress: tx.fromCoinMintAddress,
+			toCoinMintAddress: tx.toCoinMintAddress,
+			amount: tx.amount,
+			price: tx.price,
+			totalValue: tx.totalValue,
+			status: tx.status,
+		}))
+	});
 	
 	const costBasis = calculateCostBasisForToken(token, tokenTransactions);
 	const unrealizedPnL = currentValue - costBasis;
 	const pnlPercentage = costBasis > 0 ? (unrealizedPnL / costBasis) * 100 : 0;
+	
+	const hasPurchaseData = tokenTransactions.length > 0 && tokenTransactions.some(tx => tx.price !== undefined);
+	
+	console.log(`[PnL] Stats for ${token.coin.symbol}:`, {
+		currentValue,
+		costBasis,
+		unrealizedPnL,
+		pnlPercentage,
+		hasPurchaseData,
+		hasTransactions: tokenTransactions.length > 0,
+		hasPriceData: tokenTransactions.some(tx => tx.price !== undefined)
+	});
 
 	return {
 		token,
@@ -107,7 +146,7 @@ export const calculateTokenStats = (token: PortfolioToken, transactions: Transac
 		costBasis,
 		unrealizedPnL,
 		pnlPercentage,
-		hasPurchaseData: tokenTransactions.length > 0 && tokenTransactions.some(tx => tx.price !== undefined),
+		hasPurchaseData,
 	};
 };
 
