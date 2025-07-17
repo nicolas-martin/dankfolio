@@ -2,7 +2,6 @@ import { View, ScrollView, ActivityIndicator, RefreshControl, Linking } from 're
 import { Text, Chip, IconButton } from 'react-native-paper';
 import { useTransactionsStore } from '@/store/transactions';
 import { Transaction, TransactionType, TransactionStatus } from '@/types';
-import { logger } from '@/utils/logger';
 import { useStyles } from './transactionslist_styles';
 import { formatPrice } from '@/utils/numberFormat';
 import { useCallback, useState, useMemo, useEffect } from 'react';
@@ -91,10 +90,6 @@ const TransactionsList = () => {
 		// Fallback icon URLs if coin data not found
 		const fromIconURI = fromCoin?.logoURI
 		const toIconURI = toCoin?.logoURI
-		if (fromCoin && !fromIconURI) {
-			logger.warn(`No icon found for fromCoinMintAddress: ${item.fromCoinMintAddress}`);
-			return null;
-		}
 
 		const isLastItem = index === transactions.length - 1;
 		const transactionStyles = isLastItem ? [styles.transactionItem, styles.transactionItemLast] : [styles.transactionItem];
@@ -114,19 +109,13 @@ const TransactionsList = () => {
 								{item.type === TransactionType.SWAP ? 'Swap' : item.type === TransactionType.TRANSFER ? 'Transfer' : 'Transaction'}
 							</Text>
 						</View>
-						<View style={styles.coinIconsRow}>
-							<View style={styles.coinItem}>
+						<View style={styles.transactionRow}>
+							{fromIconURI && (
 								<CachedImage
 									uri={fromIconURI}
 									style={styles.coinIcon}
 								/>
-								<View style={styles.coinTextContainer}>
-									<Text style={styles.coinAmount}>
-										{formatPrice(item.amount, false)}
-									</Text>
-									<Text style={styles.coinSymbol}>{item.fromCoinSymbol}</Text>
-								</View>
-							</View>
+							)}
 							{isSwap && (
 								<>
 									<IconButton
@@ -135,16 +124,18 @@ const TransactionsList = () => {
 										iconColor={styles.colors.onSurfaceVariant}
 										style={styles.arrowIcon}
 									/>
-									<View style={styles.coinItem}>
+									{toIconURI && (
 										<CachedImage
 											uri={toIconURI}
 											style={styles.coinIcon}
 										/>
-										<Text style={styles.coinSymbol}>{item.toCoinSymbol}</Text>
-									</View>
+									)}
 								</>
 							)}
 						</View>
+						<Text style={styles.coinAmount}>
+							{formatPrice(item.amount, false)}
+						</Text>
 					</View>
 					<View style={styles.transactionRight}>
 						<Text style={styles.transactionDate}>

@@ -30,51 +30,6 @@ const PnLView = () => {
 		}
 	}, [wallet?.address, fetchPortfolioBalance]);
 
-	const renderPortfolioSummary = () => (
-		<Card style={styles.summaryCard} mode="elevated">
-			<Card.Content>
-				<Text style={styles.summaryTitle}>Portfolio Summary</Text>
-				<View style={styles.statsGrid}>
-					<View style={styles.statItem}>
-						<Text style={styles.statLabel}>Total Value</Text>
-						<Text style={styles.statValue}>{formatPrice(portfolioStats.totalValue, true)}</Text>
-					</View>
-					<View style={styles.statItem}>
-						<Text style={styles.statLabel}>Total P&L</Text>
-						<Text style={[
-							styles.statValue,
-							portfolioStats.totalUnrealizedPnL >= 0 ? styles.pnlPositive : styles.pnlNegative
-						]}>
-							{portfolioStats.totalUnrealizedPnL >= 0 ? '+' : ''}{formatPrice(portfolioStats.totalUnrealizedPnL, true)}
-						</Text>
-						<Text style={[
-							styles.statSubtext,
-							portfolioStats.totalUnrealizedPnL >= 0 ? styles.pnlPositive : styles.pnlNegative
-						]}>
-							({portfolioStats.totalUnrealizedPnL >= 0 ? '+' : ''}{formatPercentage(portfolioStats.totalPnLPercentage)})
-						</Text>
-					</View>
-				</View>
-				{portfolioStats.totalCostBasis === 0 && (
-					<>
-						<Divider style={styles.divider} />
-						<View style={styles.noteContainer}>
-							<IconButton
-								icon="information-outline"
-								size={20}
-								iconColor={styles.colors.onSurfaceVariant}
-								style={styles.infoIcon}
-							/>
-							<Text style={styles.noteText}>
-								P&L tracking is based on your transaction history. Tokens without transaction data show current value.
-							</Text>
-						</View>
-					</>
-				)}
-			</Card.Content>
-		</Card>
-	);
-
 	const renderTokenItem = (data: PnLData, index: number) => {
 		const { token } = data;
 		const isPositive = data.unrealizedPnL >= 0;

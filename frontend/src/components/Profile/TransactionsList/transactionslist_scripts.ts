@@ -23,22 +23,22 @@ export const formatTransactionDate = (dateString: string): string => {
 		}
 		return `${hours}h ago`;
 	}
-	
+
 	// Yesterday
 	if (diffDays === 1) {
 		return 'Yesterday';
 	}
-	
+
 	// Within a week - show days
 	if (diffDays < 7) {
 		return `${diffDays}d ago`;
 	}
-	
+
 	// Within a month - show date without year
 	if (diffDays < 30) {
 		return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 	}
-	
+
 	// Older - show full date with year
 	return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
 };

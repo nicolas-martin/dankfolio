@@ -1,12 +1,12 @@
 import { StyleSheet } from 'react-native';
-import { useTheme } from 'react-native-paper';
 import { AppTheme } from '@/utils/theme';
+import { useTheme } from 'react-native-paper';
+import { useMemo } from 'react';
 
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
-
-	return {
-		...StyleSheet.create({
+	return useMemo(() => {
+		const styles = StyleSheet.create({
 			arrowIcon: {
 				margin: 0,
 				marginHorizontal: theme.spacing.xs,
@@ -196,7 +196,11 @@ export const useStyles = () => {
 				marginLeft: -8,
 				marginRight: theme.spacing.xs,
 			},
-		}),
-		colors: theme.colors,
-	};
+		});
+		return {
+			...styles,
+			colors: theme.colors,
+			theme,
+		};
+	}, [theme]);
 };

@@ -200,7 +200,7 @@ export interface API {
 	search: (params: SearchRequest) => Promise<SearchResponse>;
 	searchCoinByAddress: (mintAddress: string) => Promise<SearchCoinByAddressResponse>;
 	submitSwap: (payload: TradePayload) => Promise<SubmitSwapResponse>;
-	getSwapQuote: (fromCoin: string, toCoin: string, amount: string, includeFeeBreakdown?: boolean, userPublicKey?: string) => Promise<SwapQuoteResponse>;
+	getSwapQuote: (fromCoin: string, toCoin: string, amount: string, includeFeeBreakdown?: boolean, userPublicKey?: string, allowMultiHop?: boolean) => Promise<SwapQuoteResponse>;
 	getSwapStatus: (txHash: string) => Promise<TradeStatusResponse>;
 	getPriceHistory: (address: string, type: string, time: string, addressType: string) => Promise<PriceHistoryResponse>;
 	getPriceHistoriesByIDs: (requests: PriceHistoryBatchRequest[]) => Promise<PriceHistoryBatchResponse>;

@@ -1,12 +1,12 @@
 import { StyleSheet } from 'react-native';
-import { useTheme } from 'react-native-paper';
 import { AppTheme } from '@/utils/theme';
+import { useTheme } from 'react-native-paper';
+import { useMemo } from 'react';
 
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
-
-	return {
-		...StyleSheet.create({
+	return useMemo(() => {
+		const styles = StyleSheet.create({
 			container: {
 				flex: 1,
 			},
@@ -207,7 +207,11 @@ export const useStyles = () => {
 				fontSize: theme.typography.fontSize.base,
 				fontWeight: '600',
 			},
-		}),
-		colors: theme.colors,
-	};
+		});
+		return {
+			...styles,
+			colors: theme.colors,
+			theme,
+		};
+	}, [theme]);
 };
