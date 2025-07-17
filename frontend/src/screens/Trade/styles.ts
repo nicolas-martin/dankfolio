@@ -57,18 +57,18 @@ export const useStyles = () => {
 				backgroundColor: theme.colors.surfaceVariant,
 				marginBottom: theme.spacing.xl,
 			},
-			routingRow: {
-				flexDirection: 'row',
+			routingLabelContainer: {
 				alignItems: 'center',
+				flexDirection: 'row',
+			},
+			routingRow: {
+				alignItems: 'center',
+				flexDirection: 'row',
 				justifyContent: 'space-between',
 			},
 			routingTextContainer: {
 				flex: 1,
 				marginRight: theme.spacing.md,
-			},
-			routingLabelContainer: {
-				flexDirection: 'row',
-				alignItems: 'center',
 			},
 			routingLabel: {
 				color: theme.colors.onSurface,

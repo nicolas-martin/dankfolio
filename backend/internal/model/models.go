@@ -11,20 +11,71 @@ import (
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 )
 
+// TradeStatus represents the status of a trade
+type TradeStatus int
+
 const (
 	SolMint        = "So11111111111111111111111111111111111111112" // Wrapped SOL mint address
 	NativeSolMint  = "11111111111111111111111111111111"            // Native SOL identifier
 
-	// Trade status constants - matching blockchain status strings
-	TradeStatusPending   = "pending"
-	TradeStatusPrepared  = "prepared"
-	TradeStatusSubmitted = "submitted"
-	TradeStatusProcessed = "Processed"
-	TradeStatusConfirmed = "Confirmed"
-	TradeStatusFinalized = "Finalized"
-	TradeStatusFailed    = "Failed"
-	TradeStatusUnknown   = "Unknown"
+	// Trade status constants - enum-style constants
+	TradeStatusPending TradeStatus = iota
+	TradeStatusPrepared
+	TradeStatusSubmitted
+	TradeStatusProcessed
+	TradeStatusConfirmed
+	TradeStatusFinalized
+	TradeStatusFailed
+	TradeStatusUnknown
 )
+
+// String converts TradeStatus to its string representation
+func (t TradeStatus) String() string {
+	switch t {
+	case TradeStatusPending:
+		return "pending"
+	case TradeStatusPrepared:
+		return "prepared"
+	case TradeStatusSubmitted:
+		return "submitted"
+	case TradeStatusProcessed:
+		return "processed"
+	case TradeStatusConfirmed:
+		return "confirmed"
+	case TradeStatusFinalized:
+		return "finalized"
+	case TradeStatusFailed:
+		return "failed"
+	case TradeStatusUnknown:
+		return "unknown"
+	default:
+		return "unknown"
+	}
+}
+
+// ParseTradeStatus converts a string to TradeStatus
+func ParseTradeStatus(status string) TradeStatus {
+	switch status {
+	case "pending":
+		return TradeStatusPending
+	case "prepared":
+		return TradeStatusPrepared
+	case "submitted":
+		return TradeStatusSubmitted
+	case "processed":
+		return TradeStatusProcessed
+	case "confirmed":
+		return TradeStatusConfirmed
+	case "finalized":
+		return TradeStatusFinalized
+	case "failed":
+		return TradeStatusFailed
+	case "unknown":
+		return TradeStatusUnknown
+	default:
+		return TradeStatusUnknown
+	}
+}
 
 // Coin represents a token or coin in the system (unified model)
 // Field names aligned with BirdEye API for consistency

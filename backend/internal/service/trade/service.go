@@ -886,7 +886,7 @@ func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) 
 	}
 
 	// If trade status is already final, return it as is.
-	if trade.Status == model.TradeStatusFinalized || trade.Status == model.TradeStatusFailed {
+	if trade.Status == model.TradeStatusFinalized.String() || trade.Status == model.TradeStatusFailed.String() {
 		return trade, nil
 	}
 

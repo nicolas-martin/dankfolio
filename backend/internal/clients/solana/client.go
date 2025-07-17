@@ -254,19 +254,19 @@ func (c *Client) GetTransactionStatus(ctx context.Context, signature bmodel.Sign
 	}
 
 	if rpcStatus.Err != nil {
-		txStatus.Status = "Failed"
+		txStatus.Status = model.TradeStatusFailed.String()
 		txStatus.Error = fmt.Sprintf("%v", rpcStatus.Err)
 		txStatus.RawError = rpcStatus.Err
 	} else {
 		switch rpcStatus.ConfirmationStatus {
 		case rpc.ConfirmationStatusProcessed:
-			txStatus.Status = "Processed"
+			txStatus.Status = model.TradeStatusProcessed.String()
 		case rpc.ConfirmationStatusConfirmed:
-			txStatus.Status = "Confirmed"
+			txStatus.Status = model.TradeStatusConfirmed.String()
 		case rpc.ConfirmationStatusFinalized:
-			txStatus.Status = "Finalized"
+			txStatus.Status = model.TradeStatusFinalized.String()
 		default:
-			txStatus.Status = "Unknown"
+			txStatus.Status = model.TradeStatusUnknown.String()
 			slog.WarnContext(ctx, "@@@@@@@@@ Unknown confirmation status for GetTransactionStatus",
 				"confirmation_status", string(rpcStatus.ConfirmationStatus),
 				"signature", sigStr,
@@ -424,21 +424,21 @@ func getMockTransactionStatusInternal(sigStr string) (*bmodel.TransactionStatus,
 
 	switch {
 	case elapsed < 2*time.Second:
-		status.Status = "Unknown" // Or "Pending"
+		status.Status = model.TradeStatusUnknown.String() // Or "pending"
 		return status, nil
 	case elapsed < 4*time.Second:
 		state.Confirmations = 0
-		status.Status = "Processed"
+		status.Status = model.TradeStatusProcessed.String()
 	case elapsed < 6*time.Second:
 		state.Confirmations = 15
-		status.Status = "Confirmed"
+		status.Status = model.TradeStatusConfirmed.String()
 	case elapsed < 8*time.Second:
 		state.Confirmations = 31
-		status.Status = "Confirmed"
+		status.Status = model.TradeStatusConfirmed.String()
 	default:
 		state.Confirmations = 40
 		state.IsFinalized = true
-		status.Status = "Finalized"
+		status.Status = model.TradeStatusFinalized.String()
 	}
 	status.Confirmations = &state.Confirmations
 	return status, nil

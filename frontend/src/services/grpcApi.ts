@@ -660,9 +660,9 @@ export const grpcApi: grpcModel.API = {
 						trade.type === 'TRANSFER' ? 'TRANSFER' : 'UNKNOWN';
 
 				const status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'UNKNOWN' =
-					trade.status === 'PENDING' ? 'PENDING' :
-						trade.status === 'COMPLETED' ? 'COMPLETED' :
-							trade.status === 'FAILED' ? 'FAILED' : 'UNKNOWN';
+					trade.status === 'pending' || trade.status === 'prepared' || trade.status === 'submitted' ? 'PENDING' :
+						trade.status === 'finalized' || trade.status === 'confirmed' || trade.status === 'processed' ? 'COMPLETED' :
+							trade.status === 'failed' ? 'FAILED' : 'UNKNOWN';
 
 				return {
 					id: trade.id,
