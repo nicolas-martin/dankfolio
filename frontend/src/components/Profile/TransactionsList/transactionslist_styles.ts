@@ -22,31 +22,42 @@ export const useStyles = () => {
 				paddingVertical: theme.spacing['4xl'],
 			},
 			coinAmount: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: theme.typography.fontSize.xs,
+				marginTop: 2,
+			},
+			coinIcon: {
+				borderRadius: theme.spacing.xl,
+				height: 32,
+				width: 32,
+			},
+			coinColumn: {
+				alignItems: 'center',
+				flex: 1,
+			},
+			coinSymbol: {
 				color: theme.colors.onSurface,
 				fontSize: theme.typography.fontSize.sm,
 				fontWeight: '600',
+				marginTop: theme.spacing.xs,
 			},
-			coinIcon: {
-				borderRadius: theme.spacing.md,
-				height: 24,
-				marginRight: theme.spacing.xs,
-				width: 24,
+			swapArrow: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: theme.typography.fontSize.sm,
+				marginHorizontal: theme.spacing.xs,
 			},
-			coinIconsRow: {
+			transactionTop: {
 				alignItems: 'center',
+				flexDirection: 'row',
+				justifyContent: 'space-between',
+			},
+			transactionBottom: {
 				flexDirection: 'row',
 				marginTop: theme.spacing.xs,
 			},
-			coinItem: {
-				alignItems: 'center',
-				flexDirection: 'row',
-			},
-			coinSymbol: {
+			transactionDate: {
 				color: theme.colors.onSurfaceVariant,
 				fontSize: theme.typography.fontSize.xs,
-			},
-			coinTextContainer: {
-				flexDirection: 'column',
 			},
 			container: {
 				flex: 1,
@@ -144,11 +155,6 @@ export const useStyles = () => {
 			},
 			transactionCard: {
 				marginBottom: theme.spacing.md,
-			},
-			transactionDate: {
-				color: theme.colors.onSurfaceVariant,
-				fontSize: theme.typography.fontSize.xs,
-				textAlign: 'right',
 			},
 			transactionDetails: {
 				color: theme.colors.onSurfaceVariant,

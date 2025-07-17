@@ -1,10 +1,11 @@
-import { View, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, ScrollView, ActivityIndicator, RefreshControl, TouchableOpacity, Linking } from 'react-native';
 import { Text, Chip, IconButton } from 'react-native-paper';
 import { useTransactionsStore } from '@/store/transactions';
 import { Transaction, TransactionType, TransactionStatus } from '@/types';
 import { logger } from '@/utils/logger';
 import { useStyles } from './transactionslist_styles';
 import { formatPrice } from '@/utils/numberFormat';
+import { formatRelativeDate } from '@/utils/dateFormat';
 import { useCallback, useState, useMemo, useEffect } from 'react';
 import { usePortfolioStore } from '@/store/portfolio';
 import { useCoinStore } from '@/store/coins';
@@ -75,20 +76,10 @@ const TransactionsList = () => {
 		}
 	};
 
-	const formatTransactionDate = (dateString: string) => {
-		const date = new Date(dateString);
-		const now = new Date();
-		const diffTime = Math.abs(now.getTime() - date.getTime());
-		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-		if (diffDays === 0) {
-			return `Today at ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
-		} else if (diffDays === 1) {
-			return `Yesterday at ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
-		} else if (diffDays < 7) {
-			return `${diffDays} days ago`;
-		} else {
-			return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+	const handleStatusPress = (transaction: Transaction) => {
+		if (transaction.status === TransactionStatus.COMPLETED && transaction.transactionHash) {
+			const solscanUrl = `https://solscan.io/tx/${transaction.transactionHash}`;
+			Linking.openURL(solscanUrl);
 		}
 	};
 
