@@ -38,9 +38,9 @@ import (
 	// "github.com/nicolas-martin/dankfolio/backend/internal/db/postgres/schema" // Not directly needed for count if repo has Count
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
-
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
+	"github.com/nicolas-martin/dankfolio/backend/internal/telemetry/trademetrics"
 )
 
 var populateNaughtyWords = flag.Bool("populate-naughty-words", false, "If set, fetches the naughty word list and populates the database.")
@@ -386,6 +386,12 @@ func main() {
 
 	priceService := price.NewService(birdeyeClient, jupiterClient, store, priceCache)
 
+	tradeMetrics, err := trademetrics.New(otelTelemetry.Meter)
+	if err != nil {
+		slog.Error("Failed to create trade metrics", slog.Any("error", err))
+		os.Exit(1)
+	}
+
 	tradeService := trade.NewService(
 		solanaClient,
 		coinService,
@@ -395,6 +401,7 @@ func main() {
 		config.PlatformFeeBps,
 		config.PlatformFeeAccountAddress,
 		config.PlatformPrivateKey,
+		tradeMetrics,
 	)
 
 	walletService := wallet.New(solanaClient, store, coinService)

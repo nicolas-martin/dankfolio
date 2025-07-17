@@ -25,6 +25,7 @@ import (
 	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
+	"github.com/nicolas-martin/dankfolio/backend/internal/telemetry/trademetrics"
 	"github.com/nicolas-martin/dankfolio/backend/internal/util"
 )
 
@@ -35,10 +36,11 @@ type Service struct {
 	priceService              price.PriceServiceAPI    // Use PriceServiceAPI interface from price package
 	jupiterClient             jupiter.ClientAPI
 	store                     db.Store
-	platformFeeBps            int                  // Platform fee in basis points
-	platformFeeAccountAddress string               // Solana address for collecting platform fees
-	platformPrivateKey        *solanago.PrivateKey // Platform private key for ATA creation
-	feeMintSelector           *FeeMintSelector     // Handles fee mint selection logic
+	platformFeeBps            int                   // Platform fee in basis points
+	platformFeeAccountAddress string                // Solana address for collecting platform fees
+	platformPrivateKey        *solanago.PrivateKey  // Platform private key for ATA creation
+	feeMintSelector           *FeeMintSelector      // Handles fee mint selection logic
+	metrics                   *trademetrics.TradeMetrics // Trade-related metrics
 }
 
 // NewService creates a new TradeService instance
@@ -51,6 +53,7 @@ func NewService(
 	configuredPlatformFeeBps int, // Platform fee in basis points
 	configuredPlatformFeeAccountAddress string, // Platform fee account address
 	platformPrivateKeyBase64 string, // Platform private key for ATA creation
+	metrics *trademetrics.TradeMetrics,
 ) *Service {
 	// Parse platform private key
 	var platformKey *solanago.PrivateKey
@@ -75,6 +78,7 @@ func NewService(
 		platformFeeBps:            configuredPlatformFeeBps,
 		platformFeeAccountAddress: configuredPlatformFeeAccountAddress,
 		platformPrivateKey:        platformKey,
+		metrics:                   metrics,
 	}
 
 	// Initialize fee mint selector with ATA checker and creator
@@ -989,6 +993,22 @@ func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) 
 				slog.Warn("Failed to update trade", "trade_id", trade.ID, "error", errUpdate)
 			} else {
 				slog.Info("Successfully updated trade", "trade_id", trade.ID, "status", trade.Status, "confirmations", trade.Confirmations, "finalized", trade.Finalized)
+			}
+		}
+	}
+
+	// Record metrics for finalized trades
+	if trade.Finalized && trade.Status == model.TradeStatusFinalized.String() {
+		if s.metrics != nil {
+			s.metrics.RecordTrade(ctx)
+			if trade.PlatformFeeAmount > 0 {
+				// Find symbol for the fee mint
+				feeCoin, err := s.coinService.GetCoinByAddress(ctx, trade.PlatformFeeMint)
+				if err == nil {
+					s.metrics.RecordPlatformFee(ctx, trade.PlatformFeeAmount, feeCoin.Symbol)
+				} else {
+					slog.Warn("Failed to get coin details for fee metric", "mint", trade.PlatformFeeMint)
+				}
 			}
 		}
 	}
