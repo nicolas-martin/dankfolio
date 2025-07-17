@@ -22,12 +22,11 @@ const initialState = {
 
 export const useTransactionsStore = create<TransactionsState>((set) => ({
 	...initialState,
-	fetchRecentTransactions: async (userId: string, limit: number = 10) => {
+	fetchRecentTransactions: async (userId: string) => {
 		set({ isLoading: true, error: null });
 		try {
 			const response = await grpcApi.listTrades({
 				userId,
-				limit,
 				offset: 0,
 				sortBy: 'created_at',
 				sortDesc: true,

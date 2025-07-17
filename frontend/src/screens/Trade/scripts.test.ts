@@ -8,7 +8,10 @@ import { fetchTradeQuote, executeTrade } from './scripts'; // The functions to t
 
 // Mock dependencies
 jest.mock('@/services/grpcApi');
-jest.mock('@/services/solana');
+jest.mock('@/services/solana', () => ({
+	...jest.requireActual('@/services/solana'),
+	getActiveWalletKeys: jest.fn(),
+}));
 jest.mock('@/store/portfolio');
 jest.mock('@/utils/logger');
 

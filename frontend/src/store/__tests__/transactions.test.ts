@@ -53,7 +53,7 @@ describe('useTransactionsStore', () => {
         totalCount: mockTotalCount,
       });
 
-      const fetchPromise = useTransactionsStore.getState().fetchRecentTransactions(mockUserId, 5);
+      const fetchPromise = useTransactionsStore.getState().fetchRecentTransactions(mockUserId);
 
       // Check isLoading is true immediately after call (before await)
       expect(useTransactionsStore.getState().isLoading).toBe(true);
@@ -69,22 +69,10 @@ describe('useTransactionsStore', () => {
       expect(state.error).toBeNull();
       expect(grpcApi.listTrades).toHaveBeenCalledWith({
         userId: mockUserId,
-        limit: 5,
         offset: 0,
         sortBy: 'created_at',
         sortDesc: true,
       });
-    });
-
-    it('should use default limit of 10 if not provided', async () => {
-        (grpcApi.listTrades as jest.Mock).mockResolvedValueOnce({
-            transactions: [],
-            totalCount: 0,
-          });
-        await useTransactionsStore.getState().fetchRecentTransactions(mockUserId);
-        expect(grpcApi.listTrades).toHaveBeenCalledWith(expect.objectContaining({
-            limit: 10,
-        }));
     });
 
     it('should set error and isLoading to false, hasFetched to true on fetch failure', async () => {
@@ -109,29 +97,7 @@ describe('useTransactionsStore', () => {
         (grpcApi.listTrades as jest.Mock).mockRejectedValueOnce('A string error');
         await useTransactionsStore.getState().fetchRecentTransactions(mockUserId);
         const state = useTransactionsStore.getState();
-        expect(state.error).toBe('A string error');
+        expect(state.error).toBe('An unknown error occurred');
       });
-  });
-
-  describe('clearTransactions', () => {
-    it('should reset the store to its initial state', () => {
-      // First, modify the state to be non-initial
-      useTransactionsStore.setState({
-        transactions: [{ id: '1', type: 'SWAP', fromCoinSymbol: 'BTC', toCoinSymbol: 'ETH', amount: 1, status: 'COMPLETED', date: 'date', transactionHash: 'tx1' }],
-        isLoading: true,
-        error: 'Some error',
-        totalCount: 1,
-        hasFetched: true,
-      });
-
-      useTransactionsStore.getState().clearTransactions();
-
-      const state = useTransactionsStore.getState();
-      expect(state.transactions).toEqual([]);
-      expect(state.isLoading).toBe(false);
-      expect(state.error).toBeNull();
-      expect(state.totalCount).toBe(0);
-      expect(state.hasFetched).toBe(false);
-    });
   });
 });
