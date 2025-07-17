@@ -1,5 +1,5 @@
 import { View, ScrollView, RefreshControl } from 'react-native';
-import { Text, Card, IconButton, Divider } from 'react-native-paper';
+import { Text, IconButton } from 'react-native-paper';
 import { usePortfolioStore } from '@/store/portfolio';
 import { useTransactionsStore } from '@/store/transactions';
 import { useStyles } from './pnlview_styles';
@@ -75,53 +75,52 @@ const PnLView = () => {
 		</Card>
 	);
 
-	const renderTokenItem = (data: PnLData) => {
+	const renderTokenItem = (data: PnLData, index: number) => {
 		const { token } = data;
 		const isPositive = data.unrealizedPnL >= 0;
+		const isLastItem = index === tokenStats.length - 1;
 
 		return (
-			<Card key={token.mintAddress} style={styles.tokenCard} mode="outlined">
-				<Card.Content style={styles.tokenContent}>
-					<View style={styles.tokenRow}>
-						<View style={styles.tokenLeft}>
-							<View style={styles.tokenIconContainer}>
-								<CachedImage
-									uri={token.coin.logoURI}
-									style={styles.tokenIcon}
-									testID={`pnl-token-icon-${token.coin.symbol}`}
-								/>
-							</View>
-							<View style={styles.tokenInfo}>
-								<Text style={styles.tokenSymbol}>{token.coin.symbol}</Text>
-								<Text style={styles.tokenName}>{token.coin.name}</Text>
-								<Text style={styles.tokenAmount}>
-									{token.amount.toFixed(4)} tokens
-								</Text>
-							</View>
+			<View key={token.mintAddress} style={[styles.tokenItem, isLastItem && styles.tokenItemLast]}>
+				<View style={styles.tokenRow}>
+					<View style={styles.tokenLeft}>
+						<View style={styles.tokenIconContainer}>
+							<CachedImage
+								uri={token.coin.logoURI}
+								style={styles.tokenIcon}
+								testID={`pnl-token-icon-${token.coin.symbol}`}
+							/>
 						</View>
-						<View style={styles.tokenRight}>
-							<Text style={styles.currentValue}>
-								{formatPrice(data.currentValue, true)}
+						<View style={styles.tokenInfo}>
+							<Text style={styles.tokenSymbol}>{token.coin.symbol}</Text>
+							<Text style={styles.tokenName}>{token.coin.name}</Text>
+							<Text style={styles.tokenAmount}>
+								{token.amount.toFixed(4)} tokens
 							</Text>
-							<Text style={styles.currentPrice}>
-								@ {formatPrice(token.price, false)}
-							</Text>
-							{data.hasPurchaseData ? (
-								<View style={styles.pnlContainer}>
-									<Text style={isPositive ? styles.pnlValuePositive : styles.pnlValueNegative}>
-										{isPositive ? '+' : ''}{formatPrice(data.unrealizedPnL, true)}
-									</Text>
-									<Text style={isPositive ? styles.pnlPercentagePositive : styles.pnlPercentageNegative}>
-										({isPositive ? '+' : ''}{formatPercentage(data.pnlPercentage)})
-									</Text>
-								</View>
-							) : (
-								<Text style={styles.noPnlData}>No purchase data</Text>
-							)}
 						</View>
 					</View>
-				</Card.Content>
-			</Card>
+					<View style={styles.tokenRight}>
+						<Text style={styles.currentValue}>
+							{formatPrice(data.currentValue, true)}
+						</Text>
+						<Text style={styles.currentPrice}>
+							@ {formatPrice(token.price, false)}
+						</Text>
+						{data.hasPurchaseData ? (
+							<View style={styles.pnlContainer}>
+								<Text style={isPositive ? styles.pnlValuePositive : styles.pnlValueNegative}>
+									{isPositive ? '+' : ''}{formatPrice(data.unrealizedPnL, true)}
+								</Text>
+								<Text style={isPositive ? styles.pnlPercentagePositive : styles.pnlPercentageNegative}>
+									({isPositive ? '+' : ''}{formatPercentage(data.pnlPercentage)})
+								</Text>
+							</View>
+						) : (
+							<Text style={styles.noPnlData}>No purchase data</Text>
+						)}
+					</View>
+				</View>
+			</View>
 		);
 	};
 
@@ -156,7 +155,7 @@ const PnLView = () => {
 			}
 		>
 			<View style={styles.contentContainer}>
-				{tokenStats.map(renderTokenItem)}
+				{tokenStats.map((stat, index) => renderTokenItem(stat, index))}
 			</View>
 		</ScrollView>
 	);

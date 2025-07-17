@@ -92,7 +92,20 @@ export const useStyles = () => {
 				marginRight: theme.spacing.md,
 			},
 			listContainer: {
-				paddingBottom: theme.spacing.xl,
+				backgroundColor: theme.colors.surface,
+				borderRadius: theme.roundness,
+				marginHorizontal: theme.spacing.md,
+				marginTop: theme.spacing.md,
+				overflow: 'hidden',
+			},
+			transactionItem: {
+				borderBottomColor: theme.colors.surfaceVariant,
+				borderBottomWidth: StyleSheet.hairlineWidth,
+				paddingHorizontal: theme.spacing.md,
+				paddingVertical: theme.spacing.sm,
+			},
+			transactionItemLast: {
+				borderBottomWidth: 0,
 			},
 			loadingText: {
 				color: theme.colors.onSurface,

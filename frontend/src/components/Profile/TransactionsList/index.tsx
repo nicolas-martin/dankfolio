@@ -1,5 +1,5 @@
 import { View, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
-import { Text, Card, Chip, IconButton } from 'react-native-paper';
+import { Text, Chip, IconButton } from 'react-native-paper';
 import { useTransactionsStore } from '@/store/transactions';
 import { Transaction, TransactionType, TransactionStatus } from '@/types';
 import { logger } from '@/utils/logger';
@@ -102,7 +102,7 @@ const TransactionsList = () => {
 		}
 	}, [wallet?.address, fetchRecentTransactions]);
 
-	const renderTransaction = (item: Transaction) => {
+	const renderTransaction = (item: Transaction, index: number) => {
 		const isSwap = item.type === TransactionType.SWAP;
 		const fromCoin = item.fromCoinMintAddress ? (coinData[item.fromCoinMintAddress] || coinMap[item.fromCoinMintAddress]) : null;
 		const toCoin = item.toCoinMintAddress ? (coinData[item.toCoinMintAddress] || coinMap[item.toCoinMintAddress]) : null;
@@ -115,70 +115,70 @@ const TransactionsList = () => {
 			return null;
 		}
 
+		const isLastItem = index === transactions.length - 1;
+
 		return (
-			<Card key={item.id} style={styles.transactionCard} mode="outlined">
-				<Card.Content style={styles.cardContent}>
-					<View style={styles.transactionMainRow}>
-						<View style={styles.transactionLeft}>
-							<View style={styles.transactionHeader}>
-								<IconButton
-									icon={getTransactionIcon(item.type)}
-									size={20}
-									iconColor={styles.colors.onSurfaceVariant}
-									style={styles.transactionTypeIcon}
-								/>
-								<Text style={styles.transactionType}>
-									{item.type === TransactionType.SWAP ? 'Swap' : item.type === TransactionType.TRANSFER ? 'Transfer' : 'Transaction'}
-								</Text>
-							</View>
-							<View style={styles.coinIconsRow}>
-								<View style={styles.coinItem}>
-									<CachedImage
-										uri={fromIconURI}
-										style={styles.coinIcon}
-									/>
-									<View style={styles.coinTextContainer}>
-										<Text style={styles.coinAmount}>
-											{formatPrice(item.amount, false)}
-										</Text>
-										<Text style={styles.coinSymbol}>{item.fromCoinSymbol}</Text>
-									</View>
-								</View>
-								{isSwap && (
-									<>
-										<IconButton
-											icon="arrow-right"
-											size={16}
-											iconColor={styles.colors.onSurfaceVariant}
-											style={styles.arrowIcon}
-										/>
-										<View style={styles.coinItem}>
-											<CachedImage
-												uri={toIconURI}
-												style={styles.coinIcon}
-											/>
-											<Text style={styles.coinSymbol}>{item.toCoinSymbol}</Text>
-										</View>
-									</>
-								)}
-							</View>
-						</View>
-						<View style={styles.transactionRight}>
-							<Text style={styles.transactionDate}>
-								{formatTransactionDate(item.date)}
+			<View key={item.id} style={[styles.transactionItem, isLastItem && styles.transactionItemLast]}>
+				<View style={styles.transactionMainRow}>
+					<View style={styles.transactionLeft}>
+						<View style={styles.transactionHeader}>
+							<IconButton
+								icon={getTransactionIcon(item.type)}
+								size={20}
+								iconColor={styles.colors.onSurfaceVariant}
+								style={styles.transactionTypeIcon}
+							/>
+							<Text style={styles.transactionType}>
+								{item.type === TransactionType.SWAP ? 'Swap' : item.type === TransactionType.TRANSFER ? 'Transfer' : 'Transaction'}
 							</Text>
-							<Chip
-								mode="flat"
-								compact
-								textStyle={styles.statusChipText}
-								style={getStatusChipStyle(item.status)}
-							>
-								{item.status}
-							</Chip>
+						</View>
+						<View style={styles.coinIconsRow}>
+							<View style={styles.coinItem}>
+								<CachedImage
+									uri={fromIconURI}
+									style={styles.coinIcon}
+								/>
+								<View style={styles.coinTextContainer}>
+									<Text style={styles.coinAmount}>
+										{formatPrice(item.amount, false)}
+									</Text>
+									<Text style={styles.coinSymbol}>{item.fromCoinSymbol}</Text>
+								</View>
+							</View>
+							{isSwap && (
+								<>
+									<IconButton
+										icon="arrow-right"
+										size={16}
+										iconColor={styles.colors.onSurfaceVariant}
+										style={styles.arrowIcon}
+									/>
+									<View style={styles.coinItem}>
+										<CachedImage
+											uri={toIconURI}
+											style={styles.coinIcon}
+										/>
+										<Text style={styles.coinSymbol}>{item.toCoinSymbol}</Text>
+									</View>
+								</>
+							)}
 						</View>
 					</View>
-				</Card.Content>
-			</Card>
+					<View style={styles.transactionRight}>
+						<Text style={styles.transactionDate}>
+							{formatTransactionDate(item.date)}
+						</Text>
+						<Chip
+							mode="flat"
+							compact
+							textStyle={styles.statusChipText}
+							style={getStatusChipStyle(item.status)}
+						>
+							{item.status}
+						</Chip>
+					</View>
+				</View>
+			</View>
 		);
 	};
 
@@ -225,7 +225,7 @@ const TransactionsList = () => {
 			}
 		>
 			<View style={styles.listContainer}>
-				{transactions.map(renderTransaction)}
+				{transactions.map((transaction, index) => renderTransaction(transaction, index))}
 			</View>
 		</ScrollView>
 	);

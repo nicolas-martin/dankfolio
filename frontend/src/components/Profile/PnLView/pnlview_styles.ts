@@ -11,7 +11,20 @@ export const useStyles = () => {
 				flex: 1,
 			},
 			contentContainer: {
-				paddingBottom: theme.spacing.xl,
+				backgroundColor: theme.colors.surface,
+				borderRadius: theme.roundness,
+				marginHorizontal: theme.spacing.md,
+				marginTop: theme.spacing.md,
+				overflow: 'hidden',
+			},
+			tokenItem: {
+				borderBottomColor: theme.colors.surfaceVariant,
+				borderBottomWidth: StyleSheet.hairlineWidth,
+				paddingHorizontal: theme.spacing.md,
+				paddingVertical: theme.spacing.md,
+			},
+			tokenItemLast: {
+				borderBottomWidth: 0,
 			},
 			currentPrice: {
 				color: theme.colors.onSurfaceVariant,
