@@ -1,9 +1,9 @@
 import { View, ScrollView, RefreshControl } from 'react-native';
-import { Text, IconButton } from 'react-native-paper';
+import { Text, IconButton, DataTable } from 'react-native-paper';
 import { usePortfolioStore } from '@/store/portfolio';
 import { useTransactionsStore } from '@/store/transactions';
 import { useStyles } from './pnlview_styles';
-import { formatTokenBalance, formatPrice, formatPercentage } from '@/utils/numberFormat';
+import { formatTokenBalance, formatPercentage } from '@/utils/numberFormat';
 import { useCallback, useState, useMemo } from 'react';
 import { calculateTokenStats } from './pnlview_scripts';
 import { PnLData } from './pnlview_types';
@@ -30,50 +30,39 @@ const PnLView = () => {
 		}
 	}, [wallet?.address, fetchPortfolioBalance]);
 
-	const renderTokenItem = (data: PnLData, index: number) => {
+	const renderTokenItem = (data: PnLData) => {
 		const { token } = data;
 		const isPositive = data.unrealizedPnL >= 0;
-		const isLastItem = index === tokenStats.length - 1;
 		if (!data.hasPurchaseData) {
 			return null
 		}
 
 		return (
-			<View key={token.mintAddress} style={[styles.tokenItem, isLastItem && styles.tokenItemLast]}>
-				<View style={styles.tokenRow}>
-					<View style={styles.tokenLeft}>
-						<View style={styles.tokenIconContainer}>
-							<CachedImage
-								uri={token.coin.logoURI}
-								style={styles.tokenIcon}
-								testID={`pnl-token-icon-${token.coin.symbol}`}
-							/>
-						</View>
-						<View style={styles.tokenInfo}>
-							<Text style={styles.tokenSymbol}>{token.coin.symbol}</Text>
-							<Text style={styles.tokenAmount}>
-								{formatTokenBalance(token.amount)}
-							</Text>
-						</View>
-					</View>
-					<View style={styles.tokenRight}>
-						<Text style={styles.currentValue}>
-							{formatPrice(data.currentValue, true)}
+			<DataTable>
+				<DataTable.Header>
+					<DataTable.Title><Text>Coin</Text></DataTable.Title>
+					<DataTable.Title><Text>Value</Text></DataTable.Title>
+					<DataTable.Title><Text>Change</Text></DataTable.Title>
+				</DataTable.Header>
+				<DataTable.Row key={token.mintAddress}>
+					<DataTable.Cell>
+						<CachedImage
+							uri={token.coin.logoURI}
+							style={styles.tokenIcon}
+							testID={`pnl-token-icon-${token.coin.symbol}`}
+						/>
+					</DataTable.Cell>
+					<DataTable.Cell numeric>
+						<Text style={styles.tokenSymbol}>{token.coin.symbol}</Text>
+						<Text style={styles.tokenAmount}> {formatTokenBalance(token.amount)} </Text>
+					</DataTable.Cell>
+					<DataTable.Cell numeric>
+						<Text style={isPositive ? styles.pnlPercentagePositive : styles.pnlPercentageNegative}>
+							({formatPercentage(data.pnlPercentage)})
 						</Text>
-						<Text style={styles.currentPrice}>
-							@ {formatPrice(token.price, false)}
-						</Text>
-						<View style={styles.pnlContainer}>
-							<Text style={isPositive ? styles.pnlValuePositive : styles.pnlValueNegative}>
-								{isPositive ? '+' : ''}{formatPrice(data.unrealizedPnL, true)}
-							</Text>
-							<Text style={isPositive ? styles.pnlPercentagePositive : styles.pnlPercentageNegative}>
-								({formatPercentage(data.pnlPercentage)})
-							</Text>
-						</View>
-					</View>
-				</View>
-			</View>
+					</DataTable.Cell>
+				</DataTable.Row>
+			</DataTable>
 		);
 	};
 
@@ -108,7 +97,7 @@ const PnLView = () => {
 			}
 		>
 			<View style={styles.contentContainer}>
-				{tokenStats.map((stat, index) => renderTokenItem(stat, index))}
+				{tokenStats.map((stat) => renderTokenItem(stat))}
 			</View>
 		</ScrollView>
 	);
