@@ -38,9 +38,6 @@ packages:
     github.com/nicolas-martin/dankfolio/backend/internal/service/price:
         interfaces:
             PriceServiceAPI:
-    github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry:
-        interfaces:
-            TelemetryAPI:
     github.com/nicolas-martin/dankfolio/backend/internal/cache:
         interfaces:
             GenericCache:

@@ -1,5 +1,6 @@
-// Import transaction enums from types
-export { TransactionType, TransactionStatus } from '@/types/transactions';
+// Import and re-export transaction enums from types
+import { TransactionType, TransactionStatus } from '@/types/transactions';
+export { TransactionType, TransactionStatus };
 
 export interface Coin {
 	address: string;                    // Was: mintAddress (aligned with BirdEye)
@@ -217,6 +218,7 @@ export interface API {
 	getTrendingCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
 	getTopGainersCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
 	getXStocksCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
+	getPortfolioPnL: (walletAddress: string) => Promise<GetPortfolioPnLResponse>;
 }
 
 export interface GetProxiedImageResponse {
@@ -251,4 +253,30 @@ export interface FullSwapQuoteDetails {
 	solFeeBreakdown?: SolFeeBreakdown; // Enhanced SOL fee breakdown
 	totalSolRequired: string;          // Total SOL needed for transaction
 	tradingFeeSol: string;            // Trading fees in SOL
+}
+
+export interface TokenPnL {
+	coinId: string;
+	symbol: string;
+	name: string;
+	amountHeld: number;
+	costBasis: number;
+	currentPrice: number;
+	currentValue: number;
+	unrealizedPnl: number;
+	pnlPercentage: number;
+	hasPurchaseData: boolean;
+}
+
+export interface GetPortfolioPnLRequest {
+	walletAddress: string;
+}
+
+export interface GetPortfolioPnLResponse {
+	totalPortfolioValue: number;
+	totalCostBasis: number;
+	totalUnrealizedPnl: number;
+	totalPnlPercentage: number;
+	totalHoldings: number;
+	tokenPnls: TokenPnL[];
 }

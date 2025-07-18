@@ -686,3 +686,203 @@ func (s *Service) getTokenBalances(ctx context.Context, address string) ([]Balan
 
 	return tokens, nil
 }
+
+// TokenPnLData represents PnL data for a single token
+type TokenPnLData struct {
+	CoinID           string
+	Symbol           string
+	Name             string
+	AmountHeld       float64
+	CostBasis        float64
+	CurrentPrice     float64
+	CurrentValue     float64
+	UnrealizedPnL    float64
+	PnLPercentage    float64
+	HasPurchaseData  bool
+}
+
+// GetPortfolioPnL calculates profit and loss for a wallet
+func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (totalValue float64, totalCostBasis float64, totalUnrealizedPnL float64, totalPnLPercentage float64, totalHoldings int32, tokenPnLs []TokenPnLData, err error) {
+	// Note: We calculate PnL based only on trades in our database
+	// This gives accurate trading performance metrics
+
+	// Get all completed trades for this wallet
+	sortBy := "created_at"
+	sortDesc := false
+	trades, _, err := s.store.Trades().ListWithOpts(ctx, db.ListOptions{
+		Filters: []db.FilterOption{
+			{Field: "user_id", Operator: db.FilterOpEqual, Value: walletAddress},
+			// Try multiple status values that indicate completion
+			{Field: "status", Operator: db.FilterOpIn, Value: []string{"completed", "finalized", "confirmed", "processed"}},
+		},
+		SortBy:   &sortBy,
+		SortDesc: &sortDesc,
+	})
+	if err != nil {
+		return 0, 0, 0, 0, 0, nil, fmt.Errorf("failed to get trades: %w", err)
+	}
+
+	// Build holdings based on our trade records (not wallet balances)
+	// This ensures we only calculate PnL for amounts we can track
+	holdings := make(map[string]float64)
+
+	// Calculate cost basis for each token from trade history
+	costBasisMap := make(map[string]struct {
+		totalCost   float64
+		totalAmount float64
+	})
+
+	for _, trade := range trades {
+		// For buys and swaps where we received the token
+		if trade.Type == "buy" || (trade.Type == "swap" && trade.ToCoinMintAddress != "") {
+			tokenID := trade.ToCoinMintAddress
+			if tokenID == "" {
+				tokenID = trade.FromCoinMintAddress // Fallback for buy trades
+			}
+			
+			data := costBasisMap[tokenID]
+			
+			// Calculate cost basis based on trade type
+			costInUSD := 0.0
+			if trade.Type == "swap" && trade.FromCoinMintAddress != "" {
+				// For swaps, trade.Price is the exchange rate (how many TO tokens per FROM token)
+				// We need to calculate: FROM amount * FROM price = cost in USD
+				// FROM amount = TO amount / exchange rate
+				fromAmount := trade.Amount / trade.Price
+				
+				// Get the price of the FROM token
+				fromCoin, err := s.coinService.GetCoinByAddress(ctx, trade.FromCoinMintAddress)
+				if err == nil && fromCoin != nil && fromCoin.Price > 0 {
+					costInUSD = fromAmount * fromCoin.Price
+				} else {
+					// If we can't get the from coin price, skip this trade
+					slog.Warn("Could not get price for from coin in swap", 
+						"from_coin", trade.FromCoinMintAddress, 
+						"to_coin", tokenID,
+						"error", err)
+					continue
+				}
+			} else if trade.Type == "buy" {
+				// For direct buys, trade.Price should be the USD price per token
+				costInUSD = trade.Amount * trade.Price
+			}
+			
+			data.totalCost += costInUSD
+			data.totalAmount += trade.Amount
+			costBasisMap[tokenID] = data
+			
+			// Track holdings based on trades
+			holdings[tokenID] += trade.Amount
+			slog.Debug("Added to holdings from trade",
+				"token", tokenID,
+				"amount", trade.Amount,
+				"new_total", holdings[tokenID])
+		}
+		
+		// For swaps, also track what we spent
+		if trade.Type == "swap" && trade.FromCoinMintAddress != "" {
+			// For swaps: trade.Amount is output amount, trade.Price is exchange rate
+			// Input amount = Output amount / Exchange rate
+			inputAmount := trade.Amount / trade.Price
+			holdings[trade.FromCoinMintAddress] -= inputAmount
+			slog.Debug("Subtracted from holdings for swap",
+				"token", trade.FromCoinMintAddress,
+				"amount", inputAmount,
+				"new_total", holdings[trade.FromCoinMintAddress])
+		}
+	}
+
+	// Get current prices for all held tokens
+	var tokenPnLList []TokenPnLData
+	totalPortfolioValue := 0.0
+	totalPortfolioCostBasis := 0.0
+	
+	slog.Info("Portfolio holdings from trades", 
+		"wallet", walletAddress,
+		"holdings_count", len(holdings),
+		"trades_processed", len(trades))
+
+	for coinID, amount := range holdings {
+		// Skip if no balance or very small (rounding errors)
+		if amount <= 0.00000001 {
+			continue
+		}
+
+		// Get coin info and current price
+		coin, err := s.coinService.GetCoinByAddress(ctx, coinID)
+		if err != nil {
+			slog.Warn("Failed to get coin info", "coin_id", coinID, "error", err)
+			continue
+		}
+
+		// Get current price
+		currentPrice := 0.0
+		if coin != nil && coin.Price > 0 {
+			currentPrice = coin.Price
+		}
+
+		// Calculate cost basis
+		costBasis := 0.0
+		hasPurchaseData := false
+		if data, exists := costBasisMap[coinID]; exists && data.totalAmount > 0 {
+			costBasis = data.totalCost / data.totalAmount
+			hasPurchaseData = true
+		}
+		
+		// Skip tokens without purchase data
+		if !hasPurchaseData {
+			continue
+		}
+
+		// Calculate values based on our tracked holdings
+		currentValue := amount * currentPrice
+		totalCost := amount * costBasis
+		unrealizedPnL := currentValue - totalCost
+		
+		// Round to avoid floating point precision issues
+		unrealizedPnL = math.Round(unrealizedPnL*1e8) / 1e8 // Round to 8 decimal places
+		
+		pnlPercentage := 0.0
+		if totalCost > 0 && math.Abs(unrealizedPnL) > 0.00000001 { // Ignore tiny differences
+			pnlPercentage = unrealizedPnL / totalCost // Keep as decimal (0.2534 for 25.34%)
+			pnlPercentage = math.Round(pnlPercentage*10000) / 10000 // Round to 4 decimal places
+		}
+
+		// Add to totals
+		totalPortfolioValue += currentValue
+		if hasPurchaseData {
+			totalPortfolioCostBasis += totalCost
+		} else {
+			// For tokens without purchase data, use current value as cost basis
+			totalPortfolioCostBasis += currentValue
+		}
+
+		// Create token PnL data
+		tokenPnL := TokenPnLData{
+			CoinID:          coinID,
+			Symbol:          coin.Symbol,
+			Name:            coin.Name,
+			AmountHeld:      amount, // Amount based on our trade records
+			CostBasis:       costBasis,
+			CurrentPrice:    currentPrice,
+			CurrentValue:    currentValue,
+			UnrealizedPnL:   unrealizedPnL,
+			PnLPercentage:   pnlPercentage,
+			HasPurchaseData: hasPurchaseData,
+		}
+
+		tokenPnLList = append(tokenPnLList, tokenPnL)
+	}
+
+	// Calculate overall portfolio metrics
+	totalUnrealizedPnL = totalPortfolioValue - totalPortfolioCostBasis
+	totalUnrealizedPnL = math.Round(totalUnrealizedPnL*1e8) / 1e8 // Round to 8 decimal places
+	
+	totalPnLPercentage = 0.0
+	if totalPortfolioCostBasis > 0 && math.Abs(totalUnrealizedPnL) > 0.00000001 {
+		totalPnLPercentage = totalUnrealizedPnL / totalPortfolioCostBasis // Keep as decimal
+		totalPnLPercentage = math.Round(totalPnLPercentage*10000) / 10000 // Round to 4 decimal places
+	}
+
+	return totalPortfolioValue, totalPortfolioCostBasis, totalUnrealizedPnL, totalPnLPercentage, int32(len(tokenPnLList)), tokenPnLList, nil
+}

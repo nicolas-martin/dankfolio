@@ -876,4 +876,47 @@ export const grpcApi: grpcModel.API = {
 			}
 		}
 	},
+
+	getPortfolioPnL: async (walletAddress: string): Promise<grpcModel.GetPortfolioPnLResponse> => {
+		const serviceName = 'WalletService';
+		const methodName = 'getPortfolioPnL';
+		try {
+			grpcUtils.logRequest(serviceName, methodName, { walletAddress });
+
+			const response = await walletClient.getPortfolioPnL(
+				{ walletAddress },
+				{ headers: grpcUtils.getRequestHeaders() }
+			);
+
+			grpcUtils.logResponse(serviceName, methodName, response);
+
+			// Convert the response to match our frontend model
+			return {
+				totalPortfolioValue: Number(response.totalPortfolioValue),
+				totalCostBasis: Number(response.totalCostBasis),
+				totalUnrealizedPnl: Number(response.totalUnrealizedPnl),
+				totalPnlPercentage: Number(response.totalPnlPercentage),
+				totalHoldings: response.totalHoldings,
+				tokenPnls: response.tokenPnls.map(tokenPnl => ({
+					coinId: tokenPnl.coinId,
+					symbol: tokenPnl.symbol,
+					name: tokenPnl.name,
+					amountHeld: Number(tokenPnl.amountHeld),
+					costBasis: Number(tokenPnl.costBasis),
+					currentPrice: Number(tokenPnl.currentPrice),
+					currentValue: Number(tokenPnl.currentValue),
+					unrealizedPnl: Number(tokenPnl.unrealizedPnl),
+					pnlPercentage: Number(tokenPnl.pnlPercentage),
+					hasPurchaseData: tokenPnl.hasPurchaseData,
+				}))
+			};
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in getPortfolioPnL");
+			}
+		}
+	},
 };

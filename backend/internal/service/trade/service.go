@@ -282,8 +282,19 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse fee: %w", err)
 	}
-	// Convert raw amount to decimal for storage
-	amount := float64(amountInt) / math.Pow(10, float64(fromCoinModel.Decimals))
+	// For swaps, we need to get the output amount from the quote
+	// The input amount is what we're spending, but we store what we're receiving
+	outputAmount := 0.0
+	if tradeQuote.EstimatedAmount != "" {
+		outputAmount, err = strconv.ParseFloat(tradeQuote.EstimatedAmount, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse estimated output amount: %w", err)
+		}
+	} else {
+		// Fallback: calculate from exchange rate if EstimatedAmount is not available
+		inputAmountDecimal := float64(amountInt) / math.Pow(10, float64(fromCoinModel.Decimals))
+		outputAmount = inputAmountDecimal * price
+	}
 
 	// Create trade record with essential information
 	trade := &model.Trade{
@@ -294,7 +305,7 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 		ToCoinPKID:          toCoinModel.ID,
 		CoinSymbol:          fromCoinModel.Symbol,
 		Type:                "swap",
-		Amount:              amount,
+		Amount:              outputAmount, // Store the output amount (what we receive)
 		Price:               price,
 		Fee:                 fee,
 		Status:              "prepared",

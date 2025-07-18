@@ -139,6 +139,56 @@ func (s *walletServiceHandler) SubmitTransfer(
 	return res, nil
 }
 
+// GetPortfolioPnL returns the profit and loss for a wallet
+func (s *walletServiceHandler) GetPortfolioPnL(
+	ctx context.Context,
+	req *connect.Request[pb.GetPortfolioPnLRequest],
+) (*connect.Response[pb.GetPortfolioPnLResponse], error) {
+	if req.Msg.WalletAddress == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("wallet address is required"))
+	}
+
+	slog.Debug("Getting portfolio PnL", "wallet_address", req.Msg.WalletAddress)
+	
+	totalValue, totalCostBasis, totalUnrealizedPnL, totalPnLPercentage, totalHoldings, tokenPnLs, err := s.walletService.GetPortfolioPnL(ctx, req.Msg.WalletAddress)
+	if err != nil {
+		slog.Error("Failed to get portfolio PnL", "wallet_address", req.Msg.WalletAddress, "error", err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get portfolio PnL: %w", err))
+	}
+
+	// Convert tokenPnLs to protobuf format
+	pbTokenPnLs := make([]*pb.TokenPnL, 0, len(tokenPnLs))
+	for _, tokenPnL := range tokenPnLs {
+		pbTokenPnLs = append(pbTokenPnLs, &pb.TokenPnL{
+			CoinId:          tokenPnL.CoinID,
+			Symbol:          tokenPnL.Symbol,
+			Name:            tokenPnL.Name,
+			AmountHeld:      tokenPnL.AmountHeld,
+			CostBasis:       tokenPnL.CostBasis,
+			CurrentPrice:    tokenPnL.CurrentPrice,
+			CurrentValue:    tokenPnL.CurrentValue,
+			UnrealizedPnl:   tokenPnL.UnrealizedPnL,
+			PnlPercentage:   tokenPnL.PnLPercentage,
+			HasPurchaseData: tokenPnL.HasPurchaseData,
+		})
+	}
+
+	slog.Info("Portfolio PnL calculated successfully", 
+		"wallet_address", req.Msg.WalletAddress,
+		"total_value", totalValue,
+		"total_pnl", totalUnrealizedPnL,
+		"token_count", len(pbTokenPnLs))
+
+	return connect.NewResponse(&pb.GetPortfolioPnLResponse{
+		TotalPortfolioValue: totalValue,
+		TotalCostBasis:      totalCostBasis,
+		TotalUnrealizedPnl:  totalUnrealizedPnL,
+		TotalPnlPercentage:  totalPnLPercentage,
+		TotalHoldings:       totalHoldings,
+		TokenPnls:           pbTokenPnLs,
+	}), nil
+}
+
 // Helper function to convert model.WalletBalance to pb.WalletBalance
 func convertModelBalanceToPb(balance *wallet.WalletBalance) *pb.WalletBalance {
 	return &pb.WalletBalance{

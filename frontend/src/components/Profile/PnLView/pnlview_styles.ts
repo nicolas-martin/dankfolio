@@ -7,6 +7,10 @@ export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	return useMemo(() => {
 		const styles = StyleSheet.create({
+			arrowColumn: {
+				flex: 0.3,
+				justifyContent: 'center',
+			},
 			container: {
 				flex: 1,
 			},
@@ -16,20 +20,6 @@ export const useStyles = () => {
 				marginHorizontal: theme.spacing.md,
 				marginTop: theme.spacing.md,
 				overflow: 'hidden',
-			},
-			currentPrice: {
-				color: theme.colors.onSurfaceVariant,
-				fontSize: theme.typography.fontSize.xs,
-				marginTop: 2,
-			},
-			currentValue: {
-				color: theme.colors.onSurface,
-				fontSize: theme.typography.fontSize.base,
-				fontWeight: '700',
-				textAlign: 'right',
-			},
-			divider: {
-				marginVertical: theme.spacing.lg,
 			},
 			emptyContainer: {
 				alignItems: 'center',
@@ -53,159 +43,99 @@ export const useStyles = () => {
 				fontWeight: '600',
 				marginBottom: theme.spacing.xs,
 			},
-			infoIcon: {
-				margin: 0,
-				marginRight: theme.spacing.xs,
+			gainBadge: {
+				alignSelf: 'center',
 			},
-			noPnlData: {
+			gainBadgeNegative: {
+				// No background
+			},
+			gainBadgePositive: {
+				// No background
+			},
+			gainBadgeNeutral: {
+				// No background
+			},
+			gainColumn: {
+				flex: 1.2,
+				justifyContent: 'center',
+			},
+			gainText: {
+				fontSize: theme.typography.fontSize.sm,
+				fontWeight: '600',
+			},
+			gainTextNegative: {
+				color: theme.colors.error,
+			},
+			gainTextPositive: {
+				color: theme.success,
+			},
+			gainTextNeutral: {
 				color: theme.colors.onSurfaceVariant,
-				fontSize: theme.typography.fontSize.xs,
-				fontStyle: 'italic',
-				marginTop: theme.spacing.xs,
-				textAlign: 'right',
 			},
-			noteContainer: {
-				alignItems: 'center',
-				flexDirection: 'row',
-			},
-			noteText: {
+			headerText: {
 				color: theme.colors.onSurfaceVariant,
-				flex: 1,
-				fontSize: theme.typography.fontSize.sm,
-				fontStyle: 'italic',
-			},
-			pnlContainer: {
-				alignItems: 'flex-end',
-				marginTop: theme.spacing.xs,
-			},
-			pnlNegative: {
-				color: theme.colors.error,
-			},
-			pnlPercentage: {
-				fontSize: theme.typography.fontSize.xs,
+				fontSize: 10,
 				fontWeight: '600',
+				letterSpacing: 0.5,
 			},
-			pnlPercentageNegative: {
-				color: theme.colors.error,
-				fontSize: theme.typography.fontSize.xs,
-				fontWeight: '600',
-			},
-			pnlPercentagePositive: {
-				color: theme.success,
-				fontSize: theme.typography.fontSize.xs,
-				fontWeight: '600',
-			},
-			pnlPositive: {
-				color: theme.success,
-			},
-			pnlValue: {
-				fontSize: theme.typography.fontSize.sm,
-				fontWeight: '700',
-			},
-			pnlValueNegative: {
-				color: theme.colors.error,
-				fontSize: theme.typography.fontSize.sm,
-				fontWeight: '700',
-			},
-			pnlValuePositive: {
-				color: theme.success,
-				fontSize: theme.typography.fontSize.sm,
-				fontWeight: '700',
+			lastRow: {
+				borderBottomWidth: 0,
 			},
 			scrollContent: {
 				flexGrow: 1,
+				paddingBottom: 100,
 			},
-			sectionTitle: {
-				color: theme.colors.onSurface,
-				fontSize: theme.typography.fontSize.lg,
-				fontWeight: '600',
-				marginBottom: theme.spacing.md,
-				marginTop: theme.spacing.xl,
-			},
-			statItem: {
-				flex: 1,
-			},
-			statLabel: {
-				color: theme.colors.onSurfaceVariant,
-				fontSize: theme.typography.fontSize.sm,
-				marginBottom: theme.spacing.xs,
-			},
-			statSubtext: {
-				fontSize: theme.typography.fontSize.sm,
-				marginTop: theme.spacing.xs,
-			},
-			statValue: {
-				color: theme.colors.onSurface,
-				fontSize: theme.typography.fontSize.xl,
-				fontWeight: '700',
-			},
-			statsGrid: {
+			symbolCellContent: {
+				alignItems: 'flex-start',
 				flexDirection: 'row',
-				justifyContent: 'space-between',
-				marginTop: theme.spacing.md,
 			},
-			summaryCard: {
-				marginBottom: theme.spacing.lg,
+			symbolColumn: {
+				flex: 1.2,
 			},
-			summaryTitle: {
-				color: theme.colors.onSurface,
-				fontSize: theme.typography.fontSize.xl,
-				fontWeight: '700',
+			tokenInfoContainer: {
+				alignItems: 'center',
 			},
-			tokenAmount: {
-				color: theme.colors.onSurfaceVariant,
-				fontSize: theme.typography.fontSize.xs,
-				marginTop: 2,
+			tableHeader: {
+				borderBottomColor: theme.colors.surfaceVariant,
+				borderBottomWidth: 1,
+				height: 40,
+				paddingHorizontal: theme.spacing.sm,
 			},
-			tokenCard: {
-				marginBottom: theme.spacing.md,
-			},
-			tokenContent: {
-				paddingHorizontal: theme.spacing.md,
-				paddingVertical: theme.spacing.md,
+			tableRow: {
+				alignItems: 'center',
+				borderBottomColor: theme.colors.surfaceVariant,
+				borderBottomWidth: 1,
+				minHeight: 72,
 			},
 			tokenIcon: {
-				borderRadius: theme.spacing.xl,
+				borderRadius: 20,
 				height: 40,
 				width: 40,
 			},
-			tokenIconContainer: {
-				marginRight: theme.spacing.md,
-			},
-			tokenInfo: {
-				flex: 1,
-			},
-			tokenItem: {
-				borderBottomColor: theme.colors.surfaceVariant,
-				borderBottomWidth: StyleSheet.hairlineWidth,
-				paddingHorizontal: theme.spacing.md,
-				paddingVertical: theme.spacing.md,
-			},
-			tokenItemLast: {
-				borderBottomWidth: 0,
-			},
-			tokenLeft: {
-				alignItems: 'center',
-				flex: 1,
-				flexDirection: 'row',
-			},
-			tokenName: {
+			tokenAmount: {
 				color: theme.colors.onSurfaceVariant,
-				fontSize: theme.typography.fontSize.xs,
+				fontSize: 10,
 				marginTop: 2,
 			},
-			tokenRight: {
-				alignItems: 'flex-end',
-				justifyContent: 'center',
-			},
-			tokenRow: {
-				flexDirection: 'row',
-				justifyContent: 'space-between',
+			tokenShares: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: 10,
+				marginTop: 1,
 			},
 			tokenSymbol: {
 				color: theme.colors.onSurface,
-				fontSize: theme.typography.fontSize.base,
+				fontSize: theme.typography.fontSize.sm,
 				fontWeight: '600',
+				marginBottom: 4,
+			},
+			tokenValue: {
+				color: theme.colors.onSurface,
+				fontSize: theme.typography.fontSize.sm,
+				fontWeight: '600',
+			},
+			valueColumn: {
+				flex: 1.5,
+				justifyContent: 'center',
 			},
 		});
 		return {

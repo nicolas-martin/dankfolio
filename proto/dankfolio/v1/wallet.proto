@@ -17,6 +17,9 @@ service WalletService {
 
   // SubmitTransfer submits a signed transfer transaction
   rpc SubmitTransfer(SubmitTransferRequest) returns (SubmitTransferResponse);
+
+  // GetPortfolioPnL returns the overall profit and loss for a wallet
+  rpc GetPortfolioPnL(GetPortfolioPnLRequest) returns (GetPortfolioPnLResponse);
 }
 
 // Balance represents information about a coin balance
@@ -74,4 +77,33 @@ message SubmitTransferRequest {
 // SubmitTransferResponse is the response after submitting a transfer
 message SubmitTransferResponse {
   string transaction_hash = 1;
+}
+
+// GetPortfolioPnLRequest is the request for GetPortfolioPnL
+message GetPortfolioPnLRequest {
+  string wallet_address = 1;  // Solana wallet address
+}
+
+// TokenPnL represents profit and loss data for a single token
+message TokenPnL {
+  string coin_id = 1;             // Coin mint address
+  string symbol = 2;              // Token symbol
+  string name = 3;                // Token name
+  double amount_held = 4;         // Current amount held
+  double cost_basis = 5;          // Average cost per token
+  double current_price = 6;       // Current price per token
+  double current_value = 7;       // Current total value (amount * price)
+  double unrealized_pnl = 8;      // Unrealized profit/loss
+  double pnl_percentage = 9;      // Percentage gain/loss
+  bool has_purchase_data = 10;    // Whether we have transaction history
+}
+
+// GetPortfolioPnLResponse contains overall portfolio PnL and per-token breakdown
+message GetPortfolioPnLResponse {
+  double total_portfolio_value = 1;   // Current total value
+  double total_cost_basis = 2;        // Total amount invested
+  double total_unrealized_pnl = 3;    // Total unrealized profit/loss
+  double total_pnl_percentage = 4;    // Overall percentage gain/loss
+  int32 total_holdings = 5;           // Number of tokens held
+  repeated TokenPnL token_pnls = 6;   // PnL data for each token
 } 

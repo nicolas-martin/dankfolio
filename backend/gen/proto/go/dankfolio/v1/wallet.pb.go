@@ -519,6 +519,253 @@ func (x *SubmitTransferResponse) GetTransactionHash() string {
 	return ""
 }
 
+// GetPortfolioPnLRequest is the request for GetPortfolioPnL
+type GetPortfolioPnLRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	WalletAddress string                 `protobuf:"bytes,1,opt,name=wallet_address,json=walletAddress,proto3" json:"wallet_address,omitempty"` // Solana wallet address
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPortfolioPnLRequest) Reset() {
+	*x = GetPortfolioPnLRequest{}
+	mi := &file_dankfolio_v1_wallet_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPortfolioPnLRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPortfolioPnLRequest) ProtoMessage() {}
+
+func (x *GetPortfolioPnLRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dankfolio_v1_wallet_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPortfolioPnLRequest.ProtoReflect.Descriptor instead.
+func (*GetPortfolioPnLRequest) Descriptor() ([]byte, []int) {
+	return file_dankfolio_v1_wallet_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *GetPortfolioPnLRequest) GetWalletAddress() string {
+	if x != nil {
+		return x.WalletAddress
+	}
+	return ""
+}
+
+// TokenPnL represents profit and loss data for a single token
+type TokenPnL struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	CoinId          string                 `protobuf:"bytes,1,opt,name=coin_id,json=coinId,proto3" json:"coin_id,omitempty"`                                // Coin mint address
+	Symbol          string                 `protobuf:"bytes,2,opt,name=symbol,proto3" json:"symbol,omitempty"`                                              // Token symbol
+	Name            string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                                                  // Token name
+	AmountHeld      float64                `protobuf:"fixed64,4,opt,name=amount_held,json=amountHeld,proto3" json:"amount_held,omitempty"`                  // Current amount held
+	CostBasis       float64                `protobuf:"fixed64,5,opt,name=cost_basis,json=costBasis,proto3" json:"cost_basis,omitempty"`                     // Average cost per token
+	CurrentPrice    float64                `protobuf:"fixed64,6,opt,name=current_price,json=currentPrice,proto3" json:"current_price,omitempty"`            // Current price per token
+	CurrentValue    float64                `protobuf:"fixed64,7,opt,name=current_value,json=currentValue,proto3" json:"current_value,omitempty"`            // Current total value (amount * price)
+	UnrealizedPnl   float64                `protobuf:"fixed64,8,opt,name=unrealized_pnl,json=unrealizedPnl,proto3" json:"unrealized_pnl,omitempty"`         // Unrealized profit/loss
+	PnlPercentage   float64                `protobuf:"fixed64,9,opt,name=pnl_percentage,json=pnlPercentage,proto3" json:"pnl_percentage,omitempty"`         // Percentage gain/loss
+	HasPurchaseData bool                   `protobuf:"varint,10,opt,name=has_purchase_data,json=hasPurchaseData,proto3" json:"has_purchase_data,omitempty"` // Whether we have transaction history
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *TokenPnL) Reset() {
+	*x = TokenPnL{}
+	mi := &file_dankfolio_v1_wallet_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TokenPnL) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TokenPnL) ProtoMessage() {}
+
+func (x *TokenPnL) ProtoReflect() protoreflect.Message {
+	mi := &file_dankfolio_v1_wallet_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TokenPnL.ProtoReflect.Descriptor instead.
+func (*TokenPnL) Descriptor() ([]byte, []int) {
+	return file_dankfolio_v1_wallet_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *TokenPnL) GetCoinId() string {
+	if x != nil {
+		return x.CoinId
+	}
+	return ""
+}
+
+func (x *TokenPnL) GetSymbol() string {
+	if x != nil {
+		return x.Symbol
+	}
+	return ""
+}
+
+func (x *TokenPnL) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *TokenPnL) GetAmountHeld() float64 {
+	if x != nil {
+		return x.AmountHeld
+	}
+	return 0
+}
+
+func (x *TokenPnL) GetCostBasis() float64 {
+	if x != nil {
+		return x.CostBasis
+	}
+	return 0
+}
+
+func (x *TokenPnL) GetCurrentPrice() float64 {
+	if x != nil {
+		return x.CurrentPrice
+	}
+	return 0
+}
+
+func (x *TokenPnL) GetCurrentValue() float64 {
+	if x != nil {
+		return x.CurrentValue
+	}
+	return 0
+}
+
+func (x *TokenPnL) GetUnrealizedPnl() float64 {
+	if x != nil {
+		return x.UnrealizedPnl
+	}
+	return 0
+}
+
+func (x *TokenPnL) GetPnlPercentage() float64 {
+	if x != nil {
+		return x.PnlPercentage
+	}
+	return 0
+}
+
+func (x *TokenPnL) GetHasPurchaseData() bool {
+	if x != nil {
+		return x.HasPurchaseData
+	}
+	return false
+}
+
+// GetPortfolioPnLResponse contains overall portfolio PnL and per-token breakdown
+type GetPortfolioPnLResponse struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	TotalPortfolioValue float64                `protobuf:"fixed64,1,opt,name=total_portfolio_value,json=totalPortfolioValue,proto3" json:"total_portfolio_value,omitempty"` // Current total value
+	TotalCostBasis      float64                `protobuf:"fixed64,2,opt,name=total_cost_basis,json=totalCostBasis,proto3" json:"total_cost_basis,omitempty"`                // Total amount invested
+	TotalUnrealizedPnl  float64                `protobuf:"fixed64,3,opt,name=total_unrealized_pnl,json=totalUnrealizedPnl,proto3" json:"total_unrealized_pnl,omitempty"`    // Total unrealized profit/loss
+	TotalPnlPercentage  float64                `protobuf:"fixed64,4,opt,name=total_pnl_percentage,json=totalPnlPercentage,proto3" json:"total_pnl_percentage,omitempty"`    // Overall percentage gain/loss
+	TotalHoldings       int32                  `protobuf:"varint,5,opt,name=total_holdings,json=totalHoldings,proto3" json:"total_holdings,omitempty"`                      // Number of tokens held
+	TokenPnls           []*TokenPnL            `protobuf:"bytes,6,rep,name=token_pnls,json=tokenPnls,proto3" json:"token_pnls,omitempty"`                                   // PnL data for each token
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *GetPortfolioPnLResponse) Reset() {
+	*x = GetPortfolioPnLResponse{}
+	mi := &file_dankfolio_v1_wallet_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPortfolioPnLResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPortfolioPnLResponse) ProtoMessage() {}
+
+func (x *GetPortfolioPnLResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_dankfolio_v1_wallet_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPortfolioPnLResponse.ProtoReflect.Descriptor instead.
+func (*GetPortfolioPnLResponse) Descriptor() ([]byte, []int) {
+	return file_dankfolio_v1_wallet_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *GetPortfolioPnLResponse) GetTotalPortfolioValue() float64 {
+	if x != nil {
+		return x.TotalPortfolioValue
+	}
+	return 0
+}
+
+func (x *GetPortfolioPnLResponse) GetTotalCostBasis() float64 {
+	if x != nil {
+		return x.TotalCostBasis
+	}
+	return 0
+}
+
+func (x *GetPortfolioPnLResponse) GetTotalUnrealizedPnl() float64 {
+	if x != nil {
+		return x.TotalUnrealizedPnl
+	}
+	return 0
+}
+
+func (x *GetPortfolioPnLResponse) GetTotalPnlPercentage() float64 {
+	if x != nil {
+		return x.TotalPnlPercentage
+	}
+	return 0
+}
+
+func (x *GetPortfolioPnLResponse) GetTotalHoldings() int32 {
+	if x != nil {
+		return x.TotalHoldings
+	}
+	return 0
+}
+
+func (x *GetPortfolioPnLResponse) GetTokenPnls() []*TokenPnL {
+	if x != nil {
+		return x.TokenPnls
+	}
+	return nil
+}
+
 var File_dankfolio_v1_wallet_proto protoreflect.FileDescriptor
 
 const file_dankfolio_v1_wallet_proto_rawDesc = "" +
@@ -552,12 +799,37 @@ const file_dankfolio_v1_wallet_proto_rawDesc = "" +
 	"\x12signed_transaction\x18\x01 \x01(\tR\x11signedTransaction\x121\n" +
 	"\x14unsigned_transaction\x18\x02 \x01(\tR\x13unsignedTransaction\"C\n" +
 	"\x16SubmitTransferResponse\x12)\n" +
-	"\x10transaction_hash\x18\x01 \x01(\tR\x0ftransactionHash2\x89\x03\n" +
+	"\x10transaction_hash\x18\x01 \x01(\tR\x0ftransactionHash\"?\n" +
+	"\x16GetPortfolioPnLRequest\x12%\n" +
+	"\x0ewallet_address\x18\x01 \x01(\tR\rwalletAddress\"\xd3\x02\n" +
+	"\bTokenPnL\x12\x17\n" +
+	"\acoin_id\x18\x01 \x01(\tR\x06coinId\x12\x16\n" +
+	"\x06symbol\x18\x02 \x01(\tR\x06symbol\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1f\n" +
+	"\vamount_held\x18\x04 \x01(\x01R\n" +
+	"amountHeld\x12\x1d\n" +
+	"\n" +
+	"cost_basis\x18\x05 \x01(\x01R\tcostBasis\x12#\n" +
+	"\rcurrent_price\x18\x06 \x01(\x01R\fcurrentPrice\x12#\n" +
+	"\rcurrent_value\x18\a \x01(\x01R\fcurrentValue\x12%\n" +
+	"\x0eunrealized_pnl\x18\b \x01(\x01R\runrealizedPnl\x12%\n" +
+	"\x0epnl_percentage\x18\t \x01(\x01R\rpnlPercentage\x12*\n" +
+	"\x11has_purchase_data\x18\n" +
+	" \x01(\bR\x0fhasPurchaseData\"\xb9\x02\n" +
+	"\x17GetPortfolioPnLResponse\x122\n" +
+	"\x15total_portfolio_value\x18\x01 \x01(\x01R\x13totalPortfolioValue\x12(\n" +
+	"\x10total_cost_basis\x18\x02 \x01(\x01R\x0etotalCostBasis\x120\n" +
+	"\x14total_unrealized_pnl\x18\x03 \x01(\x01R\x12totalUnrealizedPnl\x120\n" +
+	"\x14total_pnl_percentage\x18\x04 \x01(\x01R\x12totalPnlPercentage\x12%\n" +
+	"\x0etotal_holdings\x18\x05 \x01(\x05R\rtotalHoldings\x125\n" +
+	"\n" +
+	"token_pnls\x18\x06 \x03(\v2\x16.dankfolio.v1.TokenPnLR\ttokenPnls2\xe9\x03\n" +
 	"\rWalletService\x12d\n" +
 	"\x11GetWalletBalances\x12&.dankfolio.v1.GetWalletBalancesRequest\x1a'.dankfolio.v1.GetWalletBalancesResponse\x12U\n" +
 	"\fCreateWallet\x12!.dankfolio.v1.CreateWalletRequest\x1a\".dankfolio.v1.CreateWalletResponse\x12^\n" +
 	"\x0fPrepareTransfer\x12$.dankfolio.v1.PrepareTransferRequest\x1a%.dankfolio.v1.PrepareTransferResponse\x12[\n" +
-	"\x0eSubmitTransfer\x12#.dankfolio.v1.SubmitTransferRequest\x1a$.dankfolio.v1.SubmitTransferResponseB\xb7\x01\n" +
+	"\x0eSubmitTransfer\x12#.dankfolio.v1.SubmitTransferRequest\x1a$.dankfolio.v1.SubmitTransferResponse\x12^\n" +
+	"\x0fGetPortfolioPnL\x12$.dankfolio.v1.GetPortfolioPnLRequest\x1a%.dankfolio.v1.GetPortfolioPnLResponseB\xb7\x01\n" +
 	"\x10com.dankfolio.v1B\vWalletProtoP\x01ZEgithub.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1\xa2\x02\x03DXX\xaa\x02\fDankfolio.V1\xca\x02\fDankfolio\\V1\xe2\x02\x18Dankfolio\\V1\\GPBMetadata\xea\x02\rDankfolio::V1b\x06proto3"
 
 var (
@@ -572,7 +844,7 @@ func file_dankfolio_v1_wallet_proto_rawDescGZIP() []byte {
 	return file_dankfolio_v1_wallet_proto_rawDescData
 }
 
-var file_dankfolio_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_dankfolio_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_dankfolio_v1_wallet_proto_goTypes = []any{
 	(*Balance)(nil),                   // 0: dankfolio.v1.Balance
 	(*WalletBalance)(nil),             // 1: dankfolio.v1.WalletBalance
@@ -584,23 +856,29 @@ var file_dankfolio_v1_wallet_proto_goTypes = []any{
 	(*PrepareTransferResponse)(nil),   // 7: dankfolio.v1.PrepareTransferResponse
 	(*SubmitTransferRequest)(nil),     // 8: dankfolio.v1.SubmitTransferRequest
 	(*SubmitTransferResponse)(nil),    // 9: dankfolio.v1.SubmitTransferResponse
+	(*GetPortfolioPnLRequest)(nil),    // 10: dankfolio.v1.GetPortfolioPnLRequest
+	(*TokenPnL)(nil),                  // 11: dankfolio.v1.TokenPnL
+	(*GetPortfolioPnLResponse)(nil),   // 12: dankfolio.v1.GetPortfolioPnLResponse
 }
 var file_dankfolio_v1_wallet_proto_depIdxs = []int32{
-	0, // 0: dankfolio.v1.WalletBalance.balances:type_name -> dankfolio.v1.Balance
-	1, // 1: dankfolio.v1.GetWalletBalancesResponse.wallet_balance:type_name -> dankfolio.v1.WalletBalance
-	2, // 2: dankfolio.v1.WalletService.GetWalletBalances:input_type -> dankfolio.v1.GetWalletBalancesRequest
-	4, // 3: dankfolio.v1.WalletService.CreateWallet:input_type -> dankfolio.v1.CreateWalletRequest
-	6, // 4: dankfolio.v1.WalletService.PrepareTransfer:input_type -> dankfolio.v1.PrepareTransferRequest
-	8, // 5: dankfolio.v1.WalletService.SubmitTransfer:input_type -> dankfolio.v1.SubmitTransferRequest
-	3, // 6: dankfolio.v1.WalletService.GetWalletBalances:output_type -> dankfolio.v1.GetWalletBalancesResponse
-	5, // 7: dankfolio.v1.WalletService.CreateWallet:output_type -> dankfolio.v1.CreateWalletResponse
-	7, // 8: dankfolio.v1.WalletService.PrepareTransfer:output_type -> dankfolio.v1.PrepareTransferResponse
-	9, // 9: dankfolio.v1.WalletService.SubmitTransfer:output_type -> dankfolio.v1.SubmitTransferResponse
-	6, // [6:10] is the sub-list for method output_type
-	2, // [2:6] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0,  // 0: dankfolio.v1.WalletBalance.balances:type_name -> dankfolio.v1.Balance
+	1,  // 1: dankfolio.v1.GetWalletBalancesResponse.wallet_balance:type_name -> dankfolio.v1.WalletBalance
+	11, // 2: dankfolio.v1.GetPortfolioPnLResponse.token_pnls:type_name -> dankfolio.v1.TokenPnL
+	2,  // 3: dankfolio.v1.WalletService.GetWalletBalances:input_type -> dankfolio.v1.GetWalletBalancesRequest
+	4,  // 4: dankfolio.v1.WalletService.CreateWallet:input_type -> dankfolio.v1.CreateWalletRequest
+	6,  // 5: dankfolio.v1.WalletService.PrepareTransfer:input_type -> dankfolio.v1.PrepareTransferRequest
+	8,  // 6: dankfolio.v1.WalletService.SubmitTransfer:input_type -> dankfolio.v1.SubmitTransferRequest
+	10, // 7: dankfolio.v1.WalletService.GetPortfolioPnL:input_type -> dankfolio.v1.GetPortfolioPnLRequest
+	3,  // 8: dankfolio.v1.WalletService.GetWalletBalances:output_type -> dankfolio.v1.GetWalletBalancesResponse
+	5,  // 9: dankfolio.v1.WalletService.CreateWallet:output_type -> dankfolio.v1.CreateWalletResponse
+	7,  // 10: dankfolio.v1.WalletService.PrepareTransfer:output_type -> dankfolio.v1.PrepareTransferResponse
+	9,  // 11: dankfolio.v1.WalletService.SubmitTransfer:output_type -> dankfolio.v1.SubmitTransferResponse
+	12, // 12: dankfolio.v1.WalletService.GetPortfolioPnL:output_type -> dankfolio.v1.GetPortfolioPnLResponse
+	8,  // [8:13] is the sub-list for method output_type
+	3,  // [3:8] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_dankfolio_v1_wallet_proto_init() }
@@ -614,7 +892,7 @@ func file_dankfolio_v1_wallet_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dankfolio_v1_wallet_proto_rawDesc), len(file_dankfolio_v1_wallet_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

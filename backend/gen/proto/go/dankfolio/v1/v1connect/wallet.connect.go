@@ -45,6 +45,9 @@ const (
 	// WalletServiceSubmitTransferProcedure is the fully-qualified name of the WalletService's
 	// SubmitTransfer RPC.
 	WalletServiceSubmitTransferProcedure = "/dankfolio.v1.WalletService/SubmitTransfer"
+	// WalletServiceGetPortfolioPnLProcedure is the fully-qualified name of the WalletService's
+	// GetPortfolioPnL RPC.
+	WalletServiceGetPortfolioPnLProcedure = "/dankfolio.v1.WalletService/GetPortfolioPnL"
 )
 
 // WalletServiceClient is a client for the dankfolio.v1.WalletService service.
@@ -57,6 +60,8 @@ type WalletServiceClient interface {
 	PrepareTransfer(context.Context, *connect.Request[v1.PrepareTransferRequest]) (*connect.Response[v1.PrepareTransferResponse], error)
 	// SubmitTransfer submits a signed transfer transaction
 	SubmitTransfer(context.Context, *connect.Request[v1.SubmitTransferRequest]) (*connect.Response[v1.SubmitTransferResponse], error)
+	// GetPortfolioPnL returns the overall profit and loss for a wallet
+	GetPortfolioPnL(context.Context, *connect.Request[v1.GetPortfolioPnLRequest]) (*connect.Response[v1.GetPortfolioPnLResponse], error)
 }
 
 // NewWalletServiceClient constructs a client for the dankfolio.v1.WalletService service. By
@@ -94,6 +99,12 @@ func NewWalletServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(walletServiceMethods.ByName("SubmitTransfer")),
 			connect.WithClientOptions(opts...),
 		),
+		getPortfolioPnL: connect.NewClient[v1.GetPortfolioPnLRequest, v1.GetPortfolioPnLResponse](
+			httpClient,
+			baseURL+WalletServiceGetPortfolioPnLProcedure,
+			connect.WithSchema(walletServiceMethods.ByName("GetPortfolioPnL")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -103,6 +114,7 @@ type walletServiceClient struct {
 	createWallet      *connect.Client[v1.CreateWalletRequest, v1.CreateWalletResponse]
 	prepareTransfer   *connect.Client[v1.PrepareTransferRequest, v1.PrepareTransferResponse]
 	submitTransfer    *connect.Client[v1.SubmitTransferRequest, v1.SubmitTransferResponse]
+	getPortfolioPnL   *connect.Client[v1.GetPortfolioPnLRequest, v1.GetPortfolioPnLResponse]
 }
 
 // GetWalletBalances calls dankfolio.v1.WalletService.GetWalletBalances.
@@ -125,6 +137,11 @@ func (c *walletServiceClient) SubmitTransfer(ctx context.Context, req *connect.R
 	return c.submitTransfer.CallUnary(ctx, req)
 }
 
+// GetPortfolioPnL calls dankfolio.v1.WalletService.GetPortfolioPnL.
+func (c *walletServiceClient) GetPortfolioPnL(ctx context.Context, req *connect.Request[v1.GetPortfolioPnLRequest]) (*connect.Response[v1.GetPortfolioPnLResponse], error) {
+	return c.getPortfolioPnL.CallUnary(ctx, req)
+}
+
 // WalletServiceHandler is an implementation of the dankfolio.v1.WalletService service.
 type WalletServiceHandler interface {
 	// GetWalletBalances returns the balances for all coins in a wallet
@@ -135,6 +152,8 @@ type WalletServiceHandler interface {
 	PrepareTransfer(context.Context, *connect.Request[v1.PrepareTransferRequest]) (*connect.Response[v1.PrepareTransferResponse], error)
 	// SubmitTransfer submits a signed transfer transaction
 	SubmitTransfer(context.Context, *connect.Request[v1.SubmitTransferRequest]) (*connect.Response[v1.SubmitTransferResponse], error)
+	// GetPortfolioPnL returns the overall profit and loss for a wallet
+	GetPortfolioPnL(context.Context, *connect.Request[v1.GetPortfolioPnLRequest]) (*connect.Response[v1.GetPortfolioPnLResponse], error)
 }
 
 // NewWalletServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -168,6 +187,12 @@ func NewWalletServiceHandler(svc WalletServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(walletServiceMethods.ByName("SubmitTransfer")),
 		connect.WithHandlerOptions(opts...),
 	)
+	walletServiceGetPortfolioPnLHandler := connect.NewUnaryHandler(
+		WalletServiceGetPortfolioPnLProcedure,
+		svc.GetPortfolioPnL,
+		connect.WithSchema(walletServiceMethods.ByName("GetPortfolioPnL")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/dankfolio.v1.WalletService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case WalletServiceGetWalletBalancesProcedure:
@@ -178,6 +203,8 @@ func NewWalletServiceHandler(svc WalletServiceHandler, opts ...connect.HandlerOp
 			walletServicePrepareTransferHandler.ServeHTTP(w, r)
 		case WalletServiceSubmitTransferProcedure:
 			walletServiceSubmitTransferHandler.ServeHTTP(w, r)
+		case WalletServiceGetPortfolioPnLProcedure:
+			walletServiceGetPortfolioPnLHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -201,4 +228,8 @@ func (UnimplementedWalletServiceHandler) PrepareTransfer(context.Context, *conne
 
 func (UnimplementedWalletServiceHandler) SubmitTransfer(context.Context, *connect.Request[v1.SubmitTransferRequest]) (*connect.Response[v1.SubmitTransferResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.WalletService.SubmitTransfer is not implemented"))
+}
+
+func (UnimplementedWalletServiceHandler) GetPortfolioPnL(context.Context, *connect.Request[v1.GetPortfolioPnLRequest]) (*connect.Response[v1.GetPortfolioPnLResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.WalletService.GetPortfolioPnL is not implemented"))
 }

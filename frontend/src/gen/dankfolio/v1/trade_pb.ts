@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/trade.proto.
  */
 export const file_dankfolio_v1_trade: GenFile = /*@__PURE__*/
-	fileDesc("ChhkYW5rZm9saW8vdjEvdHJhZGUucHJvdG8SDGRhbmtmb2xpby52MSKsBAoFVHJhZGUSCgoCaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCRIUCgxmcm9tX2NvaW5faWQYAyABKAkSEgoKdG9fY29pbl9pZBgEIAEoCRIMCgR0eXBlGAUgASgJEg4KBmFtb3VudBgGIAEoARINCgVwcmljZRgHIAEoARILCgNmZWUYCCABKAESDgoGc3RhdHVzGAkgASgJEhgKEHRyYW5zYWN0aW9uX2hhc2gYCiABKAkSLgoKY3JlYXRlZF9hdBgLIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASNQoMY29tcGxldGVkX2F0GAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEgAiAEBEhUKDWNvbmZpcm1hdGlvbnMYDSABKAUSEQoJZmluYWxpemVkGA4gASgIEhIKBWVycm9yGA8gASgJSAGIAQESIAoTcGxhdGZvcm1fZmVlX2Ftb3VudBgSIAEoAUgCiAEBEiEKFHBsYXRmb3JtX2ZlZV9wZXJjZW50GBMgASgBSAOIAQESJQoYcGxhdGZvcm1fZmVlX2Rlc3RpbmF0aW9uGBQgASgJSASIAQFCDwoNX2NvbXBsZXRlZF9hdEIICgZfZXJyb3JCFgoUX3BsYXRmb3JtX2ZlZV9hbW91bnRCFwoVX3BsYXRmb3JtX2ZlZV9wZXJjZW50QhsKGV9wbGF0Zm9ybV9mZWVfZGVzdGluYXRpb24izwEKE0dldFN3YXBRdW90ZVJlcXVlc3QSFAoMZnJvbV9jb2luX2lkGAEgASgJEhIKCnRvX2NvaW5faWQYAiABKAkSDgoGYW1vdW50GAMgASgJEhQKDHNsaXBwYWdlX2JwcxgEIAEoCRIdChVpbmNsdWRlX2ZlZV9icmVha2Rvd24YBSABKAgSHAoPdXNlcl9wdWJsaWNfa2V5GAYgASgJSACIAQESFwoPYWxsb3dfbXVsdGlfaG9wGAcgASgIQhIKEF91c2VyX3B1YmxpY19rZXkingEKD1NvbEZlZUJyZWFrZG93bhITCgt0cmFkaW5nX2ZlZRgBIAEoCRIXCg90cmFuc2FjdGlvbl9mZWUYAiABKAkSHAoUYWNjb3VudF9jcmVhdGlvbl9mZWUYAyABKAkSFAoMcHJpb3JpdHlfZmVlGAQgASgJEg0KBXRvdGFsGAUgASgJEhoKEmFjY291bnRzX3RvX2NyZWF0ZRgGIAEoBSKkAgoUR2V0U3dhcFF1b3RlUmVzcG9uc2USGAoQZXN0aW1hdGVkX2Ftb3VudBgBIAEoCRIVCg1leGNoYW5nZV9yYXRlGAIgASgJEhQKDHByaWNlX2ltcGFjdBgDIAEoCRISCgpyb3V0ZV9wbGFuGAQgAygJEhIKCmlucHV0X21pbnQYBSABKAkSEwoLb3V0cHV0X21pbnQYBiABKAkSPQoRc29sX2ZlZV9icmVha2Rvd24YByABKAsyHS5kYW5rZm9saW8udjEuU29sRmVlQnJlYWtkb3duSACIAQESGgoSdG90YWxfc29sX3JlcXVpcmVkGAggASgJEhcKD3RyYWRpbmdfZmVlX3NvbBgJIAEoCUIUChJfc29sX2ZlZV9icmVha2Rvd24ilgEKElByZXBhcmVTd2FwUmVxdWVzdBIUCgxmcm9tX2NvaW5faWQYASABKAkSEgoKdG9fY29pbl9pZBgCIAEoCRIOCgZhbW91bnQYAyABKAkSFAoMc2xpcHBhZ2VfYnBzGAQgASgJEhcKD3VzZXJfcHVibGljX2tleRgFIAEoCRIXCg9hbGxvd19tdWx0aV9ob3AYBiABKAgivQEKE1ByZXBhcmVTd2FwUmVzcG9uc2USHAoUdW5zaWduZWRfdHJhbnNhY3Rpb24YASABKAkSPQoRc29sX2ZlZV9icmVha2Rvd24YAiABKAsyHS5kYW5rZm9saW8udjEuU29sRmVlQnJlYWtkb3duSACIAQESGgoSdG90YWxfc29sX3JlcXVpcmVkGAMgASgJEhcKD3RyYWRpbmdfZmVlX3NvbBgEIAEoCUIUChJfc29sX2ZlZV9icmVha2Rvd24ihwEKEVN1Ym1pdFN3YXBSZXF1ZXN0EhQKDGZyb21fY29pbl9pZBgBIAEoCRISCgp0b19jb2luX2lkGAIgASgJEg4KBmFtb3VudBgDIAEoARIaChJzaWduZWRfdHJhbnNhY3Rpb24YBCABKAkSHAoUdW5zaWduZWRfdHJhbnNhY3Rpb24YBSABKAkiQAoSU3VibWl0U3dhcFJlc3BvbnNlEhAKCHRyYWRlX2lkGAEgASgJEhgKEHRyYW5zYWN0aW9uX2hhc2gYAiABKAkiSQoPR2V0VHJhZGVSZXF1ZXN0EgwKAmlkGAEgASgJSAASGgoQdHJhbnNhY3Rpb25faGFzaBgCIAEoCUgAQgwKCmlkZW50aWZpZXIinAIKEUxpc3RUcmFkZXNSZXF1ZXN0Eg0KBWxpbWl0GAEgASgFEg4KBm9mZnNldBgCIAEoBRIPCgdzb3J0X2J5GAMgASgJEhEKCXNvcnRfZGVzYxgEIAEoCBIUCgd1c2VyX2lkGAUgASgJSACIAQESEwoGc3RhdHVzGAYgASgJSAGIAQESEQoEdHlwZRgHIAEoCUgCiAEBEh4KEWZyb21fY29pbl9hZGRyZXNzGAggASgJSAOIAQESHAoPdG9fY29pbl9hZGRyZXNzGAkgASgJSASIAQFCCgoIX3VzZXJfaWRCCQoHX3N0YXR1c0IHCgVfdHlwZUIUChJfZnJvbV9jb2luX2FkZHJlc3NCEgoQX3RvX2NvaW5fYWRkcmVzcyJOChJMaXN0VHJhZGVzUmVzcG9uc2USIwoGdHJhZGVzGAEgAygLMhMuZGFua2ZvbGlvLnYxLlRyYWRlEhMKC3RvdGFsX2NvdW50GAIgASgFMpsDCgxUcmFkZVNlcnZpY2USVQoMR2V0U3dhcFF1b3RlEiEuZGFua2ZvbGlvLnYxLkdldFN3YXBRdW90ZVJlcXVlc3QaIi5kYW5rZm9saW8udjEuR2V0U3dhcFF1b3RlUmVzcG9uc2USUgoLUHJlcGFyZVN3YXASIC5kYW5rZm9saW8udjEuUHJlcGFyZVN3YXBSZXF1ZXN0GiEuZGFua2ZvbGlvLnYxLlByZXBhcmVTd2FwUmVzcG9uc2USTwoKU3VibWl0U3dhcBIfLmRhbmtmb2xpby52MS5TdWJtaXRTd2FwUmVxdWVzdBogLmRhbmtmb2xpby52MS5TdWJtaXRTd2FwUmVzcG9uc2USPgoIR2V0VHJhZGUSHS5kYW5rZm9saW8udjEuR2V0VHJhZGVSZXF1ZXN0GhMuZGFua2ZvbGlvLnYxLlRyYWRlEk8KCkxpc3RUcmFkZXMSHy5kYW5rZm9saW8udjEuTGlzdFRyYWRlc1JlcXVlc3QaIC5kYW5rZm9saW8udjEuTGlzdFRyYWRlc1Jlc3BvbnNlQrYBChBjb20uZGFua2ZvbGlvLnYxQgpUcmFkZVByb3RvUAFaRWdpdGh1Yi5jb20vbmljb2xhcy1tYXJ0aW4vZGFua2ZvbGlvL2JhY2tlbmQvZ2VuL3Byb3RvL2dvL2Rhbmtmb2xpby92MaICA0RYWKoCDERhbmtmb2xpby5WMcoCDERhbmtmb2xpb1xWMeICGERhbmtmb2xpb1xWMVxHUEJNZXRhZGF0YeoCDURhbmtmb2xpbzo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
+  fileDesc("ChhkYW5rZm9saW8vdjEvdHJhZGUucHJvdG8SDGRhbmtmb2xpby52MSKsBAoFVHJhZGUSCgoCaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCRIUCgxmcm9tX2NvaW5faWQYAyABKAkSEgoKdG9fY29pbl9pZBgEIAEoCRIMCgR0eXBlGAUgASgJEg4KBmFtb3VudBgGIAEoARINCgVwcmljZRgHIAEoARILCgNmZWUYCCABKAESDgoGc3RhdHVzGAkgASgJEhgKEHRyYW5zYWN0aW9uX2hhc2gYCiABKAkSLgoKY3JlYXRlZF9hdBgLIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASNQoMY29tcGxldGVkX2F0GAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEgAiAEBEhUKDWNvbmZpcm1hdGlvbnMYDSABKAUSEQoJZmluYWxpemVkGA4gASgIEhIKBWVycm9yGA8gASgJSAGIAQESIAoTcGxhdGZvcm1fZmVlX2Ftb3VudBgSIAEoAUgCiAEBEiEKFHBsYXRmb3JtX2ZlZV9wZXJjZW50GBMgASgBSAOIAQESJQoYcGxhdGZvcm1fZmVlX2Rlc3RpbmF0aW9uGBQgASgJSASIAQFCDwoNX2NvbXBsZXRlZF9hdEIICgZfZXJyb3JCFgoUX3BsYXRmb3JtX2ZlZV9hbW91bnRCFwoVX3BsYXRmb3JtX2ZlZV9wZXJjZW50QhsKGV9wbGF0Zm9ybV9mZWVfZGVzdGluYXRpb24izwEKE0dldFN3YXBRdW90ZVJlcXVlc3QSFAoMZnJvbV9jb2luX2lkGAEgASgJEhIKCnRvX2NvaW5faWQYAiABKAkSDgoGYW1vdW50GAMgASgJEhQKDHNsaXBwYWdlX2JwcxgEIAEoCRIdChVpbmNsdWRlX2ZlZV9icmVha2Rvd24YBSABKAgSHAoPdXNlcl9wdWJsaWNfa2V5GAYgASgJSACIAQESFwoPYWxsb3dfbXVsdGlfaG9wGAcgASgIQhIKEF91c2VyX3B1YmxpY19rZXkingEKD1NvbEZlZUJyZWFrZG93bhITCgt0cmFkaW5nX2ZlZRgBIAEoCRIXCg90cmFuc2FjdGlvbl9mZWUYAiABKAkSHAoUYWNjb3VudF9jcmVhdGlvbl9mZWUYAyABKAkSFAoMcHJpb3JpdHlfZmVlGAQgASgJEg0KBXRvdGFsGAUgASgJEhoKEmFjY291bnRzX3RvX2NyZWF0ZRgGIAEoBSKkAgoUR2V0U3dhcFF1b3RlUmVzcG9uc2USGAoQZXN0aW1hdGVkX2Ftb3VudBgBIAEoCRIVCg1leGNoYW5nZV9yYXRlGAIgASgJEhQKDHByaWNlX2ltcGFjdBgDIAEoCRISCgpyb3V0ZV9wbGFuGAQgAygJEhIKCmlucHV0X21pbnQYBSABKAkSEwoLb3V0cHV0X21pbnQYBiABKAkSPQoRc29sX2ZlZV9icmVha2Rvd24YByABKAsyHS5kYW5rZm9saW8udjEuU29sRmVlQnJlYWtkb3duSACIAQESGgoSdG90YWxfc29sX3JlcXVpcmVkGAggASgJEhcKD3RyYWRpbmdfZmVlX3NvbBgJIAEoCUIUChJfc29sX2ZlZV9icmVha2Rvd24ilgEKElByZXBhcmVTd2FwUmVxdWVzdBIUCgxmcm9tX2NvaW5faWQYASABKAkSEgoKdG9fY29pbl9pZBgCIAEoCRIOCgZhbW91bnQYAyABKAkSFAoMc2xpcHBhZ2VfYnBzGAQgASgJEhcKD3VzZXJfcHVibGljX2tleRgFIAEoCRIXCg9hbGxvd19tdWx0aV9ob3AYBiABKAgivQEKE1ByZXBhcmVTd2FwUmVzcG9uc2USHAoUdW5zaWduZWRfdHJhbnNhY3Rpb24YASABKAkSPQoRc29sX2ZlZV9icmVha2Rvd24YAiABKAsyHS5kYW5rZm9saW8udjEuU29sRmVlQnJlYWtkb3duSACIAQESGgoSdG90YWxfc29sX3JlcXVpcmVkGAMgASgJEhcKD3RyYWRpbmdfZmVlX3NvbBgEIAEoCUIUChJfc29sX2ZlZV9icmVha2Rvd24ihwEKEVN1Ym1pdFN3YXBSZXF1ZXN0EhQKDGZyb21fY29pbl9pZBgBIAEoCRISCgp0b19jb2luX2lkGAIgASgJEg4KBmFtb3VudBgDIAEoARIaChJzaWduZWRfdHJhbnNhY3Rpb24YBCABKAkSHAoUdW5zaWduZWRfdHJhbnNhY3Rpb24YBSABKAkiQAoSU3VibWl0U3dhcFJlc3BvbnNlEhAKCHRyYWRlX2lkGAEgASgJEhgKEHRyYW5zYWN0aW9uX2hhc2gYAiABKAkiSQoPR2V0VHJhZGVSZXF1ZXN0EgwKAmlkGAEgASgJSAASGgoQdHJhbnNhY3Rpb25faGFzaBgCIAEoCUgAQgwKCmlkZW50aWZpZXIinAIKEUxpc3RUcmFkZXNSZXF1ZXN0Eg0KBWxpbWl0GAEgASgFEg4KBm9mZnNldBgCIAEoBRIPCgdzb3J0X2J5GAMgASgJEhEKCXNvcnRfZGVzYxgEIAEoCBIUCgd1c2VyX2lkGAUgASgJSACIAQESEwoGc3RhdHVzGAYgASgJSAGIAQESEQoEdHlwZRgHIAEoCUgCiAEBEh4KEWZyb21fY29pbl9hZGRyZXNzGAggASgJSAOIAQESHAoPdG9fY29pbl9hZGRyZXNzGAkgASgJSASIAQFCCgoIX3VzZXJfaWRCCQoHX3N0YXR1c0IHCgVfdHlwZUIUChJfZnJvbV9jb2luX2FkZHJlc3NCEgoQX3RvX2NvaW5fYWRkcmVzcyJOChJMaXN0VHJhZGVzUmVzcG9uc2USIwoGdHJhZGVzGAEgAygLMhMuZGFua2ZvbGlvLnYxLlRyYWRlEhMKC3RvdGFsX2NvdW50GAIgASgFMpsDCgxUcmFkZVNlcnZpY2USVQoMR2V0U3dhcFF1b3RlEiEuZGFua2ZvbGlvLnYxLkdldFN3YXBRdW90ZVJlcXVlc3QaIi5kYW5rZm9saW8udjEuR2V0U3dhcFF1b3RlUmVzcG9uc2USUgoLUHJlcGFyZVN3YXASIC5kYW5rZm9saW8udjEuUHJlcGFyZVN3YXBSZXF1ZXN0GiEuZGFua2ZvbGlvLnYxLlByZXBhcmVTd2FwUmVzcG9uc2USTwoKU3VibWl0U3dhcBIfLmRhbmtmb2xpby52MS5TdWJtaXRTd2FwUmVxdWVzdBogLmRhbmtmb2xpby52MS5TdWJtaXRTd2FwUmVzcG9uc2USPgoIR2V0VHJhZGUSHS5kYW5rZm9saW8udjEuR2V0VHJhZGVSZXF1ZXN0GhMuZGFua2ZvbGlvLnYxLlRyYWRlEk8KCkxpc3RUcmFkZXMSHy5kYW5rZm9saW8udjEuTGlzdFRyYWRlc1JlcXVlc3QaIC5kYW5rZm9saW8udjEuTGlzdFRyYWRlc1Jlc3BvbnNlQrYBChBjb20uZGFua2ZvbGlvLnYxQgpUcmFkZVByb3RvUAFaRWdpdGh1Yi5jb20vbmljb2xhcy1tYXJ0aW4vZGFua2ZvbGlvL2JhY2tlbmQvZ2VuL3Byb3RvL2dvL2Rhbmtmb2xpby92MaICA0RYWKoCDERhbmtmb2xpby5WMcoCDERhbmtmb2xpb1xWMeICGERhbmtmb2xpb1xWMVxHUEJNZXRhZGF0YeoCDURhbmtmb2xpbzo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
 
 /**
  * Trade represents a meme trading transaction
@@ -20,99 +20,99 @@ export const file_dankfolio_v1_trade: GenFile = /*@__PURE__*/
  * @generated from message dankfolio.v1.Trade
  */
 export type Trade = Message<"dankfolio.v1.Trade"> & {
-	/**
-	 * @generated from field: string id = 1;
-	 */
-	id: string;
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
 
-	/**
-	 * @generated from field: string user_id = 2;
-	 */
-	userId: string;
+  /**
+   * @generated from field: string user_id = 2;
+   */
+  userId: string;
 
-	/**
-	 * Note: This will likely be FromCoinMintAddress in backend model
-	 *
-	 * @generated from field: string from_coin_id = 3;
-	 */
-	fromCoinId: string;
+  /**
+   * Note: This will likely be FromCoinMintAddress in backend model
+   *
+   * @generated from field: string from_coin_id = 3;
+   */
+  fromCoinId: string;
 
-	/**
-	 * Note: This will likely be ToCoinMintAddress in backend model
-	 *
-	 * @generated from field: string to_coin_id = 4;
-	 */
-	toCoinId: string;
+  /**
+   * Note: This will likely be ToCoinMintAddress in backend model
+   *
+   * @generated from field: string to_coin_id = 4;
+   */
+  toCoinId: string;
 
-	/**
-	 * @generated from field: string type = 5;
-	 */
-	type: string;
+  /**
+   * @generated from field: string type = 5;
+   */
+  type: string;
 
-	/**
-	 * @generated from field: double amount = 6;
-	 */
-	amount: number;
+  /**
+   * @generated from field: double amount = 6;
+   */
+  amount: number;
 
-	/**
-	 * @generated from field: double price = 7;
-	 */
-	price: number;
+  /**
+   * @generated from field: double price = 7;
+   */
+  price: number;
 
-	/**
-	 * @generated from field: double fee = 8;
-	 */
-	fee: number;
+  /**
+   * @generated from field: double fee = 8;
+   */
+  fee: number;
 
-	/**
-	 * @generated from field: string status = 9;
-	 */
-	status: string;
+  /**
+   * @generated from field: string status = 9;
+   */
+  status: string;
 
-	/**
-	 * @generated from field: string transaction_hash = 10;
-	 */
-	transactionHash: string;
+  /**
+   * @generated from field: string transaction_hash = 10;
+   */
+  transactionHash: string;
 
-	/**
-	 * @generated from field: google.protobuf.Timestamp created_at = 11;
-	 */
-	createdAt?: Timestamp;
+  /**
+   * @generated from field: google.protobuf.Timestamp created_at = 11;
+   */
+  createdAt?: Timestamp;
 
-	/**
-	 * @generated from field: optional google.protobuf.Timestamp completed_at = 12;
-	 */
-	completedAt?: Timestamp;
+  /**
+   * @generated from field: optional google.protobuf.Timestamp completed_at = 12;
+   */
+  completedAt?: Timestamp;
 
-	/**
-	 * @generated from field: int32 confirmations = 13;
-	 */
-	confirmations: number;
+  /**
+   * @generated from field: int32 confirmations = 13;
+   */
+  confirmations: number;
 
-	/**
-	 * @generated from field: bool finalized = 14;
-	 */
-	finalized: boolean;
+  /**
+   * @generated from field: bool finalized = 14;
+   */
+  finalized: boolean;
 
-	/**
-	 * @generated from field: optional string error = 15;
-	 */
-	error?: string;
+  /**
+   * @generated from field: optional string error = 15;
+   */
+  error?: string;
 
-	/**
-	 * @generated from field: optional double platform_fee_amount = 18;
-	 */
-	platformFeeAmount?: number;
+  /**
+   * @generated from field: optional double platform_fee_amount = 18;
+   */
+  platformFeeAmount?: number;
 
-	/**
-	 * @generated from field: optional double platform_fee_percent = 19;
-	 */
-	platformFeePercent?: number;
+  /**
+   * @generated from field: optional double platform_fee_percent = 19;
+   */
+  platformFeePercent?: number;
 
-	/**
-	 * @generated from field: optional string platform_fee_destination = 20;
-	 */
-	platformFeeDestination?: string;
+  /**
+   * @generated from field: optional string platform_fee_destination = 20;
+   */
+  platformFeeDestination?: string;
 };
 
 /**
@@ -120,7 +120,7 @@ export type Trade = Message<"dankfolio.v1.Trade"> & {
  * Use `create(TradeSchema)` to create a new message.
  */
 export const TradeSchema: GenMessage<Trade> = /*@__PURE__*/
-	messageDesc(file_dankfolio_v1_trade, 0);
+  messageDesc(file_dankfolio_v1_trade, 0);
 
 /**
  * GetSwapQuoteRequest is the request for getting a trade quote
@@ -128,50 +128,50 @@ export const TradeSchema: GenMessage<Trade> = /*@__PURE__*/
  * @generated from message dankfolio.v1.GetSwapQuoteRequest
  */
 export type GetSwapQuoteRequest = Message<"dankfolio.v1.GetSwapQuoteRequest"> & {
-	/**
-	 * Typically mint address
-	 *
-	 * @generated from field: string from_coin_id = 1;
-	 */
-	fromCoinId: string;
+  /**
+   * Typically mint address
+   *
+   * @generated from field: string from_coin_id = 1;
+   */
+  fromCoinId: string;
 
-	/**
-	 * Typically mint address
-	 *
-	 * @generated from field: string to_coin_id = 2;
-	 */
-	toCoinId: string;
+  /**
+   * Typically mint address
+   *
+   * @generated from field: string to_coin_id = 2;
+   */
+  toCoinId: string;
 
-	/**
-	 * @generated from field: string amount = 3;
-	 */
-	amount: string;
+  /**
+   * @generated from field: string amount = 3;
+   */
+  amount: string;
 
-	/**
-	 * @generated from field: string slippage_bps = 4;
-	 */
-	slippageBps: string;
+  /**
+   * @generated from field: string slippage_bps = 4;
+   */
+  slippageBps: string;
 
-	/**
-	 * Whether to include detailed SOL fee breakdown (requires CreateSwapTransaction call)
-	 *
-	 * @generated from field: bool include_fee_breakdown = 5;
-	 */
-	includeFeeBreakdown: boolean;
+  /**
+   * Whether to include detailed SOL fee breakdown (requires CreateSwapTransaction call)
+   *
+   * @generated from field: bool include_fee_breakdown = 5;
+   */
+  includeFeeBreakdown: boolean;
 
-	/**
-	 * Required when include_fee_breakdown=true
-	 *
-	 * @generated from field: optional string user_public_key = 6;
-	 */
-	userPublicKey?: string;
+  /**
+   * Required when include_fee_breakdown=true
+   *
+   * @generated from field: optional string user_public_key = 6;
+   */
+  userPublicKey?: string;
 
-	/**
-	 * Allow routing through multiple pools for better rates
-	 *
-	 * @generated from field: bool allow_multi_hop = 7;
-	 */
-	allowMultiHop: boolean;
+  /**
+   * Allow routing through multiple pools for better rates
+   *
+   * @generated from field: bool allow_multi_hop = 7;
+   */
+  allowMultiHop: boolean;
 };
 
 /**
@@ -179,7 +179,7 @@ export type GetSwapQuoteRequest = Message<"dankfolio.v1.GetSwapQuoteRequest"> & 
  * Use `create(GetSwapQuoteRequestSchema)` to create a new message.
  */
 export const GetSwapQuoteRequestSchema: GenMessage<GetSwapQuoteRequest> = /*@__PURE__*/
-	messageDesc(file_dankfolio_v1_trade, 1);
+  messageDesc(file_dankfolio_v1_trade, 1);
 
 /**
  * SolFeeBreakdown provides detailed breakdown of all SOL costs
@@ -187,47 +187,47 @@ export const GetSwapQuoteRequestSchema: GenMessage<GetSwapQuoteRequest> = /*@__P
  * @generated from message dankfolio.v1.SolFeeBreakdown
  */
 export type SolFeeBreakdown = Message<"dankfolio.v1.SolFeeBreakdown"> & {
-	/**
-	 * Route + platform fees in SOL
-	 *
-	 * @generated from field: string trading_fee = 1;
-	 */
-	tradingFee: string;
+  /**
+   * Route + platform fees in SOL
+   *
+   * @generated from field: string trading_fee = 1;
+   */
+  tradingFee: string;
 
-	/**
-	 * Basic transaction cost
-	 *
-	 * @generated from field: string transaction_fee = 2;
-	 */
-	transactionFee: string;
+  /**
+   * Basic transaction cost
+   *
+   * @generated from field: string transaction_fee = 2;
+   */
+  transactionFee: string;
 
-	/**
-	 * ATA creation costs
-	 *
-	 * @generated from field: string account_creation_fee = 3;
-	 */
-	accountCreationFee: string;
+  /**
+   * ATA creation costs
+   *
+   * @generated from field: string account_creation_fee = 3;
+   */
+  accountCreationFee: string;
 
-	/**
-	 * Transaction prioritization fee
-	 *
-	 * @generated from field: string priority_fee = 4;
-	 */
-	priorityFee: string;
+  /**
+   * Transaction prioritization fee
+   *
+   * @generated from field: string priority_fee = 4;
+   */
+  priorityFee: string;
 
-	/**
-	 * Sum of all SOL fees
-	 *
-	 * @generated from field: string total = 5;
-	 */
-	total: string;
+  /**
+   * Sum of all SOL fees
+   *
+   * @generated from field: string total = 5;
+   */
+  total: string;
 
-	/**
-	 * Number of ATAs to create
-	 *
-	 * @generated from field: int32 accounts_to_create = 6;
-	 */
-	accountsToCreate: number;
+  /**
+   * Number of ATAs to create
+   *
+   * @generated from field: int32 accounts_to_create = 6;
+   */
+  accountsToCreate: number;
 };
 
 /**
@@ -235,7 +235,7 @@ export type SolFeeBreakdown = Message<"dankfolio.v1.SolFeeBreakdown"> & {
  * Use `create(SolFeeBreakdownSchema)` to create a new message.
  */
 export const SolFeeBreakdownSchema: GenMessage<SolFeeBreakdown> = /*@__PURE__*/
-	messageDesc(file_dankfolio_v1_trade, 2);
+  messageDesc(file_dankfolio_v1_trade, 2);
 
 /**
  * GetSwapQuoteResponse is the response containing trade quote details
@@ -243,56 +243,56 @@ export const SolFeeBreakdownSchema: GenMessage<SolFeeBreakdown> = /*@__PURE__*/
  * @generated from message dankfolio.v1.GetSwapQuoteResponse
  */
 export type GetSwapQuoteResponse = Message<"dankfolio.v1.GetSwapQuoteResponse"> & {
-	/**
-	 * @generated from field: string estimated_amount = 1;
-	 */
-	estimatedAmount: string;
+  /**
+   * @generated from field: string estimated_amount = 1;
+   */
+  estimatedAmount: string;
 
-	/**
-	 * @generated from field: string exchange_rate = 2;
-	 */
-	exchangeRate: string;
+  /**
+   * @generated from field: string exchange_rate = 2;
+   */
+  exchangeRate: string;
 
-	/**
-	 * @generated from field: string price_impact = 3;
-	 */
-	priceImpact: string;
+  /**
+   * @generated from field: string price_impact = 3;
+   */
+  priceImpact: string;
 
-	/**
-	 * @generated from field: repeated string route_plan = 4;
-	 */
-	routePlan: string[];
+  /**
+   * @generated from field: repeated string route_plan = 4;
+   */
+  routePlan: string[];
 
-	/**
-	 * @generated from field: string input_mint = 5;
-	 */
-	inputMint: string;
+  /**
+   * @generated from field: string input_mint = 5;
+   */
+  inputMint: string;
 
-	/**
-	 * @generated from field: string output_mint = 6;
-	 */
-	outputMint: string;
+  /**
+   * @generated from field: string output_mint = 6;
+   */
+  outputMint: string;
 
-	/**
-	 * Enhanced SOL fee breakdown
-	 *
-	 * @generated from field: optional dankfolio.v1.SolFeeBreakdown sol_fee_breakdown = 7;
-	 */
-	solFeeBreakdown?: SolFeeBreakdown;
+  /**
+   * Enhanced SOL fee breakdown
+   *
+   * @generated from field: optional dankfolio.v1.SolFeeBreakdown sol_fee_breakdown = 7;
+   */
+  solFeeBreakdown?: SolFeeBreakdown;
 
-	/**
-	 * Total SOL needed for transaction
-	 *
-	 * @generated from field: string total_sol_required = 8;
-	 */
-	totalSolRequired: string;
+  /**
+   * Total SOL needed for transaction
+   *
+   * @generated from field: string total_sol_required = 8;
+   */
+  totalSolRequired: string;
 
-	/**
-	 * Trading fees in SOL
-	 *
-	 * @generated from field: string trading_fee_sol = 9;
-	 */
-	tradingFeeSol: string;
+  /**
+   * Trading fees in SOL
+   *
+   * @generated from field: string trading_fee_sol = 9;
+   */
+  tradingFeeSol: string;
 };
 
 /**
@@ -300,7 +300,7 @@ export type GetSwapQuoteResponse = Message<"dankfolio.v1.GetSwapQuoteResponse"> 
  * Use `create(GetSwapQuoteResponseSchema)` to create a new message.
  */
 export const GetSwapQuoteResponseSchema: GenMessage<GetSwapQuoteResponse> = /*@__PURE__*/
-	messageDesc(file_dankfolio_v1_trade, 3);
+  messageDesc(file_dankfolio_v1_trade, 3);
 
 /**
  * PrepareSwapRequest is the request for preparing a swap transaction
@@ -308,45 +308,45 @@ export const GetSwapQuoteResponseSchema: GenMessage<GetSwapQuoteResponse> = /*@_
  * @generated from message dankfolio.v1.PrepareSwapRequest
  */
 export type PrepareSwapRequest = Message<"dankfolio.v1.PrepareSwapRequest"> & {
-	/**
-	 * Typically mint address
-	 *
-	 * @generated from field: string from_coin_id = 1;
-	 */
-	fromCoinId: string;
+  /**
+   * Typically mint address
+   *
+   * @generated from field: string from_coin_id = 1;
+   */
+  fromCoinId: string;
 
-	/**
-	 * Typically mint address
-	 *
-	 * @generated from field: string to_coin_id = 2;
-	 */
-	toCoinId: string;
+  /**
+   * Typically mint address
+   *
+   * @generated from field: string to_coin_id = 2;
+   */
+  toCoinId: string;
 
-	/**
-	 * @generated from field: string amount = 3;
-	 */
-	amount: string;
+  /**
+   * @generated from field: string amount = 3;
+   */
+  amount: string;
 
-	/**
-	 * @generated from field: string slippage_bps = 4;
-	 */
-	slippageBps: string;
+  /**
+   * @generated from field: string slippage_bps = 4;
+   */
+  slippageBps: string;
 
-	/**
-	 * This is the wallet address of the user initiating the swap
-	 *
-	 * @generated from field: string user_public_key = 5;
-	 */
-	userPublicKey: string;
+  /**
+   * This is the wallet address of the user initiating the swap
+   *
+   * @generated from field: string user_public_key = 5;
+   */
+  userPublicKey: string;
 
-	/**
-	 * from_address field was removed as user_public_key serves this purpose.
-	 *
-	 * Allow routing through multiple pools for better rates
-	 *
-	 * @generated from field: bool allow_multi_hop = 6;
-	 */
-	allowMultiHop: boolean;
+  /**
+   * from_address field was removed as user_public_key serves this purpose.
+   *
+   * Allow routing through multiple pools for better rates
+   *
+   * @generated from field: bool allow_multi_hop = 6;
+   */
+  allowMultiHop: boolean;
 };
 
 /**
@@ -354,7 +354,7 @@ export type PrepareSwapRequest = Message<"dankfolio.v1.PrepareSwapRequest"> & {
  * Use `create(PrepareSwapRequestSchema)` to create a new message.
  */
 export const PrepareSwapRequestSchema: GenMessage<PrepareSwapRequest> = /*@__PURE__*/
-	messageDesc(file_dankfolio_v1_trade, 4);
+  messageDesc(file_dankfolio_v1_trade, 4);
 
 /**
  * PrepareSwapResponse is the response with the unsigned transaction
@@ -362,31 +362,31 @@ export const PrepareSwapRequestSchema: GenMessage<PrepareSwapRequest> = /*@__PUR
  * @generated from message dankfolio.v1.PrepareSwapResponse
  */
 export type PrepareSwapResponse = Message<"dankfolio.v1.PrepareSwapResponse"> & {
-	/**
-	 * @generated from field: string unsigned_transaction = 1;
-	 */
-	unsignedTransaction: string;
+  /**
+   * @generated from field: string unsigned_transaction = 1;
+   */
+  unsignedTransaction: string;
 
-	/**
-	 * Enhanced SOL fee breakdown
-	 *
-	 * @generated from field: optional dankfolio.v1.SolFeeBreakdown sol_fee_breakdown = 2;
-	 */
-	solFeeBreakdown?: SolFeeBreakdown;
+  /**
+   * Enhanced SOL fee breakdown
+   *
+   * @generated from field: optional dankfolio.v1.SolFeeBreakdown sol_fee_breakdown = 2;
+   */
+  solFeeBreakdown?: SolFeeBreakdown;
 
-	/**
-	 * Total SOL needed for transaction
-	 *
-	 * @generated from field: string total_sol_required = 3;
-	 */
-	totalSolRequired: string;
+  /**
+   * Total SOL needed for transaction
+   *
+   * @generated from field: string total_sol_required = 3;
+   */
+  totalSolRequired: string;
 
-	/**
-	 * Trading fees in SOL
-	 *
-	 * @generated from field: string trading_fee_sol = 4;
-	 */
-	tradingFeeSol: string;
+  /**
+   * Trading fees in SOL
+   *
+   * @generated from field: string trading_fee_sol = 4;
+   */
+  tradingFeeSol: string;
 };
 
 /**
@@ -394,7 +394,7 @@ export type PrepareSwapResponse = Message<"dankfolio.v1.PrepareSwapResponse"> & 
  * Use `create(PrepareSwapResponseSchema)` to create a new message.
  */
 export const PrepareSwapResponseSchema: GenMessage<PrepareSwapResponse> = /*@__PURE__*/
-	messageDesc(file_dankfolio_v1_trade, 5);
+  messageDesc(file_dankfolio_v1_trade, 5);
 
 /**
  * SubmitSwapRequest is the request for submitting a trade
@@ -402,36 +402,36 @@ export const PrepareSwapResponseSchema: GenMessage<PrepareSwapResponse> = /*@__P
  * @generated from message dankfolio.v1.SubmitSwapRequest
  */
 export type SubmitSwapRequest = Message<"dankfolio.v1.SubmitSwapRequest"> & {
-	/**
-	 * Typically mint address
-	 *
-	 * @generated from field: string from_coin_id = 1;
-	 */
-	fromCoinId: string;
+  /**
+   * Typically mint address
+   *
+   * @generated from field: string from_coin_id = 1;
+   */
+  fromCoinId: string;
 
-	/**
-	 * Typically mint address
-	 *
-	 * @generated from field: string to_coin_id = 2;
-	 */
-	toCoinId: string;
+  /**
+   * Typically mint address
+   *
+   * @generated from field: string to_coin_id = 2;
+   */
+  toCoinId: string;
 
-	/**
-	 * @generated from field: double amount = 3;
-	 */
-	amount: number;
+  /**
+   * @generated from field: double amount = 3;
+   */
+  amount: number;
 
-	/**
-	 * @generated from field: string signed_transaction = 4;
-	 */
-	signedTransaction: string;
+  /**
+   * @generated from field: string signed_transaction = 4;
+   */
+  signedTransaction: string;
 
-	/**
-	 * used to retrieve the record in the backend
-	 *
-	 * @generated from field: string unsigned_transaction = 5;
-	 */
-	unsignedTransaction: string;
+  /**
+   * used to retrieve the record in the backend
+   *
+   * @generated from field: string unsigned_transaction = 5;
+   */
+  unsignedTransaction: string;
 };
 
 /**
@@ -439,7 +439,7 @@ export type SubmitSwapRequest = Message<"dankfolio.v1.SubmitSwapRequest"> & {
  * Use `create(SubmitSwapRequestSchema)` to create a new message.
  */
 export const SubmitSwapRequestSchema: GenMessage<SubmitSwapRequest> = /*@__PURE__*/
-	messageDesc(file_dankfolio_v1_trade, 6);
+  messageDesc(file_dankfolio_v1_trade, 6);
 
 /**
  * SubmitSwapResponse is the response after submitting a trade
@@ -447,15 +447,15 @@ export const SubmitSwapRequestSchema: GenMessage<SubmitSwapRequest> = /*@__PURE_
  * @generated from message dankfolio.v1.SubmitSwapResponse
  */
 export type SubmitSwapResponse = Message<"dankfolio.v1.SubmitSwapResponse"> & {
-	/**
-	 * @generated from field: string trade_id = 1;
-	 */
-	tradeId: string;
+  /**
+   * @generated from field: string trade_id = 1;
+   */
+  tradeId: string;
 
-	/**
-	 * @generated from field: string transaction_hash = 2;
-	 */
-	transactionHash: string;
+  /**
+   * @generated from field: string transaction_hash = 2;
+   */
+  transactionHash: string;
 };
 
 /**
@@ -463,7 +463,7 @@ export type SubmitSwapResponse = Message<"dankfolio.v1.SubmitSwapResponse"> & {
  * Use `create(SubmitSwapResponseSchema)` to create a new message.
  */
 export const SubmitSwapResponseSchema: GenMessage<SubmitSwapResponse> = /*@__PURE__*/
-	messageDesc(file_dankfolio_v1_trade, 7);
+  messageDesc(file_dankfolio_v1_trade, 7);
 
 /**
  * GetTradeRequest is the request for getting trade details and status
@@ -471,22 +471,22 @@ export const SubmitSwapResponseSchema: GenMessage<SubmitSwapResponse> = /*@__PUR
  * @generated from message dankfolio.v1.GetTradeRequest
  */
 export type GetTradeRequest = Message<"dankfolio.v1.GetTradeRequest"> & {
-	/**
-	 * @generated from oneof dankfolio.v1.GetTradeRequest.identifier
-	 */
-	identifier: {
-		/**
-		 * @generated from field: string id = 1;
-		 */
-		value: string;
-		case: "id";
-	} | {
-		/**
-		 * @generated from field: string transaction_hash = 2;
-		 */
-		value: string;
-		case: "transactionHash";
-	} | { case: undefined; value?: undefined };
+  /**
+   * @generated from oneof dankfolio.v1.GetTradeRequest.identifier
+   */
+  identifier: {
+    /**
+     * @generated from field: string id = 1;
+     */
+    value: string;
+    case: "id";
+  } | {
+    /**
+     * @generated from field: string transaction_hash = 2;
+     */
+    value: string;
+    case: "transactionHash";
+  } | { case: undefined; value?: undefined };
 };
 
 /**
@@ -494,7 +494,7 @@ export type GetTradeRequest = Message<"dankfolio.v1.GetTradeRequest"> & {
  * Use `create(GetTradeRequestSchema)` to create a new message.
  */
 export const GetTradeRequestSchema: GenMessage<GetTradeRequest> = /*@__PURE__*/
-	messageDesc(file_dankfolio_v1_trade, 8);
+  messageDesc(file_dankfolio_v1_trade, 8);
 
 /**
  * ListTradesRequest is the request for listing trades
@@ -502,62 +502,62 @@ export const GetTradeRequestSchema: GenMessage<GetTradeRequest> = /*@__PURE__*/
  * @generated from message dankfolio.v1.ListTradesRequest
  */
 export type ListTradesRequest = Message<"dankfolio.v1.ListTradesRequest"> & {
-	/**
-	 * @generated from field: int32 limit = 1;
-	 */
-	limit: number;
+  /**
+   * @generated from field: int32 limit = 1;
+   */
+  limit: number;
 
-	/**
-	 * @generated from field: int32 offset = 2;
-	 */
-	offset: number;
+  /**
+   * @generated from field: int32 offset = 2;
+   */
+  offset: number;
 
-	/**
-	 * e.g., "created_at", "amount"
-	 *
-	 * @generated from field: string sort_by = 3;
-	 */
-	sortBy: string;
+  /**
+   * e.g., "created_at", "amount"
+   *
+   * @generated from field: string sort_by = 3;
+   */
+  sortBy: string;
 
-	/**
-	 * @generated from field: bool sort_desc = 4;
-	 */
-	sortDesc: boolean;
+  /**
+   * @generated from field: bool sort_desc = 4;
+   */
+  sortDesc: boolean;
 
-	/**
-	 * Filter by user ID (wallet public key)
-	 *
-	 * @generated from field: optional string user_id = 5;
-	 */
-	userId?: string;
+  /**
+   * Filter by user ID (wallet public key)
+   *
+   * @generated from field: optional string user_id = 5;
+   */
+  userId?: string;
 
-	/**
-	 * Filter by trade status (e.g., "completed", "pending")
-	 *
-	 * @generated from field: optional string status = 6;
-	 */
-	status?: string;
+  /**
+   * Filter by trade status (e.g., "completed", "pending")
+   *
+   * @generated from field: optional string status = 6;
+   */
+  status?: string;
 
-	/**
-	 * Filter by trade type (e.g., "swap", "transfer")
-	 *
-	 * @generated from field: optional string type = 7;
-	 */
-	type?: string;
+  /**
+   * Filter by trade type (e.g., "swap", "transfer")
+   *
+   * @generated from field: optional string type = 7;
+   */
+  type?: string;
 
-	/**
-	 * Filter by source coin mint address
-	 *
-	 * @generated from field: optional string from_coin_address = 8;
-	 */
-	fromCoinAddress?: string;
+  /**
+   * Filter by source coin mint address
+   *
+   * @generated from field: optional string from_coin_address = 8;
+   */
+  fromCoinAddress?: string;
 
-	/**
-	 * Filter by destination coin mint address
-	 *
-	 * @generated from field: optional string to_coin_address = 9;
-	 */
-	toCoinAddress?: string;
+  /**
+   * Filter by destination coin mint address
+   *
+   * @generated from field: optional string to_coin_address = 9;
+   */
+  toCoinAddress?: string;
 };
 
 /**
@@ -565,7 +565,7 @@ export type ListTradesRequest = Message<"dankfolio.v1.ListTradesRequest"> & {
  * Use `create(ListTradesRequestSchema)` to create a new message.
  */
 export const ListTradesRequestSchema: GenMessage<ListTradesRequest> = /*@__PURE__*/
-	messageDesc(file_dankfolio_v1_trade, 9);
+  messageDesc(file_dankfolio_v1_trade, 9);
 
 /**
  * ListTradesResponse is the response containing a list of trades
@@ -573,17 +573,17 @@ export const ListTradesRequestSchema: GenMessage<ListTradesRequest> = /*@__PURE_
  * @generated from message dankfolio.v1.ListTradesResponse
  */
 export type ListTradesResponse = Message<"dankfolio.v1.ListTradesResponse"> & {
-	/**
-	 * @generated from field: repeated dankfolio.v1.Trade trades = 1;
-	 */
-	trades: Trade[];
+  /**
+   * @generated from field: repeated dankfolio.v1.Trade trades = 1;
+   */
+  trades: Trade[];
 
-	/**
-	 * Total number of trades matching the filter criteria (before pagination)
-	 *
-	 * @generated from field: int32 total_count = 2;
-	 */
-	totalCount: number;
+  /**
+   * Total number of trades matching the filter criteria (before pagination)
+   *
+   * @generated from field: int32 total_count = 2;
+   */
+  totalCount: number;
 };
 
 /**
@@ -591,7 +591,7 @@ export type ListTradesResponse = Message<"dankfolio.v1.ListTradesResponse"> & {
  * Use `create(ListTradesResponseSchema)` to create a new message.
  */
 export const ListTradesResponseSchema: GenMessage<ListTradesResponse> = /*@__PURE__*/
-	messageDesc(file_dankfolio_v1_trade, 10);
+  messageDesc(file_dankfolio_v1_trade, 10);
 
 /**
  * TradeService provides operations for trading coins on Solana
@@ -599,56 +599,56 @@ export const ListTradesResponseSchema: GenMessage<ListTradesResponse> = /*@__PUR
  * @generated from service dankfolio.v1.TradeService
  */
 export const TradeService: GenService<{
-	/**
-	 * GetSwapQuote returns a quote for a potential trade
-	 *
-	 * @generated from rpc dankfolio.v1.TradeService.GetSwapQuote
-	 */
-	getSwapQuote: {
-		methodKind: "unary";
-		input: typeof GetSwapQuoteRequestSchema;
-		output: typeof GetSwapQuoteResponseSchema;
-	},
-	/**
-	 * PrepareSwap prepares an unsigned swap transaction
-	 *
-	 * @generated from rpc dankfolio.v1.TradeService.PrepareSwap
-	 */
-	prepareSwap: {
-		methodKind: "unary";
-		input: typeof PrepareSwapRequestSchema;
-		output: typeof PrepareSwapResponseSchema;
-	},
-	/**
-	 * SubmitSwap submits a trade for execution
-	 *
-	 * @generated from rpc dankfolio.v1.TradeService.SubmitSwap
-	 */
-	submitSwap: {
-		methodKind: "unary";
-		input: typeof SubmitSwapRequestSchema;
-		output: typeof SubmitSwapResponseSchema;
-	},
-	/**
-	 * GetTrade returns details and status of a specific trade
-	 *
-	 * @generated from rpc dankfolio.v1.TradeService.GetTrade
-	 */
-	getTrade: {
-		methodKind: "unary";
-		input: typeof GetTradeRequestSchema;
-		output: typeof TradeSchema;
-	},
-	/**
-	 * ListTrades returns all trades
-	 *
-	 * @generated from rpc dankfolio.v1.TradeService.ListTrades
-	 */
-	listTrades: {
-		methodKind: "unary";
-		input: typeof ListTradesRequestSchema;
-		output: typeof ListTradesResponseSchema;
-	},
+  /**
+   * GetSwapQuote returns a quote for a potential trade
+   *
+   * @generated from rpc dankfolio.v1.TradeService.GetSwapQuote
+   */
+  getSwapQuote: {
+    methodKind: "unary";
+    input: typeof GetSwapQuoteRequestSchema;
+    output: typeof GetSwapQuoteResponseSchema;
+  },
+  /**
+   * PrepareSwap prepares an unsigned swap transaction
+   *
+   * @generated from rpc dankfolio.v1.TradeService.PrepareSwap
+   */
+  prepareSwap: {
+    methodKind: "unary";
+    input: typeof PrepareSwapRequestSchema;
+    output: typeof PrepareSwapResponseSchema;
+  },
+  /**
+   * SubmitSwap submits a trade for execution
+   *
+   * @generated from rpc dankfolio.v1.TradeService.SubmitSwap
+   */
+  submitSwap: {
+    methodKind: "unary";
+    input: typeof SubmitSwapRequestSchema;
+    output: typeof SubmitSwapResponseSchema;
+  },
+  /**
+   * GetTrade returns details and status of a specific trade
+   *
+   * @generated from rpc dankfolio.v1.TradeService.GetTrade
+   */
+  getTrade: {
+    methodKind: "unary";
+    input: typeof GetTradeRequestSchema;
+    output: typeof TradeSchema;
+  },
+  /**
+   * ListTrades returns all trades
+   *
+   * @generated from rpc dankfolio.v1.TradeService.ListTrades
+   */
+  listTrades: {
+    methodKind: "unary";
+    input: typeof ListTradesRequestSchema;
+    output: typeof ListTradesResponseSchema;
+  },
 }> = /*@__PURE__*/
-	serviceDesc(file_dankfolio_v1_trade, 0);
+  serviceDesc(file_dankfolio_v1_trade, 0);
 

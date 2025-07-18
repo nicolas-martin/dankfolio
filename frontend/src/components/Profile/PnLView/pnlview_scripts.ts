@@ -1,6 +1,21 @@
 import { PortfolioToken } from '@/store/portfolio';
 import { PnLData, PortfolioStats } from './pnlview_types';
 import { Transaction, TransactionType, TransactionStatus } from '@/types';
+import { grpcApi } from '@/services/grpcApi';
+import type { GetPortfolioPnLResponse } from '@/services/grpc/model';
+
+/**
+ * Fetch portfolio PnL data from backend
+ */
+export const fetchPortfolioPnL = async (walletAddress: string): Promise<GetPortfolioPnLResponse | null> => {
+	try {
+		const response = await grpcApi.getPortfolioPnL(walletAddress);
+		return response;
+	} catch (error) {
+		console.error('[PnL] Failed to fetch portfolio PnL:', error);
+		return null;
+	}
+};
 
 /**
  * Calculate portfolio-level statistics

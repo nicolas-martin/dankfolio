@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/wallet.proto.
  */
 export const file_dankfolio_v1_wallet: GenFile = /*@__PURE__*/
-  fileDesc("ChlkYW5rZm9saW8vdjEvd2FsbGV0LnByb3RvEgxkYW5rZm9saW8udjEiJQoHQmFsYW5jZRIKCgJpZBgBIAEoCRIOCgZhbW91bnQYAiABKAEiOAoNV2FsbGV0QmFsYW5jZRInCghiYWxhbmNlcxgBIAMoCzIVLmRhbmtmb2xpby52MS5CYWxhbmNlIisKGEdldFdhbGxldEJhbGFuY2VzUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIlAKGUdldFdhbGxldEJhbGFuY2VzUmVzcG9uc2USMwoOd2FsbGV0X2JhbGFuY2UYASABKAsyGy5kYW5rZm9saW8udjEuV2FsbGV0QmFsYW5jZSIVChNDcmVhdGVXYWxsZXRSZXF1ZXN0IlAKFENyZWF0ZVdhbGxldFJlc3BvbnNlEhIKCnB1YmxpY19rZXkYASABKAkSEgoKc2VjcmV0X2tleRgCIAEoCRIQCghtbmVtb25pYxgDIAEoCSJlChZQcmVwYXJlVHJhbnNmZXJSZXF1ZXN0EhQKDGZyb21fYWRkcmVzcxgBIAEoCRISCgp0b19hZGRyZXNzGAIgASgJEhEKCWNvaW5fbWludBgDIAEoCRIOCgZhbW91bnQYBCABKAEiNwoXUHJlcGFyZVRyYW5zZmVyUmVzcG9uc2USHAoUdW5zaWduZWRfdHJhbnNhY3Rpb24YASABKAkiUQoVU3VibWl0VHJhbnNmZXJSZXF1ZXN0EhoKEnNpZ25lZF90cmFuc2FjdGlvbhgBIAEoCRIcChR1bnNpZ25lZF90cmFuc2FjdGlvbhgCIAEoCSIyChZTdWJtaXRUcmFuc2ZlclJlc3BvbnNlEhgKEHRyYW5zYWN0aW9uX2hhc2gYASABKAkyiQMKDVdhbGxldFNlcnZpY2USZAoRR2V0V2FsbGV0QmFsYW5jZXMSJi5kYW5rZm9saW8udjEuR2V0V2FsbGV0QmFsYW5jZXNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldFdhbGxldEJhbGFuY2VzUmVzcG9uc2USVQoMQ3JlYXRlV2FsbGV0EiEuZGFua2ZvbGlvLnYxLkNyZWF0ZVdhbGxldFJlcXVlc3QaIi5kYW5rZm9saW8udjEuQ3JlYXRlV2FsbGV0UmVzcG9uc2USXgoPUHJlcGFyZVRyYW5zZmVyEiQuZGFua2ZvbGlvLnYxLlByZXBhcmVUcmFuc2ZlclJlcXVlc3QaJS5kYW5rZm9saW8udjEuUHJlcGFyZVRyYW5zZmVyUmVzcG9uc2USWwoOU3VibWl0VHJhbnNmZXISIy5kYW5rZm9saW8udjEuU3VibWl0VHJhbnNmZXJSZXF1ZXN0GiQuZGFua2ZvbGlvLnYxLlN1Ym1pdFRyYW5zZmVyUmVzcG9uc2VCtwEKEGNvbS5kYW5rZm9saW8udjFCC1dhbGxldFByb3RvUAFaRWdpdGh1Yi5jb20vbmljb2xhcy1tYXJ0aW4vZGFua2ZvbGlvL2JhY2tlbmQvZ2VuL3Byb3RvL2dvL2Rhbmtmb2xpby92MaICA0RYWKoCDERhbmtmb2xpby5WMcoCDERhbmtmb2xpb1xWMeICGERhbmtmb2xpb1xWMVxHUEJNZXRhZGF0YeoCDURhbmtmb2xpbzo6VjFiBnByb3RvMw");
+  fileDesc("ChlkYW5rZm9saW8vdjEvd2FsbGV0LnByb3RvEgxkYW5rZm9saW8udjEiJQoHQmFsYW5jZRIKCgJpZBgBIAEoCRIOCgZhbW91bnQYAiABKAEiOAoNV2FsbGV0QmFsYW5jZRInCghiYWxhbmNlcxgBIAMoCzIVLmRhbmtmb2xpby52MS5CYWxhbmNlIisKGEdldFdhbGxldEJhbGFuY2VzUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIlAKGUdldFdhbGxldEJhbGFuY2VzUmVzcG9uc2USMwoOd2FsbGV0X2JhbGFuY2UYASABKAsyGy5kYW5rZm9saW8udjEuV2FsbGV0QmFsYW5jZSIVChNDcmVhdGVXYWxsZXRSZXF1ZXN0IlAKFENyZWF0ZVdhbGxldFJlc3BvbnNlEhIKCnB1YmxpY19rZXkYASABKAkSEgoKc2VjcmV0X2tleRgCIAEoCRIQCghtbmVtb25pYxgDIAEoCSJlChZQcmVwYXJlVHJhbnNmZXJSZXF1ZXN0EhQKDGZyb21fYWRkcmVzcxgBIAEoCRISCgp0b19hZGRyZXNzGAIgASgJEhEKCWNvaW5fbWludBgDIAEoCRIOCgZhbW91bnQYBCABKAEiNwoXUHJlcGFyZVRyYW5zZmVyUmVzcG9uc2USHAoUdW5zaWduZWRfdHJhbnNhY3Rpb24YASABKAkiUQoVU3VibWl0VHJhbnNmZXJSZXF1ZXN0EhoKEnNpZ25lZF90cmFuc2FjdGlvbhgBIAEoCRIcChR1bnNpZ25lZF90cmFuc2FjdGlvbhgCIAEoCSIyChZTdWJtaXRUcmFuc2ZlclJlc3BvbnNlEhgKEHRyYW5zYWN0aW9uX2hhc2gYASABKAkiMAoWR2V0UG9ydGZvbGlvUG5MUmVxdWVzdBIWCg53YWxsZXRfYWRkcmVzcxgBIAEoCSLbAQoIVG9rZW5QbkwSDwoHY29pbl9pZBgBIAEoCRIOCgZzeW1ib2wYAiABKAkSDAoEbmFtZRgDIAEoCRITCgthbW91bnRfaGVsZBgEIAEoARISCgpjb3N0X2Jhc2lzGAUgASgBEhUKDWN1cnJlbnRfcHJpY2UYBiABKAESFQoNY3VycmVudF92YWx1ZRgHIAEoARIWCg51bnJlYWxpemVkX3BubBgIIAEoARIWCg5wbmxfcGVyY2VudGFnZRgJIAEoARIZChFoYXNfcHVyY2hhc2VfZGF0YRgKIAEoCCLSAQoXR2V0UG9ydGZvbGlvUG5MUmVzcG9uc2USHQoVdG90YWxfcG9ydGZvbGlvX3ZhbHVlGAEgASgBEhgKEHRvdGFsX2Nvc3RfYmFzaXMYAiABKAESHAoUdG90YWxfdW5yZWFsaXplZF9wbmwYAyABKAESHAoUdG90YWxfcG5sX3BlcmNlbnRhZ2UYBCABKAESFgoOdG90YWxfaG9sZGluZ3MYBSABKAUSKgoKdG9rZW5fcG5scxgGIAMoCzIWLmRhbmtmb2xpby52MS5Ub2tlblBuTDLpAwoNV2FsbGV0U2VydmljZRJkChFHZXRXYWxsZXRCYWxhbmNlcxImLmRhbmtmb2xpby52MS5HZXRXYWxsZXRCYWxhbmNlc1JlcXVlc3QaJy5kYW5rZm9saW8udjEuR2V0V2FsbGV0QmFsYW5jZXNSZXNwb25zZRJVCgxDcmVhdGVXYWxsZXQSIS5kYW5rZm9saW8udjEuQ3JlYXRlV2FsbGV0UmVxdWVzdBoiLmRhbmtmb2xpby52MS5DcmVhdGVXYWxsZXRSZXNwb25zZRJeCg9QcmVwYXJlVHJhbnNmZXISJC5kYW5rZm9saW8udjEuUHJlcGFyZVRyYW5zZmVyUmVxdWVzdBolLmRhbmtmb2xpby52MS5QcmVwYXJlVHJhbnNmZXJSZXNwb25zZRJbCg5TdWJtaXRUcmFuc2ZlchIjLmRhbmtmb2xpby52MS5TdWJtaXRUcmFuc2ZlclJlcXVlc3QaJC5kYW5rZm9saW8udjEuU3VibWl0VHJhbnNmZXJSZXNwb25zZRJeCg9HZXRQb3J0Zm9saW9QbkwSJC5kYW5rZm9saW8udjEuR2V0UG9ydGZvbGlvUG5MUmVxdWVzdBolLmRhbmtmb2xpby52MS5HZXRQb3J0Zm9saW9QbkxSZXNwb25zZUK3AQoQY29tLmRhbmtmb2xpby52MUILV2FsbGV0UHJvdG9QAVpFZ2l0aHViLmNvbS9uaWNvbGFzLW1hcnRpbi9kYW5rZm9saW8vYmFja2VuZC9nZW4vcHJvdG8vZ28vZGFua2ZvbGlvL3YxogIDRFhYqgIMRGFua2ZvbGlvLlYxygIMRGFua2ZvbGlvXFYx4gIYRGFua2ZvbGlvXFYxXEdQQk1ldGFkYXRh6gINRGFua2ZvbGlvOjpWMWIGcHJvdG8z");
 
 /**
  * Balance represents information about a coin balance
@@ -254,6 +254,167 @@ export const SubmitTransferResponseSchema: GenMessage<SubmitTransferResponse> = 
   messageDesc(file_dankfolio_v1_wallet, 9);
 
 /**
+ * GetPortfolioPnLRequest is the request for GetPortfolioPnL
+ *
+ * @generated from message dankfolio.v1.GetPortfolioPnLRequest
+ */
+export type GetPortfolioPnLRequest = Message<"dankfolio.v1.GetPortfolioPnLRequest"> & {
+  /**
+   * Solana wallet address
+   *
+   * @generated from field: string wallet_address = 1;
+   */
+  walletAddress: string;
+};
+
+/**
+ * Describes the message dankfolio.v1.GetPortfolioPnLRequest.
+ * Use `create(GetPortfolioPnLRequestSchema)` to create a new message.
+ */
+export const GetPortfolioPnLRequestSchema: GenMessage<GetPortfolioPnLRequest> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_wallet, 10);
+
+/**
+ * TokenPnL represents profit and loss data for a single token
+ *
+ * @generated from message dankfolio.v1.TokenPnL
+ */
+export type TokenPnL = Message<"dankfolio.v1.TokenPnL"> & {
+  /**
+   * Coin mint address
+   *
+   * @generated from field: string coin_id = 1;
+   */
+  coinId: string;
+
+  /**
+   * Token symbol
+   *
+   * @generated from field: string symbol = 2;
+   */
+  symbol: string;
+
+  /**
+   * Token name
+   *
+   * @generated from field: string name = 3;
+   */
+  name: string;
+
+  /**
+   * Current amount held
+   *
+   * @generated from field: double amount_held = 4;
+   */
+  amountHeld: number;
+
+  /**
+   * Average cost per token
+   *
+   * @generated from field: double cost_basis = 5;
+   */
+  costBasis: number;
+
+  /**
+   * Current price per token
+   *
+   * @generated from field: double current_price = 6;
+   */
+  currentPrice: number;
+
+  /**
+   * Current total value (amount * price)
+   *
+   * @generated from field: double current_value = 7;
+   */
+  currentValue: number;
+
+  /**
+   * Unrealized profit/loss
+   *
+   * @generated from field: double unrealized_pnl = 8;
+   */
+  unrealizedPnl: number;
+
+  /**
+   * Percentage gain/loss
+   *
+   * @generated from field: double pnl_percentage = 9;
+   */
+  pnlPercentage: number;
+
+  /**
+   * Whether we have transaction history
+   *
+   * @generated from field: bool has_purchase_data = 10;
+   */
+  hasPurchaseData: boolean;
+};
+
+/**
+ * Describes the message dankfolio.v1.TokenPnL.
+ * Use `create(TokenPnLSchema)` to create a new message.
+ */
+export const TokenPnLSchema: GenMessage<TokenPnL> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_wallet, 11);
+
+/**
+ * GetPortfolioPnLResponse contains overall portfolio PnL and per-token breakdown
+ *
+ * @generated from message dankfolio.v1.GetPortfolioPnLResponse
+ */
+export type GetPortfolioPnLResponse = Message<"dankfolio.v1.GetPortfolioPnLResponse"> & {
+  /**
+   * Current total value
+   *
+   * @generated from field: double total_portfolio_value = 1;
+   */
+  totalPortfolioValue: number;
+
+  /**
+   * Total amount invested
+   *
+   * @generated from field: double total_cost_basis = 2;
+   */
+  totalCostBasis: number;
+
+  /**
+   * Total unrealized profit/loss
+   *
+   * @generated from field: double total_unrealized_pnl = 3;
+   */
+  totalUnrealizedPnl: number;
+
+  /**
+   * Overall percentage gain/loss
+   *
+   * @generated from field: double total_pnl_percentage = 4;
+   */
+  totalPnlPercentage: number;
+
+  /**
+   * Number of tokens held
+   *
+   * @generated from field: int32 total_holdings = 5;
+   */
+  totalHoldings: number;
+
+  /**
+   * PnL data for each token
+   *
+   * @generated from field: repeated dankfolio.v1.TokenPnL token_pnls = 6;
+   */
+  tokenPnls: TokenPnL[];
+};
+
+/**
+ * Describes the message dankfolio.v1.GetPortfolioPnLResponse.
+ * Use `create(GetPortfolioPnLResponseSchema)` to create a new message.
+ */
+export const GetPortfolioPnLResponseSchema: GenMessage<GetPortfolioPnLResponse> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_wallet, 12);
+
+/**
  * WalletService provides operations for managing Solana wallets
  *
  * @generated from service dankfolio.v1.WalletService
@@ -298,6 +459,16 @@ export const WalletService: GenService<{
     methodKind: "unary";
     input: typeof SubmitTransferRequestSchema;
     output: typeof SubmitTransferResponseSchema;
+  },
+  /**
+   * GetPortfolioPnL returns the overall profit and loss for a wallet
+   *
+   * @generated from rpc dankfolio.v1.WalletService.GetPortfolioPnL
+   */
+  getPortfolioPnL: {
+    methodKind: "unary";
+    input: typeof GetPortfolioPnLRequestSchema;
+    output: typeof GetPortfolioPnLResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_dankfolio_v1_wallet, 0);

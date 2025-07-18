@@ -410,7 +410,6 @@ func convertModelToProtoTrade(trade *model.Trade) *pb.Trade {
 		UserId:          trade.UserID,
 		FromCoinId:      trade.FromCoinMintAddress,
 		ToCoinId:        trade.ToCoinMintAddress,
-		CoinSymbol:      trade.CoinSymbol,
 		Type:            trade.Type,
 		Amount:          trade.Amount,
 		Price:           trade.Price,
