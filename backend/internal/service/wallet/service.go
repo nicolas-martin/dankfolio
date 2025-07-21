@@ -413,7 +413,9 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 		CoinSymbol:             coinSymbol, // Populate CoinSymbol
 		Type:                   "transfer",
 		Amount:                 amount,
-		Price:                  0.0,
+		FromUSDPrice:           0.0,
+		ToUSDPrice:             0.0,
+		TotalUSDCost:           0.0,
 		Status:                 "pending",
 		UnsignedTransaction:    unsignedTx,
 		CreatedAt:              time.Now(),
@@ -742,29 +744,28 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 			
 			data := costBasisMap[tokenID]
 			
-			// Calculate cost basis based on trade type
-			costInUSD := 0.0
-			if trade.Type == "swap" && trade.FromCoinMintAddress != "" {
-				// For swaps, trade.Price is the exchange rate (how many TO tokens per FROM token)
-				// We need to calculate: FROM amount * FROM price = cost in USD
-				// FROM amount = TO amount / exchange rate
-				fromAmount := trade.Amount / trade.Price
-				
-				// Get the price of the FROM token
-				fromCoin, err := s.coinService.GetCoinByAddress(ctx, trade.FromCoinMintAddress)
-				if err == nil && fromCoin != nil && fromCoin.Price > 0 {
-					costInUSD = fromAmount * fromCoin.Price
-				} else {
-					// If we can't get the from coin price, skip this trade
-					slog.Warn("Could not get price for from coin in swap", 
-						"from_coin", trade.FromCoinMintAddress, 
-						"to_coin", tokenID,
-						"error", err)
-					continue
-				}
-			} else if trade.Type == "buy" {
-				// For direct buys, trade.Price should be the USD price per token
-				costInUSD = trade.Amount * trade.Price
+			// Use stored USD cost from the trade
+			costInUSD := trade.TotalUSDCost
+			
+			// Debug logging for swap trades
+			if tokenID == "11111111111111111111111111111111" && trade.Type == "swap" {
+				slog.Info("SOL Swap Trade Debug",
+					"trade_amount", trade.Amount,
+					"from_coin", trade.FromCoinMintAddress,
+					"from_usd_price", trade.FromUSDPrice,
+					"to_usd_price", trade.ToUSDPrice,
+					"total_usd_cost", trade.TotalUSDCost,
+				)
+			}
+			
+			// Skip trades without USD cost data
+			if costInUSD <= 0 {
+				slog.Warn("Trade has no USD cost data, skipping", 
+					"trade_id", trade.ID,
+					"type", trade.Type,
+					"from_coin", trade.FromCoinMintAddress, 
+					"to_coin", tokenID)
+				continue
 			}
 			
 			data.totalCost += costInUSD
@@ -780,14 +781,16 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 		}
 		
 		// For swaps, also track what we spent
-		if trade.Type == "swap" && trade.FromCoinMintAddress != "" {
-			// For swaps: trade.Amount is output amount, trade.Price is exchange rate
-			// Input amount = Output amount / Exchange rate
-			inputAmount := trade.Amount / trade.Price
+		if trade.Type == "swap" && trade.FromCoinMintAddress != "" && trade.FromUSDPrice > 0 && trade.TotalUSDCost > 0 {
+			// Calculate input amount from USD values
+			// Input amount = Total USD cost / FROM token USD price
+			inputAmount := trade.TotalUSDCost / trade.FromUSDPrice
 			holdings[trade.FromCoinMintAddress] -= inputAmount
 			slog.Debug("Subtracted from holdings for swap",
 				"token", trade.FromCoinMintAddress,
 				"amount", inputAmount,
+				"from_usd_price", trade.FromUSDPrice,
+				"total_usd_cost", trade.TotalUSDCost,
 				"new_total", holdings[trade.FromCoinMintAddress])
 		}
 	}

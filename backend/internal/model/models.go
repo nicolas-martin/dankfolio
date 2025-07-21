@@ -127,7 +127,6 @@ type Trade struct {
 	CoinSymbol          string  `json:"coin_symbol"` // This might be redundant if From/ToCoin provides symbol, or useful for primary display
 	Type                string  `json:"type"`
 	Amount              float64 `json:"amount"`
-	Price               float64 `json:"price"`
 
 	// Fee Information
 	Fee            float64 `json:"fee"`                        // Total fee in USD
@@ -147,6 +146,11 @@ type Trade struct {
 
 	// Price Impact
 	PriceImpactPercent float64 `json:"price_impact_percent,omitempty"` // Price impact as percentage
+	
+	// USD Values at Time of Trade (for accurate PnL calculation)
+	FromUSDPrice float64 `json:"from_usd_price,omitempty"` // USD price of FROM token at trade time
+	ToUSDPrice   float64 `json:"to_usd_price,omitempty"`   // USD price of TO token at trade time
+	TotalUSDCost float64 `json:"total_usd_cost,omitempty"` // Total USD cost of the trade
 
 	Status              string    `json:"status"`
 	TransactionHash     string    `json:"transaction_hash"`

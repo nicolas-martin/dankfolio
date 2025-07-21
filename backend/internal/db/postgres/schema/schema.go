@@ -82,7 +82,6 @@ type Trade struct {
 	CoinSymbol          string  `gorm:"column:coin_symbol"`     // Primary coin symbol for display
 	Type                string  `gorm:"column:type;not null"`   // e.g., "buy", "sell", "swap"
 	Amount              float64 `gorm:"column:amount;not null"` // Amount of 'FromCoin' for sells/swaps, 'ToCoin' for buys
-	Price               float64 `gorm:"column:price;not null"`  // Price per unit of 'ToCoin' in terms of 'FromCoin' or quote currency
 
 	// Fee Information
 	Fee            float64 `gorm:"column:fee;default:0.0"`              // Total fee in USD
@@ -102,6 +101,11 @@ type Trade struct {
 
 	// Price Impact
 	PriceImpactPercent float64 `gorm:"column:price_impact_percent;default:0.0"` // Price impact as percentage
+	
+	// USD Values at Time of Trade (for accurate PnL calculation)
+	FromUSDPrice float64 `gorm:"column:from_usd_price;default:0.0"` // USD price of FROM token at trade time
+	ToUSDPrice   float64 `gorm:"column:to_usd_price;default:0.0"`   // USD price of TO token at trade time
+	TotalUSDCost float64 `gorm:"column:total_usd_cost;default:0.0"` // Total USD cost of the trade
 
 	Status              string    `gorm:"column:status;not null;index:idx_trades_status"` // e.g., "pending", "completed", "failed"
 	TransactionHash     string    `gorm:"column:transaction_hash"`

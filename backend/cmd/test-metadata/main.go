@@ -11,7 +11,6 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients/tracker"
 	"github.com/olekukonko/tablewriter"
 )
 

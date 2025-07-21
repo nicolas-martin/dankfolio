@@ -412,7 +412,7 @@ func convertModelToProtoTrade(trade *model.Trade) *pb.Trade {
 		ToCoinId:        trade.ToCoinMintAddress,
 		Type:            trade.Type,
 		Amount:          trade.Amount,
-		Price:           trade.Price,
+		Price:           0, // Deprecated - use USD price fields instead
 		Fee:             trade.Fee,
 		Status:          trade.Status,
 		TransactionHash: trade.TransactionHash,
