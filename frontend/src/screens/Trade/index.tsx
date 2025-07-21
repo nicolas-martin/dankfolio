@@ -63,7 +63,6 @@ const Trade: React.FC = () => {
 	const [pollingError, setPollingError] = useState<string | null>(null);
 	const [isNavigating, setIsNavigating] = useState(false); // This one IS used by TradeStatusModal
 	const [hasSufficientSolBalance, setHasSufficientSolBalance] = useState<boolean>(true); // Track SOL balance validation
-	const [hasDetailedFeeBreakdown, setHasDetailedFeeBreakdown] = useState<boolean>(false); // Track if we've fetched detailed fees for current pair
 	const [allowMultiHop, setAllowMultiHop] = useState<boolean>(false); // Allow multi-hop routing
 	const [isMultiHopInfoVisible, setIsMultiHopInfoVisible] = useState(false);
 
@@ -133,7 +132,6 @@ const Trade: React.FC = () => {
 
 	// Reset fee breakdown flag when coin pair changes
 	useEffect(() => {
-		setHasDetailedFeeBreakdown(false);
 	}, [fromCoin?.address, toCoin?.address]);
 
 	// Fetch portfolio balance if wallet exists and tokens are empty
@@ -188,9 +186,9 @@ const Trade: React.FC = () => {
 			// Determine which amount to set based on direction
 			const setTargetAmount = direction === 'from' ? setToAmount : setFromAmount;
 			try {
-				// Only request detailed fee breakdown if we haven't fetched it yet for this pair
-				// or if user wallet is available and we don't have breakdown yet
-				const shouldIncludeFeeBreakdown = !hasDetailedFeeBreakdown && !!wallet?.address;
+				// Always request detailed fee breakdown when wallet is connected
+				// This ensures we get accurate total SOL required for every quote
+				const shouldIncludeFeeBreakdown = !!wallet?.address;
 
 				const quoteData = await grpcApi.getFullSwapQuoteOrchestrated(
 					currentAmount,
@@ -201,10 +199,6 @@ const Trade: React.FC = () => {
 					allowMultiHop // Allow multi-hop routing
 				);
 
-				// Mark that we've fetched detailed breakdown for this pair
-				if (shouldIncludeFeeBreakdown && quoteData.solFeeBreakdown) {
-					setHasDetailedFeeBreakdown(true);
-				}
 
 				setTargetAmount(quoteData.estimatedAmount);
 				setTradeDetails(prevDetails => ({
@@ -761,8 +755,7 @@ const Trade: React.FC = () => {
 										onValueChange={(value) => {
 											setAllowMultiHop(value);
 											// Reset fee breakdown flag to force new calculation
-											setHasDetailedFeeBreakdown(false);
-											// Re-fetch quote with new routing setting and fee breakdown
+																				// Re-fetch quote with new routing setting and fee breakdown
 											if (fromAmount && fromCoin && toCoin) {
 												handleFromAmountChange(fromAmount);
 											}
