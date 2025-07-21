@@ -74,9 +74,10 @@ const Trade: React.FC = () => {
 
 	const onPollingFinalized = useCallback((finalData: TradeStatusResponse | null) => {
 		if (wallet?.address && finalData && !finalData.error) {
-			logger.info('[Trade] Transaction finalized successfully, refreshing portfolio.');
+			logger.info('[Trade] Transaction finalized successfully, refreshing portfolio and PnL.');
 			usePortfolioStore.getState().fetchPortfolioBalance(wallet.address);
 			useTransactionsStore.getState().fetchRecentTransactions(wallet.address);
+			usePortfolioStore.getState().fetchPortfolioPnL(wallet.address);
 		}
 	}, [wallet?.address]);
 

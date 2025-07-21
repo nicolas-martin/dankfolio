@@ -64,9 +64,10 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		(errorMsg) => showToast({ type: 'error', message: errorMsg || 'Transaction polling failed' }), // onError
 		(finalData) => { // onFinalized
 			if (wallet?.address && finalData && !finalData.error) { // Assuming finalData contains the structure from getSwapStatus
-				logger.info('[Send] Transaction finalized successfully, refreshing portfolio and transactions.');
+				logger.info('[Send] Transaction finalized successfully, refreshing portfolio, transactions, and PnL.');
 				fetchPortfolioBalance(wallet.address);
 				fetchRecentTransactions(wallet.address);
+				usePortfolioStore.getState().fetchPortfolioPnL(wallet.address);
 			}
 		}
 	);

@@ -6,6 +6,7 @@ import { logger as log } from '@/utils/logger';
 import * as Keychain from 'react-native-keychain';
 import { getKeypairFromPrivateKey } from '@/services/solana';
 import { KEYCHAIN_SERVICE } from '@/utils/keychainService';
+import type { TokenPnL } from '@/services/grpc/model';
 
 export interface PortfolioToken {
 	mintAddress: string;
@@ -20,16 +21,23 @@ interface PortfolioState {
 	isLoading: boolean;
 	error: string | null;
 	tokens: PortfolioToken[];
+	pnlData: TokenPnL[] | null;
+	isPnlLoading: boolean;
+	pnlError: string | null;
 	setWallet: (publicKey: string) => Promise<void>;
 	clearWallet: () => void;
 	fetchPortfolioBalance: (address: string, forceRefresh?: boolean) => Promise<void>;
+	fetchPortfolioPnL: (address: string) => Promise<void>;
 }
 
-export const usePortfolioStore = create<PortfolioState>((set, get) => ({
+export const usePortfolioStore = create<PortfolioState>((set) => ({
 	wallet: null, // Initialized with null
 	isLoading: false,
 	error: null,
 	tokens: [],
+	pnlData: null,
+	isPnlLoading: false,
+	pnlError: null,
 
 	setWallet: async (publicKey: string) => {
 		log.info('🔐 Loading wallet credentials...');
@@ -100,7 +108,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 
 	clearWallet: () => {
 		log.info('[PortfolioStore] Clearing wallet and tokens');
-		set({ wallet: null, tokens: [], error: null });
+		set({ wallet: null, tokens: [], error: null, pnlData: null, pnlError: null });
 	},
 
 	fetchPortfolioBalance: async (address: string, forceRefresh?: boolean) => {
@@ -228,6 +236,46 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 			} else {
 				throw new Error(String(error));
 			}
+		}
+	},
+
+	fetchPortfolioPnL: async (address: string) => {
+		log.info('🔄 [PortfolioStore] fetchPortfolioPnL called for address:', address);
+		if (address === '') {
+			log.warn('⚠️ [PortfolioStore] fetchPortfolioPnL called with empty address');
+			return;
+		}
+
+		try {
+			set({ isPnlLoading: true, pnlError: null });
+			log.log('⏳ [PortfolioStore] Calling grpcApi.getPortfolioPnL...');
+			const response = await grpcApi.getPortfolioPnL(address);
+			log.log('✅ [PortfolioStore] Received PnL data:', response);
+
+			if (response?.tokenPnls) {
+				const sortedPnLs = [...response.tokenPnls].sort((a, b) => b.unrealizedPnl - a.unrealizedPnl);
+				set({
+					pnlData: sortedPnLs,
+					isPnlLoading: false,
+					pnlError: null
+				});
+			} else {
+				set({
+					pnlData: [],
+					isPnlLoading: false,
+					pnlError: null
+				});
+			}
+			log.info('✅ [PortfolioStore] fetchPortfolioPnL finished.');
+		} catch (error) {
+			const errorMessage = (error as Error).message;
+			log.error(`❌ [PortfolioStore] Failed to fetch portfolio PnL:`, error);
+			
+			set({
+				pnlError: errorMessage,
+				isPnlLoading: false,
+				pnlData: null
+			});
 		}
 	},
 }));

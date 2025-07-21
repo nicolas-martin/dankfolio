@@ -3,55 +3,34 @@ import { Text, IconButton, DataTable } from 'react-native-paper';
 import { usePortfolioStore } from '@/store/portfolio';
 import { useStyles } from './pnlview_styles';
 import { formatTokenBalance, formatPercentage, formatPrice } from '@/utils/numberFormat';
-import { useCallback, useState, useMemo } from 'react';
-import { fetchPortfolioPnL } from './pnlview_scripts';
+import { useCallback, useMemo } from 'react';
 import { useEffect } from 'react';
-import type { TokenPnL } from '@/services/grpc/model';
 import CachedImage from '@/components/Common/CachedImage';
 
 const PnLView = () => {
-	const { tokens, fetchPortfolioBalance, wallet } = usePortfolioStore();
+	const { tokens, fetchPortfolioBalance, fetchPortfolioPnL, wallet, pnlData, isPnlLoading } = usePortfolioStore();
 	const styles = useStyles();
-	const [isRefreshing, setIsRefreshing] = useState(false);
-	const [pnlData, setPnlData] = useState<TokenPnL[] | null>(null);
-	const [isLoadingPnL, setIsLoadingPnL] = useState(false);
 
 	const refreshControlColors = useMemo(() => [styles.colors.primary], [styles.colors.primary]);
 
 	// Fetch PnL data from backend when wallet changes
 	useEffect(() => {
 		if (wallet?.address) {
-			const loadPnLData = async () => {
-				setIsLoadingPnL(true);
-				try {
-					const response = await fetchPortfolioPnL(wallet.address);
-					if (response?.tokenPnls) {
-						const sortedPnLs = [...response.tokenPnls].sort((a, b) => b.unrealizedPnl - a.unrealizedPnl);
-						setPnlData(sortedPnLs);
-					}
-				} finally {
-					setIsLoadingPnL(false);
-				}
-			};
-			loadPnLData();
+			fetchPortfolioPnL(wallet.address);
 		}
-	}, [wallet?.address]);
+	}, [wallet?.address, fetchPortfolioPnL]);
 
 	const handleRefresh = useCallback(async () => {
 		if (!wallet?.address) return;
-		setIsRefreshing(true);
 		try {
-			await fetchPortfolioBalance(wallet.address, true);
-			// Also refresh PnL data
-			const response = await fetchPortfolioPnL(wallet.address);
-			if (response?.tokenPnls) {
-				const sortedPnLs = [...response.tokenPnls].sort((a, b) => b.unrealizedPnl - a.unrealizedPnl);
-				setPnlData(sortedPnLs);
-			}
-		} finally {
-			setIsRefreshing(false);
+			await Promise.all([
+				fetchPortfolioBalance(wallet.address, true),
+				fetchPortfolioPnL(wallet.address)
+			]);
+		} catch {
+			// Error handling is done in the store functions
 		}
-	}, [wallet?.address, fetchPortfolioBalance]);
+	}, [wallet?.address, fetchPortfolioBalance, fetchPortfolioPnL]);
 
 	// Only show PnL data if loaded from backend
 	const displayData = pnlData || [];
@@ -73,7 +52,7 @@ const PnLView = () => {
 		);
 	}
 
-	if (isLoadingPnL) {
+	if (isPnlLoading) {
 		return (
 			<View style={styles.emptyContainer}>
 				<Text style={styles.emptyTitle}>Loading P&L data...</Text>
@@ -104,7 +83,7 @@ const PnLView = () => {
 			contentContainerStyle={styles.scrollContent}
 			refreshControl={
 				<RefreshControl
-					refreshing={isRefreshing}
+					refreshing={isPnlLoading}
 					onRefresh={handleRefresh}
 					colors={refreshControlColors}
 					tintColor={styles.colors.primary}
