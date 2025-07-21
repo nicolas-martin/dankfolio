@@ -28,7 +28,7 @@ export const validateSolBalanceForQuote = (
 ): boolean => {
 	const solBalance = solPortfolioToken?.amount ?? 0;
 	const networkFees = parseFloat(totalSolRequired) || 0;
-	
+
 	// If swapping FROM SOL, we need swap amount + network fees
 	// Otherwise, we just need network fees
 	const swapAmount = (fromCoin?.symbol === 'SOL' && fromAmount) ? parseFloat(fromAmount) || 0 : 0;
@@ -38,7 +38,7 @@ export const validateSolBalanceForQuote = (
 	if (networkFees > 0 || swapAmount > 0) {
 		// Use comprehensive SOL requirement from quote
 		if (solBalance < totalRequired) {
-			const message = swapAmount > 0 
+			const message = swapAmount > 0
 				? `Insufficient SOL. Required: ${formatTokenBalance(swapAmount)} SOL (swap) + ${formatTokenBalance(networkFees)} SOL (fees) = ${formatTokenBalance(totalRequired)} SOL. Balance: ${formatTokenBalance(solBalance)} SOL`
 				: `Insufficient SOL for transaction fees. Required: ${formatTokenBalance(networkFees)} SOL, Balance: ${formatTokenBalance(solBalance)} SOL`;
 

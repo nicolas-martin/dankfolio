@@ -105,12 +105,12 @@ const Trade: React.FC = () => {
 	// Auto-enable multi-hop for meme-to-meme swaps
 	useEffect(() => {
 		if (fromCoin && toCoin) {
-			const isMemeToMeme = 
-				fromCoin.mintAddress !== NATIVE_SOL_ADDRESS && 
-				fromCoin.mintAddress !== SOLANA_ADDRESS &&
-				toCoin.mintAddress !== NATIVE_SOL_ADDRESS && 
-				toCoin.mintAddress !== SOLANA_ADDRESS;
-			
+			const isMemeToMeme =
+				fromCoin.address !== NATIVE_SOL_ADDRESS &&
+				fromCoin.address !== SOLANA_ADDRESS &&
+				toCoin.address !== NATIVE_SOL_ADDRESS &&
+				toCoin.address !== SOLANA_ADDRESS;
+
 			setAllowMultiHop(isMemeToMeme);
 		}
 	}, [fromCoin, toCoin]);
@@ -216,7 +216,7 @@ const Trade: React.FC = () => {
 				// Validate SOL balance for transaction fees immediately after quote
 				validateSolBalanceForQuote(
 					solPortfolioToken,
-					quoteData.totalSolRequired || quoteData.totalFee,
+					quoteData.totalFee,
 					showToast,
 					setHasSufficientSolBalance,
 					currentAmount,
@@ -235,10 +235,10 @@ const Trade: React.FC = () => {
 
 				// Enhance error message if it's a routing error and multi-hop is disabled
 				let enhancedMessage = userFriendlyMessage;
-				if (isNoRouteError && !allowMultiHop && 
-					currentFromCoin.address !== NATIVE_SOL_ADDRESS && 
+				if (isNoRouteError && !allowMultiHop &&
+					currentFromCoin.address !== NATIVE_SOL_ADDRESS &&
 					currentFromCoin.address !== SOLANA_ADDRESS &&
-					currentToCoin.address !== NATIVE_SOL_ADDRESS && 
+					currentToCoin.address !== NATIVE_SOL_ADDRESS &&
 					currentToCoin.address !== SOLANA_ADDRESS) {
 					enhancedMessage = 'No direct route found. Try enabling multi-hop routing for better liquidity.';
 				}
@@ -364,7 +364,7 @@ const Trade: React.FC = () => {
 			fromCoin,
 			fromPortfolioToken,
 			solPortfolioToken,
-			tradeDetails.totalSolRequired || tradeDetails.totalFee,
+			tradeDetails.totalFee,
 			setIsConfirmationVisible,
 			showToast
 		);
@@ -730,42 +730,42 @@ const Trade: React.FC = () => {
 
 					{/* Routing Options for meme-to-meme swaps */}
 					{fromCoin && toCoin &&
-					 fromCoin.mintAddress !== NATIVE_SOL_ADDRESS && 
-					 fromCoin.mintAddress !== SOLANA_ADDRESS &&
-					 toCoin.mintAddress !== NATIVE_SOL_ADDRESS && 
-					 toCoin.mintAddress !== SOLANA_ADDRESS && (
-						<Card style={styles.routingCard}>
-							<Card.Content>
-								<View style={styles.routingRow}>
-									<View style={styles.routingTextContainer}>
-										<View style={styles.routingLabelContainer}>
-											<Text style={styles.routingLabel}>Allow Multi-Hop</Text>
-											<TouchableOpacity onPress={() => setIsMultiHopInfoVisible(true)}>
-												<InfoIcon size={18} color={styles.infoIcon.color} />
-											</TouchableOpacity>
+						fromCoin.mintAddress !== NATIVE_SOL_ADDRESS &&
+						fromCoin.mintAddress !== SOLANA_ADDRESS &&
+						toCoin.mintAddress !== NATIVE_SOL_ADDRESS &&
+						toCoin.mintAddress !== SOLANA_ADDRESS && (
+							<Card style={styles.routingCard}>
+								<Card.Content>
+									<View style={styles.routingRow}>
+										<View style={styles.routingTextContainer}>
+											<View style={styles.routingLabelContainer}>
+												<Text style={styles.routingLabel}>Allow Multi-Hop</Text>
+												<TouchableOpacity onPress={() => setIsMultiHopInfoVisible(true)}>
+													<InfoIcon size={18} color={styles.infoIcon.color} />
+												</TouchableOpacity>
+											</View>
+											<Text style={styles.routingDescription}>
+												{allowMultiHop
+													? 'Route through multiple pools'
+													: 'Direct routes only'}
+											</Text>
 										</View>
-										<Text style={styles.routingDescription}>
-											{allowMultiHop 
-												? 'Route through multiple pools' 
-												: 'Direct routes only'}
-										</Text>
+										<Switch
+											value={allowMultiHop}
+											onValueChange={(value) => {
+												setAllowMultiHop(value);
+												// Reset fee breakdown flag to force new calculation
+												// Re-fetch quote with new routing setting and fee breakdown
+												if (fromAmount && fromCoin && toCoin) {
+													handleFromAmountChange(fromAmount);
+												}
+											}}
+											testID="multi-hop-toggle"
+										/>
 									</View>
-									<Switch
-										value={allowMultiHop}
-										onValueChange={(value) => {
-											setAllowMultiHop(value);
-											// Reset fee breakdown flag to force new calculation
-																				// Re-fetch quote with new routing setting and fee breakdown
-											if (fromAmount && fromCoin && toCoin) {
-												handleFromAmountChange(fromAmount);
-											}
-										}}
-										testID="multi-hop-toggle"
-									/>
-								</View>
-							</Card.Content>
-						</Card>
-					)}
+								</Card.Content>
+							</Card>
+						)}
 
 					{renderTradeDetails()}
 
