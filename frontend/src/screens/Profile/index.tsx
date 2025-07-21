@@ -175,12 +175,12 @@ const Profile = () => {
 					</>
 				) : (
 					<TokenListCard
-						style={styles.tokenListCard}
 						title=''
 						coins={sortedTokens.map(token => createCoinCardProps(token))}
 						showSparkline={false}
 						showBalanceAndValue={true}
 						noHorizontalMargin={true}
+						noRoundedCorners={true}
 						onCoinPress={(coin) => {
 							logger.breadcrumb({
 								category: 'ui',
@@ -242,21 +242,31 @@ const Profile = () => {
 	const renderTabBar = props => (
 		<TabBar
 			{...props}
-			indicatorStyle={{ backgroundColor: 'white' }}
-			style={{ backgroundColor: 'blue' }}
-			renderIcon={({ route }) => {
+			indicatorStyle={styles.tabIndicator}
+			style={styles.tabBar}
+			renderIcon={({ route, focused }) => {
 				const tab = tabs.find(t => t.key === route.key);
-				return tab ? <Icon source={tab.icon} size={24} color={styles.colors.onPrimary} /> : null;
+				return tab ? (
+					<Icon 
+						source={tab.icon} 
+						size={20} 
+						color={focused ? styles.colors.primary : styles.colors.onSurfaceVariant} 
+					/>
+				) : null;
 			}}
 			renderLabel={({ route, focused }) => {
 				const tab = tabs.find(t => t.key === route.key);
 				return (
-					<Text style={{ color: focused ? styles.colors.onPrimary : styles.colors.onSurface }}>
+					<Text style={[
+						styles.tabLabel,
+						focused ? styles.tabLabelActive : styles.tabLabelInactive
+					]}>
 						{tab ? tab.title : ''}
 					</Text>
 				);
 			}}
-			activeColor={styles.colors.onPrimary}
+			pressColor={styles.colors.primaryContainer}
+			labelStyle={styles.tabLabel}
 		/>
 	);
 
@@ -278,7 +288,7 @@ const Profile = () => {
 					<View style={styles.contentPadding} accessible={false}>
 						{renderHeader()}
 						{renderPortfolioCard()}
-						<View style={{ height: 800 }}>
+						<View style={styles.tabViewContainer}>
 							<TabView
 								renderTabBar={renderTabBar}
 								navigationState={{ index, routes }}
@@ -286,6 +296,7 @@ const Profile = () => {
 								onIndexChange={setIndex}
 								initialLayout={{ width: layout.width }}
 								swipeEnabled={true}
+								style={styles.tabContent}
 							/>
 						</View>
 					</View>

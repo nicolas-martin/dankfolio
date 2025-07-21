@@ -6,7 +6,7 @@ export interface ExtendedCoin extends Coin {
 }
 
 export interface TokenListCardProps {
-	title: string;
+	title?: string;
 	coins: (Coin | ExtendedCoin)[];
 	priceHistories?: Record<string, PriceData[]>;
 	isLoadingPriceHistories?: Record<string, boolean>;
@@ -14,6 +14,7 @@ export interface TokenListCardProps {
 	showSparkline?: boolean;
 	showBalanceAndValue?: boolean;
 	noHorizontalMargin?: boolean;
+	noRoundedCorners?: boolean;
 	testIdPrefix?: string;
 }
 

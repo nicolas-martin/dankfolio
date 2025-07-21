@@ -159,6 +159,7 @@ const TokenListCard: React.FC<TokenListCardProps> = ({
 	showSparkline = true,
 	showBalanceAndValue = false,
 	noHorizontalMargin = false,
+	noRoundedCorners = false,
 	testIdPrefix = 'token-list',
 }) => {
 	const styles = useStyles();
@@ -182,9 +183,16 @@ const TokenListCard: React.FC<TokenListCardProps> = ({
 		);
 	}, [coins.length, priceHistories, isLoadingPriceHistories, onCoinPress, showSparkline, showBalanceAndValue, testIdPrefix]);
 
-	const containerStyle = noHorizontalMargin
-		? [styles.container, { marginHorizontal: 0 }]
-		: styles.container;
+	const containerStyle = [
+		styles.container,
+		noHorizontalMargin && { marginHorizontal: 0 },
+		noRoundedCorners && { 
+			borderRadius: 0,
+			elevation: 0,
+			shadowOpacity: 0,
+			marginBottom: 0,
+		}
+	].filter(Boolean);
 
 	return (
 		<View style={containerStyle} testID={`${testIdPrefix}-card`}>

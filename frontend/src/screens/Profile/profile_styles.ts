@@ -220,14 +220,36 @@ export const useStyles = () => {
 				marginRight: -8, // No exact match
 			},
 			tabBar: {
-				backgroundColor: 'transparent',
+				backgroundColor: theme.colors.surface,
+				borderBottomColor: theme.colors.surfaceVariant,
+				borderBottomWidth: 1,
+				elevation: 0,
+				shadowOpacity: 0,
+			},
+			tabContent: {
+				flex: 1,
 			},
 			tabIndicator: {
 				backgroundColor: theme.colors.primary,
+				height: 3,
+			},
+			tabItem: {
+				paddingVertical: theme.spacing.md,
 			},
 			tabLabel: {
 				fontSize: theme.typography.fontSize.sm,
 				fontWeight: '600',
+			},
+			tabLabelActive: {
+				color: theme.colors.primary,
+			},
+			tabLabelInactive: {
+				color: theme.colors.onSurfaceVariant,
+			},
+			tabViewContainer: {
+				backgroundColor: theme.colors.background,
+				flex: 1,
+				minHeight: 500,
 			},
 			themeToggleContainer: {
 				alignItems: 'center',
