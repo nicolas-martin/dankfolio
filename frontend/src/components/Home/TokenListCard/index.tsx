@@ -152,7 +152,6 @@ const TokenListItem: React.FC<TokenListItemProps> = React.memo(({
 TokenListItem.displayName = 'TokenListItem';
 
 const TokenListCard: React.FC<TokenListCardProps> = ({
-	title,
 	coins,
 	priceHistories = {},
 	isLoadingPriceHistories = {},
@@ -189,9 +188,6 @@ const TokenListCard: React.FC<TokenListCardProps> = ({
 
 	return (
 		<View style={containerStyle} testID={`${testIdPrefix}-card`}>
-			<View style={styles.header}>
-				<Text style={styles.title}>{title}</Text>
-			</View>
 			{!showBalanceAndValue && (
 				<View style={styles.columnHeader}>
 					<View style={styles.leftSection}>

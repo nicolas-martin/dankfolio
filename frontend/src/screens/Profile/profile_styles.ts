@@ -95,6 +95,9 @@ export const useStyles = () => {
 			headerSection: {
 				marginBottom: theme.spacing['2xl'],
 			},
+			listContainer: {
+				backgroundColor: theme.colors.surface,
+			},
 			loadingIndicator: {
 				marginVertical: 30, // No exact match
 			},
@@ -218,9 +221,6 @@ export const useStyles = () => {
 			},
 			tabBar: {
 				backgroundColor: 'transparent',
-			},
-			tabContainer: {
-				marginBottom: theme.spacing.md,
 			},
 			tabIndicator: {
 				backgroundColor: theme.colors.primary,

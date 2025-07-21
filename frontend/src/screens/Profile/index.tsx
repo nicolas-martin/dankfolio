@@ -3,8 +3,7 @@ import { View, ScrollView, RefreshControl, SafeAreaView, useWindowDimensions } f
 import { Text, Button, Icon, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
-import { TabView } from 'react-native-tab-view';
-import { SegmentedButtons } from 'react-native-paper';
+import { TabView, TabBar } from 'react-native-tab-view';
 import { handleTokenPress, formatAddress, sortTokensByValue, calculateTotalPortfolioValue, createCoinCardProps } from './profile_scripts';
 import CopyToClipboard from '@/components/Common/CopyToClipboard';
 import { usePortfolioStore } from '@store/portfolio';
@@ -176,7 +175,8 @@ const Profile = () => {
 					</>
 				) : (
 					<TokenListCard
-						title="Your Tokens"
+						style={styles.tokenListCard}
+						title=''
 						coins={sortedTokens.map(token => createCoinCardProps(token))}
 						showSparkline={false}
 						showBalanceAndValue={true}
@@ -196,7 +196,7 @@ const Profile = () => {
 		</ScrollView>
 	);
 
-	
+
 
 	const renderScene = ({ route }) => {
 		logger.info(`Rendering scene for route: ${route.key}`);
@@ -215,8 +215,6 @@ const Profile = () => {
 				return null;
 		}
 	};
-
-
 
 	const renderNoWalletState = () => (
 		<View style={styles.noWalletContainer}>
@@ -241,6 +239,26 @@ const Profile = () => {
 			</SafeAreaView>
 		);
 	}
+	const renderTabBar = props => (
+		<TabBar
+			{...props}
+			indicatorStyle={{ backgroundColor: 'white' }}
+			style={{ backgroundColor: 'blue' }}
+			renderIcon={({ route }) => {
+				const tab = tabs.find(t => t.key === route.key);
+				return tab ? <Icon source={tab.icon} size={24} color={styles.colors.onPrimary} /> : null;
+			}}
+			renderLabel={({ route, focused }) => {
+				const tab = tabs.find(t => t.key === route.key);
+				return (
+					<Text style={{ color: focused ? styles.colors.onPrimary : styles.colors.onSurface }}>
+						{tab ? tab.title : ''}
+					</Text>
+				);
+			}}
+			activeColor={styles.colors.onPrimary}
+		/>
+	);
 
 	return (
 		<SafeAreaView style={styles.safeArea} accessible={false}>
@@ -260,24 +278,13 @@ const Profile = () => {
 					<View style={styles.contentPadding} accessible={false}>
 						{renderHeader()}
 						{renderPortfolioCard()}
-						<View style={styles.tabContainer}>
-							<SegmentedButtons
-								value={tabs[index].key}
-								onValueChange={(value) => {
-									const newIndex = tabs.findIndex(tab => tab.key === value);
-									setIndex(newIndex);
-								}}
-								buttons={tabs.map(tab => ({ value: tab.key, label: tab.title, icon: tab.icon }))}
-								style={styles.segmentedButtons}
-							/>
-						</View>
-						<View style={{ height: 500 }}>
+						<View style={{ height: 800 }}>
 							<TabView
+								renderTabBar={renderTabBar}
 								navigationState={{ index, routes }}
 								renderScene={renderScene}
 								onIndexChange={setIndex}
 								initialLayout={{ width: layout.width }}
-								renderTabBar={() => null}
 								swipeEnabled={true}
 							/>
 						</View>

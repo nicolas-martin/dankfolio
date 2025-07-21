@@ -16,9 +16,6 @@ export const useStyles = () => {
 			},
 			contentContainer: {
 				backgroundColor: theme.colors.surface,
-				borderRadius: theme.roundness,
-				marginHorizontal: theme.spacing.md,
-				overflow: 'hidden',
 			},
 			emptyContainer: {
 				alignItems: 'center',
@@ -101,9 +98,6 @@ export const useStyles = () => {
 			},
 			tableHeader: {
 				borderBottomColor: theme.colors.surfaceVariant,
-				borderBottomWidth: 1,
-				height: 40,
-				paddingHorizontal: theme.spacing.sm,
 			},
 			tableRow: {
 				alignItems: 'center',

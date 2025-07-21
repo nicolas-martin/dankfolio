@@ -16,7 +16,7 @@ jest.mock('@/store/portfolio');
 jest.mock('@/utils/logger');
 
 const mockFromCoin: Coin = {
-	mintAddress: 'fromCoinMint',
+	address: 'fromCoinMint',
 	symbol: 'FROM',
 	name: 'From Coin',
 	price: 10,
@@ -29,7 +29,7 @@ const mockFromCoin: Coin = {
 };
 
 const mockToCoin: Coin = {
-	mintAddress: 'toCoinMint',
+	address: 'toCoinMint',
 	symbol: 'TO',
 	name: 'To Coin',
 	price: 5,
@@ -94,8 +94,8 @@ describe('Trade Screen Scripts', () => {
 	describe('fetchTradeQuote', () => {
 		it('should fetch and set quote successfully', async () => {
 			(grpcApi.getCoinPrices as jest.Mock).mockResolvedValue({
-				[mockFromCoin.mintAddress]: mockFromCoin.price,
-				[mockToCoin.mintAddress]: mockToCoin.price,
+				[mockFromCoin.address]: mockFromCoin.price,
+				[mockToCoin.address]: mockToCoin.price,
 			});
 			const mockQuoteResponse = {
 				estimatedAmount: '19.8', // FromCoin price 10, ToCoin price 5, amount 10 => 10*10/5 = 20 (approx)
@@ -103,8 +103,8 @@ describe('Trade Screen Scripts', () => {
 				fee: '0.02',
 				priceImpact: '0.1',
 				routePlan: 'RouteA->RouteB',
-				inputMint: mockFromCoin.mintAddress,
-				outputMint: mockToCoin.mintAddress,
+				inputMint: mockFromCoin.address,
+				outputMint: mockToCoin.address,
 			};
 			(grpcApi.getSwapQuote as jest.Mock).mockResolvedValue(mockQuoteResponse);
 
@@ -118,8 +118,8 @@ describe('Trade Screen Scripts', () => {
 			);
 
 			expect(mockSetQuoteLoading).toHaveBeenCalledWith(true);
-			expect(grpcApi.getCoinPrices).toHaveBeenCalledWith([mockFromCoin.mintAddress, mockToCoin.mintAddress]);
-			expect(grpcApi.getSwapQuote).toHaveBeenCalledWith(mockFromCoin.mintAddress, mockToCoin.mintAddress, '10000000'); // 10 * 10^6 (fromCoin.decimals)
+			expect(grpcApi.getCoinPrices).toHaveBeenCalledWith([mockFromCoin.address, mockToCoin.address]);
+			expect(grpcApi.getSwapQuote).toHaveBeenCalledWith(mockFromCoin.address, mockToCoin.address, '10000000'); // 10 * 10^6 (fromCoin.decimals)
 			expect(mockSetToAmount).toHaveBeenCalledWith(mockQuoteResponse.estimatedAmount);
 			expect(mockSetTradeDetails).toHaveBeenCalledWith({
 				fromAmount: '10',
@@ -138,8 +138,8 @@ describe('Trade Screen Scripts', () => {
 
 		it('should handle API error during quote fetching', async () => {
 			(grpcApi.getCoinPrices as jest.Mock).mockResolvedValue({
-				[mockFromCoin.mintAddress]: mockFromCoin.price,
-				[mockToCoin.mintAddress]: mockToCoin.price,
+				[mockFromCoin.address]: mockFromCoin.price,
+				[mockToCoin.address]: mockToCoin.price,
 			});
 			const apiError = new Error('Failed to fetch quote');
 			(grpcApi.getSwapQuote as jest.Mock).mockRejectedValue(apiError);
@@ -195,8 +195,8 @@ describe('Trade Screen Scripts', () => {
 			priceImpact: '0.1',
 			fee: '0.02',
 			routePlan: 'RouteA->RouteB',
-			inputMint: mockFromCoin.mintAddress,
-			outputMint: mockToCoin.mintAddress,
+			inputMint: mockFromCoin.address,
+			outputMint: mockToCoin.address,
 			fromCoinPrice: mockFromCoin.price,
 			toCoinPrice: mockToCoin.price,
 		};

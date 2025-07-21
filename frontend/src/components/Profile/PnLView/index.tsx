@@ -45,7 +45,7 @@ const PnLView = () => {
 			// Also refresh PnL data
 			const response = await fetchPortfolioPnL(wallet.address);
 			if (response?.tokenPnls) {
-				const sortedPnLs = [...response.tokenPnls].sort((a, b) => b.unrealizedPnl - a.unrealizedPnL);
+				const sortedPnLs = [...response.tokenPnls].sort((a, b) => b.unrealizedPnl - a.unrealizedPnl);
 				setPnlData(sortedPnLs);
 			}
 		} finally {

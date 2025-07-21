@@ -86,10 +86,6 @@ export const useStyles = () => {
 			},
 			listContainer: {
 				backgroundColor: theme.colors.surface,
-				borderRadius: theme.roundness,
-				marginHorizontal: theme.spacing.md,
-				marginTop: theme.spacing.md,
-				overflow: 'hidden',
 			},
 			loadingText: {
 				color: theme.colors.onSurface,

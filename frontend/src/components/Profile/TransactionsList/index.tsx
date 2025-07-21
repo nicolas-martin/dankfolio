@@ -186,9 +186,7 @@ const TransactionsList = () => {
 	}
 
 	return (
-		<ScrollView
-			style={styles.container}
-			contentContainerStyle={styles.scrollContent}
+		<ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}
 			refreshControl={
 				<RefreshControl
 					refreshing={isRefreshing}
