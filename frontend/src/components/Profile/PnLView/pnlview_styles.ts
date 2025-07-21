@@ -18,7 +18,6 @@ export const useStyles = () => {
 				backgroundColor: theme.colors.surface,
 				borderRadius: theme.roundness,
 				marginHorizontal: theme.spacing.md,
-				marginTop: theme.spacing.md,
 				overflow: 'hidden',
 			},
 			emptyContainer: {
@@ -49,13 +48,17 @@ export const useStyles = () => {
 			gainBadgeNegative: {
 				// No background
 			},
-			gainBadgePositive: {
-				// No background
-			},
 			gainBadgeNeutral: {
 				// No background
 			},
+			gainBadgePositive: {
+				// No background
+			},
 			gainColumn: {
+				flex: 1.2,
+				justifyContent: 'center',
+			},
+			gainColumnCenter: {
 				flex: 1.2,
 				justifyContent: 'center',
 			},
@@ -66,11 +69,11 @@ export const useStyles = () => {
 			gainTextNegative: {
 				color: theme.colors.error,
 			},
-			gainTextPositive: {
-				color: theme.success,
-			},
 			gainTextNeutral: {
 				color: theme.colors.onSurfaceVariant,
+			},
+			gainTextPositive: {
+				color: theme.success,
 			},
 			headerText: {
 				color: theme.colors.onSurfaceVariant,
@@ -92,8 +95,9 @@ export const useStyles = () => {
 			symbolColumn: {
 				flex: 1.2,
 			},
-			tokenInfoContainer: {
-				alignItems: 'center',
+			symbolColumnStart: {
+				flex: 1.2,
+				justifyContent: 'flex-start',
 			},
 			tableHeader: {
 				borderBottomColor: theme.colors.surfaceVariant,
@@ -107,15 +111,18 @@ export const useStyles = () => {
 				borderBottomWidth: 1,
 				minHeight: 72,
 			},
+			tokenAmount: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: 10,
+				marginTop: 2,
+			},
 			tokenIcon: {
 				borderRadius: 20,
 				height: 40,
 				width: 40,
 			},
-			tokenAmount: {
-				color: theme.colors.onSurfaceVariant,
-				fontSize: 10,
-				marginTop: 2,
+			tokenInfoContainer: {
+				alignItems: 'center',
 			},
 			tokenShares: {
 				color: theme.colors.onSurfaceVariant,
@@ -134,6 +141,10 @@ export const useStyles = () => {
 				fontWeight: '600',
 			},
 			valueColumn: {
+				flex: 1.5,
+				justifyContent: 'center',
+			},
+			valueColumnCenter: {
 				flex: 1.5,
 				justifyContent: 'center',
 			},

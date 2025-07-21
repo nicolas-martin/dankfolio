@@ -138,7 +138,7 @@ const PnLView = () => {
 								key={tokenPnL.coinId}
 								style={[styles.tableRow, index === displayData.length - 1 && styles.lastRow]}
 							>
-								<DataTable.Cell style={[styles.symbolColumn, { justifyContent: 'flex-start' }]}>
+								<DataTable.Cell style={styles.symbolColumnStart}>
 									<View style={styles.symbolCellContent}>
 										<View style={styles.tokenInfoContainer}>
 											<Text style={styles.tokenSymbol}>{tokenPnL.symbol}</Text>
@@ -159,10 +159,10 @@ const PnLView = () => {
 										</View>
 									</View>
 								</DataTable.Cell>
-								<DataTable.Cell numeric style={[styles.valueColumn, { justifyContent: 'center' }]}>
+								<DataTable.Cell numeric style={styles.valueColumnCenter}>
 									<Text style={styles.tokenValue}>{formatPrice(tokenPnL.currentValue, true)}</Text>
 								</DataTable.Cell>
-								<DataTable.Cell numeric style={[styles.gainColumn, { justifyContent: 'center' }]}>
+								<DataTable.Cell numeric style={styles.gainColumnCenter}>
 									<View style={[styles.gainBadge, isEssentiallyZero ? styles.gainBadgeNeutral : (isPositive ? styles.gainBadgePositive : styles.gainBadgeNegative)]}>
 										<Text style={[styles.gainText, isEssentiallyZero ? styles.gainTextNeutral : (isPositive ? styles.gainTextPositive : styles.gainTextNegative)]}>
 											{isEssentiallyZero ? '—' : (isPositive ? '↑' : '↓')} {isEssentiallyZero ? '0.00%' : formatPercentage(Math.abs(percentageValue), 2, false)}

@@ -87,7 +87,7 @@ export const useTransactionPolling = <T>(
 			}
 
 			// Handle finalized states
-			if (result.finalized || result.status === 'Finalized') {
+			if (result.finalized || result.status === 'Finalized' || result.status === 'finalized') {
 				logger.info(`[useTransactionPolling] Transaction finalized for tx: ${hash}`);
 				setStatus('finalized');
 				cleanup();
