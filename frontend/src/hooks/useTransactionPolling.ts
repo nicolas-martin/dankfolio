@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { logger } from '@/utils/logger';
+import { PollingStatus } from '@/types/transactions';
 
-export type PollingStatus = 'idle' | 'pending' | 'polling' | 'confirmed' | 'finalized' | 'failed';
+export { PollingStatus };
 
 interface PollingResponse {
 	finalized?: boolean;
@@ -36,7 +37,7 @@ export const useTransactionPolling = <T>(
 	pollTimeout: number = DEFAULT_POLL_TIMEOUT
 ): UseTransactionPollingReturn<T> => {
 	const [txHash, setTxHash] = useState<string | null>(null);
-	const [status, setStatus] = useState<PollingStatus>('idle');
+	const [status, setStatus] = useState<PollingStatus>(PollingStatus.IDLE);
 	const [data, setData] = useState<T | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [confirmations, setConfirmations] = useState<number>(0);
@@ -67,7 +68,7 @@ export const useTransactionPolling = <T>(
 
 			if (!result) {
 				logger.info(`[useTransactionPolling] No result for tx: ${hash}, continuing...`);
-				setStatus('polling');
+				setStatus(PollingStatus.POLLING);
 				return;
 			}
 
@@ -79,7 +80,7 @@ export const useTransactionPolling = <T>(
 				const errorMessage = typeof result.error === 'string' ? result.error : 'Transaction failed';
 				logger.error(`[useTransactionPolling] Transaction failed: ${errorMessage}`);
 				setError(errorMessage);
-				setStatus('failed');
+				setStatus(PollingStatus.FAILED);
 				cleanup();
 				onError?.(errorMessage);
 				onFinalized?.(null);
@@ -87,9 +88,9 @@ export const useTransactionPolling = <T>(
 			}
 
 			// Handle finalized states
-			if (result.finalized || result.status === 'Finalized' || result.status === 'finalized') {
+			if (result.finalized || result.status === PollingStatus.FINALIZED) {
 				logger.info(`[useTransactionPolling] Transaction finalized for tx: ${hash}`);
-				setStatus('finalized');
+				setStatus(PollingStatus.FINALIZED);
 				cleanup();
 				onSuccess?.(result);
 				onFinalized?.(result);
@@ -97,10 +98,10 @@ export const useTransactionPolling = <T>(
 			}
 
 			// Handle failed states
-			if (result.status === 'Failed' || result.status === 'failed') {
+			if (result.status === PollingStatus.FAILED) {
 				logger.error(`[useTransactionPolling] Transaction failed for tx: ${hash}`);
 				setError('Transaction failed');
-				setStatus('failed');
+				setStatus(PollingStatus.FAILED);
 				cleanup();
 				onError?.('Transaction failed');
 				onFinalized?.(null);
@@ -108,16 +109,15 @@ export const useTransactionPolling = <T>(
 			}
 
 			// Handle confirmed states
-			if (result.status === 'Confirmed' || result.status === 'confirmed' ||
-				result.status === 'Processed' || result.status === 'processed') {
+			if (result.status === PollingStatus.CONFIRMED || result.status === PollingStatus.PROCESSED) {
 				logger.info(`[useTransactionPolling] Transaction confirmed for tx: ${hash}`);
-				setStatus('confirmed');
+				setStatus(PollingStatus.CONFIRMED);
 				return; // Continue polling until finalized
 			}
 
 			// Continue polling for other states (Unknown, Pending, etc.)
 			logger.info(`[useTransactionPolling] Status "${result.status}" for tx: ${hash}, continuing...`);
-			setStatus('polling');
+			setStatus(PollingStatus.POLLING);
 
 		} catch (e) {
 			if (!isActiveRef.current) return;
@@ -139,7 +139,7 @@ export const useTransactionPolling = <T>(
 
 		// Reset state
 		setTxHash(hash);
-		setStatus('pending');
+		setStatus(PollingStatus.PENDING);
 		setData(null);
 		setError(null);
 		setConfirmations(0);
@@ -160,7 +160,7 @@ export const useTransactionPolling = <T>(
 				if (isActiveRef.current) {
 					logger.warn(`[useTransactionPolling] Polling timed out for tx: ${hash}`);
 					setError('Polling timed out');
-					setStatus('failed');
+					setStatus(PollingStatus.FAILED);
 					cleanup();
 					onError?.('Polling timed out');
 				}
@@ -177,7 +177,7 @@ export const useTransactionPolling = <T>(
 		logger.info('[useTransactionPolling] Resetting polling');
 		cleanup();
 		setTxHash(null);
-		setStatus('idle');
+		setStatus(PollingStatus.IDLE);
 		setData(null);
 		setError(null);
 		setConfirmations(0);

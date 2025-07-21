@@ -1,4 +1,4 @@
-import { PollingStatus } from './types';
+import { PollingStatus } from '@/types/transactions';
 
 // Constants
 export const CONFIRMATION_THRESHOLD = 1;
@@ -6,15 +6,15 @@ export const CONFIRMATION_THRESHOLD = 1;
 // Status text mapping
 export const getStatusText = (currentStatus: PollingStatus): string => {
 	switch (currentStatus) {
-		case 'pending':
+		case PollingStatus.PENDING:
 			return 'Submitting Transaction...';
-		case 'polling':
+		case PollingStatus.POLLING:
 			return 'Waiting for Confirmation...';
-		case 'confirmed':
+		case PollingStatus.CONFIRMED:
 			return 'Transaction Confirmed';
-		case 'finalized':
+		case PollingStatus.FINALIZED:
 			return 'Transaction Finalized!';
-		case 'failed':
+		case PollingStatus.FAILED:
 			return 'Transaction Failed';
 		default:
 			return 'Checking Status...';
@@ -24,15 +24,15 @@ export const getStatusText = (currentStatus: PollingStatus): string => {
 // Status description mapping
 export const getStatusDescription = (currentStatus: PollingStatus): string => {
 	switch (currentStatus) {
-		case 'pending':
+		case PollingStatus.PENDING:
 			return 'Your transaction is being submitted to the network';
-		case 'polling':
+		case PollingStatus.POLLING:
 			return 'Waiting for network confirmation';
-		case 'confirmed':
+		case PollingStatus.CONFIRMED:
 			return 'Waiting for final confirmation and processing';
-		case 'finalized':
+		case PollingStatus.FINALIZED:
 			return 'Your transaction is complete and irreversible';
-		case 'failed':
+		case PollingStatus.FAILED:
 			return 'Your transaction could not be completed';
 		default:
 			return 'Checking transaction status...';
@@ -42,12 +42,12 @@ export const getStatusDescription = (currentStatus: PollingStatus): string => {
 // Status type classification
 export const getStatusType = (currentStatus: PollingStatus): 'loading' | 'success' | 'error' | 'warning' => {
 	switch (currentStatus) {
-		case 'finalized':
+		case PollingStatus.FINALIZED:
 			return 'success';
-		case 'failed':
+		case PollingStatus.FAILED:
 			return 'error';
-		case 'confirmed':
-		case 'polling':
+		case PollingStatus.CONFIRMED:
+		case PollingStatus.POLLING:
 			return 'warning';
 		default:
 			return 'loading';
@@ -56,17 +56,17 @@ export const getStatusType = (currentStatus: PollingStatus): 'loading' | 'succes
 
 // Check if status is final (no more updates expected)
 export const isFinalStatus = (status: PollingStatus): boolean => {
-	return status === 'finalized' || status === 'failed';
+	return status === PollingStatus.FINALIZED || status === PollingStatus.FAILED;
 };
 
 // Check if status is successful
 export const isSuccessStatus = (status: PollingStatus): boolean => {
-	return status === 'confirmed' || status === 'finalized';
+	return status === PollingStatus.CONFIRMED || status === PollingStatus.FINALIZED;
 };
 
 // Check if status is in progress
 export const isInProgressStatus = (status: PollingStatus): boolean => {
-	return status === 'pending' || status === 'polling' || status === 'confirmed';
+	return status === PollingStatus.PENDING || status === PollingStatus.POLLING || status === PollingStatus.CONFIRMED;
 };
 
 // Get confirmation progress percentage

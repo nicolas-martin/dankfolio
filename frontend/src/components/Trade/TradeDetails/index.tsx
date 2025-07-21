@@ -7,7 +7,6 @@ import {
 	formatPriceImpactPct,
 	formatSolAmount,
 	formatTotalSolRequired,
-	hasSolFeeBreakdown,
 	isAccountCreationMajorCost
 } from './tradedetails_scripts';
 
@@ -23,7 +22,9 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 
 	// Memoize calculated values to prevent unnecessary re-renders
 	const displayTotalFee = useMemo(() => totalSolRequired || totalFee, [totalSolRequired, totalFee]);
-	const showDetailedBreakdown = useMemo(() => hasSolFeeBreakdown(solFeeBreakdown), [solFeeBreakdown]);
+	// const showDetailedBreakdown = useMemo(() => hasSolFeeBreakdown(solFeeBreakdown), [solFeeBreakdown]);
+	// NOTE: Disable for now.. it's too complicated for now. 
+	const showDetailedBreakdown = false;
 	const accountCreationIsMajorCost = useMemo(() => isAccountCreationMajorCost(solFeeBreakdown), [solFeeBreakdown]);
 
 	const accordionKey = useMemo(() => `fee-breakdown-${expanded}`, [expanded]);

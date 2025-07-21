@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, Animated } from 'react-native';
 import { Text, Button, ActivityIndicator, Icon } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
-import { TradeStatusModalProps } from './types';
+import { TradeStatusModalProps, PollingStatus } from './types';
 import ManagedBottomSheetModal from '@/components/Common/BottomSheet';
 import ModalActionButtons from '@/components/Common/ModalActionButton';
 import { useStyles } from './styles';
@@ -80,9 +80,9 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 
 	// Animate progress bar
 	useEffect(() => {
-		if (txHash && (isInProgressStatus(displayStatus) || displayStatus === 'finalized')) {
+		if (txHash && (isInProgressStatus(displayStatus) || displayStatus === PollingStatus.FINALIZED)) {
 			let progress;
-			if (displayStatus === 'finalized') {
+			if (displayStatus === PollingStatus.FINALIZED) {
 				// Always show 100% for finalized transactions
 				progress = 100;
 			} else {
@@ -91,7 +91,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 
 			Animated.timing(progressAnim, {
 				toValue: progress / 100,
-				duration: displayStatus === 'finalized' ? 500 : 300, // Slightly longer animation for completion
+				duration: displayStatus === PollingStatus.FINALIZED ? 500 : 300, // Slightly longer animation for completion
 				useNativeDriver: false,
 			}).start();
 		}
@@ -146,12 +146,12 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 
 	const renderProgressSection = () => {
 		// Show progress if currently in progress OR if we've shown it before and not failed OR if finalized
-		const shouldShowProgress = isInProgress || (hasShownProgress && displayStatus !== 'failed') || displayStatus === 'finalized';
+		const shouldShowProgress = isInProgress || (hasShownProgress && displayStatus !== PollingStatus.FAILED) || displayStatus === PollingStatus.FINALIZED;
 
 		if (!shouldShowProgress) return null;
 
 		// For pending state without txHash, show preparing message
-		if (displayStatus === 'pending' && !txHash) {
+		if (displayStatus === PollingStatus.PENDING && !txHash) {
 			return (
 				<View style={styles.progressSection}>
 					<View style={styles.progressIndicator}>
@@ -163,7 +163,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 		}
 
 		// For finalized transactions, show "Complete" instead of confirmation count
-		const confirmationDisplay = displayStatus === 'finalized'
+		const confirmationDisplay = displayStatus === PollingStatus.FINALIZED
 			? 'Complete'
 			: formatConfirmationsText(displayConfirmations);
 
@@ -184,7 +184,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 				{isInProgress && (
 					<View style={styles.progressIndicator}>
 						<Text style={styles.progressText}>
-							{displayStatus === 'polling' ? 'Confirming...' : 'Processing...'}
+							{displayStatus === PollingStatus.POLLING ? 'Confirming...' : 'Processing...'}
 						</Text>
 					</View>
 				)}
@@ -216,7 +216,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	};
 
 	const renderErrorSection = () => {
-		if (displayStatus !== 'failed' || !error) return null;
+		if (displayStatus !== PollingStatus.FAILED || !error) return null;
 
 		return (
 			<View style={styles.errorSection}>
@@ -304,7 +304,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			{isFinal && (
 				<View style={styles.actionSection}>
 					<ModalActionButtons
-						primaryButtonText={displayStatus === 'failed' ? 'Try Again' : 'Done'}
+						primaryButtonText={displayStatus === PollingStatus.FAILED ? 'Try Again' : 'Done'}
 						onPrimaryButtonPress={handleButtonClose}
 						primaryButtonTestID="trade-status-action-button"
 					/>

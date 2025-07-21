@@ -11,6 +11,18 @@ export enum TransactionStatus {
 	UNKNOWN = 'unknown'
 }
 
+// Polling status enum that matches backend status values
+export enum PollingStatus {
+	IDLE = 'idle',
+	PENDING = 'pending',
+	POLLING = 'polling',
+	PROCESSED = 'processed',
+	CONFIRMED = 'confirmed',
+	FINALIZED = 'finalized',
+	FAILED = 'failed',
+	UNKNOWN = 'unknown'
+}
+
 export interface Transaction {
 	id: string;
 	type: TransactionType;
