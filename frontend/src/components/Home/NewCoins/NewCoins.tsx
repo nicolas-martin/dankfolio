@@ -42,7 +42,7 @@ const NewCoins: React.FC<NewCoinsProps> = ({ newCoins: newlyListedCoins, isLoadi
 	}, [navigation]);
 
 	// Render function for NewListingCard
-	const renderNewListingCard = useCallback((coin: Coin, index: number) => {
+	const renderNewListingCard = useCallback((coin: Coin, _index: number) => {
 		return (
 			<NewListingCard
 				coin={coin}
@@ -58,7 +58,7 @@ const NewCoins: React.FC<NewCoinsProps> = ({ newCoins: newlyListedCoins, isLoadi
 	}, []);
 
 	// Key extractor for coins
-	const keyExtractor = useCallback((coin: Coin, index: number) => {
+	const keyExtractor = useCallback((coin: Coin, _index: number) => {
 		return `new-listing-${coin.address}`;
 	}, []);
 

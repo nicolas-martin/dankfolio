@@ -1,4 +1,3 @@
-import { logger } from '@/utils/logger';
 
 /**
  * Utility to resolve IPFS URLs to HTTP gateway URLs
@@ -49,17 +48,15 @@ export const resolveIpfsUrl = (url: string | undefined): string | undefined => {
 		const urlObject = new URL(url);
 		if (GATEWAY_HOSTS.includes(urlObject.hostname)) {
 			// It's already a known and good gateway URL. Return it to preserve query params etc.
-			logger.info(`[ipfsResolver] Using existing gateway for: ${url}`);
 			return url;
 		}
-	} catch (e) {
+	} catch {
 		// Not a valid URL object, e.g. ipfs://, so we'll proceed to build a new one.
 	}
 
 	// It's an IPFS URL, but not using one of our preferred gateways, or it's an ipfs:// URL.
 	// Build a new URL with our preferred gateway.
 	const newUrl = `${IPFS_GATEWAYS[0]}${ipfsHash}`;
-	logger.info(`[ipfsResolver] Resolving IPFS URL: ${url} -> ${newUrl}`);
 	return newUrl;
 };
 

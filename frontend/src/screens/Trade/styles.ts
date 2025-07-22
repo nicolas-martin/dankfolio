@@ -62,6 +62,10 @@ export const useStyles = () => {
 				fontSize: theme.typography.fontSize.md,
 				fontWeight: '600',
 			},
+			infoIcon: {
+				margin: 0,
+				marginLeft: theme.spacing.xs,
+			},
 			routingLabelContainer: {
 				alignItems: 'center',
 				flexDirection: 'row',
@@ -74,10 +78,6 @@ export const useStyles = () => {
 			routingTextContainer: {
 				flex: 1,
 				marginRight: theme.spacing.md,
-			},
-			infoIcon: {
-				margin: 0,
-				marginLeft: theme.spacing.xs,
 			},
 			routingDescription: {
 				color: theme.colors.onSurfaceVariant,

@@ -8,10 +8,6 @@ import { usePortfolioStore } from '@/store/portfolio';
 import { useStyles } from './settings_styles';
 import CopyToClipboard from '@/components/Common/CopyToClipboard';
 import { usePrivateKeyVisibility } from './settings_scripts';
-import type { RootStackParamList } from '@/types/navigation';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-type SettingsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 
 const Settings: React.FC = () => {
 	const styles = useStyles();

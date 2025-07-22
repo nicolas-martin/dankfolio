@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { RawWalletData, Wallet, Coin, Base58PrivateKey } from '@/types';
 import { useCoinStore } from './coins';
 import { grpcApi } from '@/services/grpcApi';
-import { logger as log } from '@/utils/logger';
+import { logger } from '@/utils/logger';
 import * as Keychain from 'react-native-keychain';
 import { getKeypairFromPrivateKey } from '@/services/solana';
 import { KEYCHAIN_SERVICE } from '@/utils/keychainService';
@@ -40,7 +40,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 	pnlError: null,
 
 	setWallet: async (publicKey: string) => {
-		log.info('🔐 Loading wallet credentials...');
+		logger.info('🔐 Loading wallet credentials...');
 
 		try {
 			const credentials = await Keychain.getGenericPassword({
@@ -84,9 +84,9 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 
 				// Store only non-sensitive data in the state
 				set({ wallet: { address: publicKey } });
-				log.info('✅ Wallet loaded successfully');
+				logger.info('✅ Wallet loaded successfully');
 			} catch (error: unknown) {
-				// log.error('❌ Error parsing credentials:', error); // Sensitive data removed
+				// logger.error('❌ Error parsing credentials:', error); // Sensitive data removed
 				if (error instanceof Error) {
 					throw new Error('Invalid credentials format in keychain: ' + error.message);
 				} else {
@@ -107,28 +107,28 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 	},
 
 	clearWallet: () => {
-		log.info('[PortfolioStore] Clearing wallet and tokens');
+		logger.info('[PortfolioStore] Clearing wallet and tokens');
 		set({ wallet: null, tokens: [], error: null, pnlData: null, pnlError: null });
 	},
 
 	fetchPortfolioBalance: async (address: string, forceRefresh?: boolean) => {
-		log.info('🔄 [PortfolioStore] fetchPortfolioBalance called for address:', address);
+		logger.info('🔄 [PortfolioStore] fetchPortfolioBalance called for address:', address);
 		if (address === '') {
-			log.warn('⚠️ [PortfolioStore] fetchPortfolioBalance called with empty address');
+			logger.warn('⚠️ [PortfolioStore] fetchPortfolioBalance called with empty address');
 			throw new Error('Address is empty');
 		}
 
 		try {
 			set({ isLoading: true, error: null });
-			log.log('⏳ [PortfolioStore] Calling grpcApi.getWalletBalance...');
+			logger.log('⏳ [PortfolioStore] Calling grpcApi.getWalletBalance...');
 			const balance = await grpcApi.getWalletBalance(address);
-			log.log('✅ [PortfolioStore] Received balance data:', balance);
+			logger.log('✅ [PortfolioStore] Received balance data:', balance);
 
 			const coinStore = useCoinStore.getState();
 			let coinMap = coinStore.coinMap;
 
 			const balanceIds = balance.balances.map((b: { id: string }) => b.id);
-			log.log(`📊 [PortfolioStore] Found ${balanceIds.length} portfolio tokens to fetch:`, balanceIds.slice(0, 5), balanceIds.length > 5 ? `... and ${balanceIds.length - 5} more` : '');
+			logger.log(`📊 [PortfolioStore] Found ${balanceIds.length} portfolio tokens to fetch:`, balanceIds.slice(0, 5), balanceIds.length > 5 ? `... and ${balanceIds.length - 5} more` : '');
 
 			// Use batch API to fetch all portfolio coins efficiently
 			const startTime = Date.now();
@@ -151,7 +151,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 			let fetchedCoins: typeof cachedCoins = [];
 			if (addressesToFetch.length > 0) {
 				try {
-					log.log(`📊 [PortfolioStore] Using batch API to fetch ${addressesToFetch.length} portfolio tokens`);
+					logger.log(`📊 [PortfolioStore] Using batch API to fetch ${addressesToFetch.length} portfolio tokens`);
 					fetchedCoins = await grpcApi.getCoinsByIDs(addressesToFetch);
 
 					// Update coin store with fetched coins
@@ -159,7 +159,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 						coinStore.setCoin(coin);
 					});
 				} catch (error) {
-					log.error(`❌ [PortfolioStore] Batch fetch failed, falling back to individual calls:`, error);
+					logger.error(`❌ [PortfolioStore] Batch fetch failed, falling back to individual calls:`, error);
 
 					// Fallback to individual calls if batch fails
 					const individualResults = await Promise.all(
@@ -179,7 +179,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 
 			const fetchTime = Date.now() - startTime;
 			const totalFetched = cachedCoins.length + fetchedCoins.length;
-			log.log(`📊 [PortfolioStore] Portfolio coin fetch complete: ${totalFetched}/${balanceIds.length} coins in ${fetchTime}ms (${cachedCoins.length} cached, ${fetchedCoins.length} fetched, ${missingCoinIds.length} missing)`);
+			logger.log(`📊 [PortfolioStore] Portfolio coin fetch complete: ${totalFetched}/${balanceIds.length} coins in ${fetchTime}ms (${cachedCoins.length} cached, ${fetchedCoins.length} fetched, ${missingCoinIds.length} missing)`);
 
 			// Re-read coinMap after fetching coins (especially if forceRefresh was used)
 			coinMap = useCoinStore.getState().coinMap;
@@ -187,7 +187,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 			const tokens = balance.balances.map((balance: { id: string; amount: number }) => {
 				const coin = coinMap[balance.id];
 				if (!coin) {
-					log.warn(`⚠️ [PortfolioStore] Skipping token for balance ID ${balance.id} because coin data is missing.`);
+					logger.warn(`⚠️ [PortfolioStore] Skipping token for balance ID ${balance.id} because coin data is missing.`);
 					return null;
 				}
 				const tokenValue = balance.amount * coin.price;
@@ -200,23 +200,23 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 				} as PortfolioToken;
 			});
 
-			log.log('📈 [PortfolioStore] Processed tokens before filtering:', tokens.length);
+			logger.log('📈 [PortfolioStore] Processed tokens before filtering:', tokens.length);
 			const filteredTokens = tokens.filter((token: PortfolioToken | null): token is PortfolioToken => token !== null);
-			log.log('📊 [PortfolioStore] Filtered tokens (displayed in portfolio):', filteredTokens.map(t => ({ symbol: t.coin.symbol, mintAddress: t.mintAddress, value: t.value })));
+			logger.log('📊 [PortfolioStore] Filtered tokens (displayed in portfolio):', filteredTokens.map(t => ({ symbol: t.coin.symbol, mintAddress: t.mintAddress, value: t.value })));
 
 			set({
 				tokens: filteredTokens,
 				isLoading: false,
 				error: missingCoinIds.length > 0 ? `Some coins could not be loaded: [${missingCoinIds.join(', ')}]` : null
 			});
-			log.info('✅ [PortfolioStore] fetchPortfolioBalance finished.');
+			logger.info('✅ [PortfolioStore] fetchPortfolioBalance finished.');
 			return; // Success - exit retry loop
 		} catch (error) {
 			const errorMessage = (error as Error).message;
 			const isRateLimited = errorMessage.includes('429') || errorMessage.includes('Too many requests');
 			const isNetworkError = errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('connection');
 
-			log.error(`❌ [PortfolioStore] Failed to fetch portfolio balance):`, error);
+			logger.error(`❌ [PortfolioStore] Failed to fetch portfolio balance):`, error);
 
 			// If this is the last attempt or it's not a retryable error, fail
 			let userFriendlyError = errorMessage;
@@ -240,17 +240,17 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 	},
 
 	fetchPortfolioPnL: async (address: string) => {
-		log.info('🔄 [PortfolioStore] fetchPortfolioPnL called for address:', address);
+		logger.info('🔄 [PortfolioStore] fetchPortfolioPnL called for address:', address);
 		if (address === '') {
-			log.warn('⚠️ [PortfolioStore] fetchPortfolioPnL called with empty address');
+			logger.warn('⚠️ [PortfolioStore] fetchPortfolioPnL called with empty address');
 			return;
 		}
 
 		try {
 			set({ isPnlLoading: true, pnlError: null });
-			log.log('⏳ [PortfolioStore] Calling grpcApi.getPortfolioPnL...');
+			logger.log('⏳ [PortfolioStore] Calling grpcApi.getPortfolioPnL...');
 			const response = await grpcApi.getPortfolioPnL(address);
-			log.log('✅ [PortfolioStore] Received PnL data:', response);
+			logger.log('✅ [PortfolioStore] Received PnL data:', response);
 
 			if (response?.tokenPnls) {
 				const sortedPnLs = [...response.tokenPnls].sort((a, b) => b.unrealizedPnl - a.unrealizedPnl);
@@ -266,11 +266,11 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 					pnlError: null
 				});
 			}
-			log.info('✅ [PortfolioStore] fetchPortfolioPnL finished.');
+			logger.info('✅ [PortfolioStore] fetchPortfolioPnL finished.');
 		} catch (error) {
 			const errorMessage = (error as Error).message;
-			log.error(`❌ [PortfolioStore] Failed to fetch portfolio PnL:`, error);
-			
+			logger.error(`❌ [PortfolioStore] Failed to fetch portfolio PnL:`, error);
+
 			set({
 				pnlError: errorMessage,
 				isPnlLoading: false,
@@ -283,7 +283,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 export const getActiveWalletKeys = async (): Promise<{ publicKey: string; privateKey: Base58PrivateKey } | null> => {
 	const currentWallet = usePortfolioStore.getState().wallet;
 	if (!currentWallet || !currentWallet.address) {
-		log.warn('[getActiveWalletKeys] No active wallet address in store.');
+		logger.warn('[getActiveWalletKeys] No active wallet address in store.');
 		return null;
 	}
 	const walletAddress = currentWallet.address;
@@ -291,12 +291,12 @@ export const getActiveWalletKeys = async (): Promise<{ publicKey: string; privat
 	try {
 		const credentials = await Keychain.getGenericPassword({ service: KEYCHAIN_SERVICE });
 		if (!credentials) {
-			log.error('[getActiveWalletKeys] No credentials found in keychain.');
+			logger.error('[getActiveWalletKeys] No credentials found in keychain.');
 			return null;
 		}
 		const parsedCredentials = JSON.parse(credentials.password) as Partial<RawWalletData>;
 		if (!parsedCredentials.privateKey) {
-			log.error('[getActiveWalletKeys] Private key not found in stored credentials.');
+			logger.error('[getActiveWalletKeys] Private key not found in stored credentials.');
 			return null;
 		}
 
@@ -305,16 +305,16 @@ export const getActiveWalletKeys = async (): Promise<{ publicKey: string; privat
 		// import { getKeypairFromPrivateKey } from '@/utils/solanaUtils'; // Example if moved
 		// const keypair = getKeypairFromPrivateKey(parsedCredentials.privateKey as Base58PrivateKey);
 		// if (keypair.publicKey.toString() !== walletAddress) {
-		//   log.error('[getActiveWalletKeys] Keychain public key does not match stored wallet address.');
+		//   logger.error('[getActiveWalletKeys] Keychain public key does not match stored wallet address.');
 		//   return null;
 		// }
 
 		return { publicKey: walletAddress, privateKey: parsedCredentials.privateKey as Base58PrivateKey };
 	} catch (error: unknown) {
 		if (error instanceof Error) {
-			log.error('[getActiveWalletKeys] Error retrieving/parsing credentials:', error.message);
+			logger.error('[getActiveWalletKeys] Error retrieving/parsing credentials:', error.message);
 		} else {
-			log.error('[getActiveWalletKeys] An unknown error occurred while retrieving/parsing credentials:', error);
+			logger.error('[getActiveWalletKeys] An unknown error occurred while retrieving/parsing credentials:', error);
 		}
 		return null;
 	}

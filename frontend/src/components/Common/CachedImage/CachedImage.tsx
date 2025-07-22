@@ -17,7 +17,7 @@ const CachedImage: React.FC<CachedImageProps> = React.memo(({
 	tintColor,
 	priority = 'normal',
 	onLoadStart: onLoadStartProp,
-	onLoadEnd: onLoadEndProp,
+	onLoadEnd: _onLoadEndProp,
 	onError: onErrorProp,
 }) => {
 	const styles = useStyles(); // Use the hook
@@ -42,8 +42,8 @@ const CachedImage: React.FC<CachedImageProps> = React.memo(({
 			const cacheKey = `${resolvedUri}-${size}x${size}`;
 			logCacheResult(loadTime, resolvedUri || uri, cacheKey);
 		}
-		onLoadEndProp?.();
-	}, [loadStartTime, uri, resolvedUri, size, onLoadEndProp]);
+		_onLoadEndProp?.();
+	}, [loadStartTime, uri, resolvedUri, size, _onLoadEndProp]);
 
 	const handleError = useCallback((error: unknown) => {
 		const msg = error instanceof Error
@@ -57,6 +57,9 @@ const CachedImage: React.FC<CachedImageProps> = React.memo(({
 
 	// Default to circular if no borderRadius is provided
 	const finalBorderRadius = borderRadius !== undefined ? borderRadius : size / 2;
+
+	// Create imageSource before any early returns (hooks must be at top level)
+	const imageSource = useMemo(() => ({ uri: resolvedUri || '' }), [resolvedUri]);
 
 	// Memoize the style array to avoid re-creating on each render
 	const imageStyle = useMemo(() => {
@@ -73,9 +76,6 @@ const CachedImage: React.FC<CachedImageProps> = React.memo(({
 			/>
 		);
 	}
-
-	// Create imageSource after the guard to ensure resolvedUri is defined
-	const imageSource = useMemo(() => ({ uri: resolvedUri }), [resolvedUri]);
 
 	return (
 		<View style={styles.createContainerStyle(size)}>
