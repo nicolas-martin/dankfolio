@@ -882,10 +882,14 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 		"total_sol_required", totalSolRequired,
 		"trading_fee_sol", tradingFeeSol)
 
+	// Use the actual decimals from the tokens for formatting
+	estimatedAmountFormat := fmt.Sprintf("%%.%df", toCoin.Decimals)
+	exchangeRateFormat := fmt.Sprintf("%%.%df", int(math.Max(float64(fromCoin.Decimals), float64(toCoin.Decimals))))
+	
 	return &TradeQuote{
-		EstimatedAmount:  TruncateAndFormatFloat(estimatedAmountInCoin, 6),
-		ExchangeRate:     TruncateAndFormatFloat(exchangeRate, 6),
-		Fee:              TruncateAndFormatFloat(totalFeeInUSDCoin, 9),
+		EstimatedAmount:  fmt.Sprintf(estimatedAmountFormat, estimatedAmountInCoin),
+		ExchangeRate:     fmt.Sprintf(exchangeRateFormat, exchangeRate),
+		Fee:              fmt.Sprintf("%.9f", totalFeeInUSDCoin), // Keep SOL fee at 9 decimals
 		PriceImpact:      truncatedPriceImpact,
 		RoutePlan:        routeSummary,
 		InputMint:        quote.InputMint,

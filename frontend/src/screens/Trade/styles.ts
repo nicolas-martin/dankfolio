@@ -53,18 +53,21 @@ export const useStyles = () => {
 				backgroundColor: theme.colors.surfaceVariant,
 				marginBottom: theme.spacing['2xl'],
 			},
+			infoIcon: {
+				color: theme.colors.onSurfaceVariant,
+			},
 			routingCard: {
 				backgroundColor: theme.colors.surfaceVariant,
 				marginBottom: theme.spacing.xl,
 			},
+			routingDescription: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: theme.typography.fontSize.sm,
+			},
 			routingLabel: {
 				color: theme.colors.onSurface,
-				fontSize: theme.typography.fontSize.md,
+				fontSize: theme.typography.fontSize.base,
 				fontWeight: '600',
-			},
-			infoIcon: {
-				margin: 0,
-				marginLeft: theme.spacing.xs,
 			},
 			routingLabelContainer: {
 				alignItems: 'center',
@@ -78,10 +81,6 @@ export const useStyles = () => {
 			routingTextContainer: {
 				flex: 1,
 				marginRight: theme.spacing.md,
-			},
-			routingDescription: {
-				color: theme.colors.onSurfaceVariant,
-				fontSize: theme.typography.fontSize.sm,
 			},
 			detailsContent: {
 				paddingTop: 0,

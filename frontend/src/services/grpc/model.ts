@@ -213,7 +213,7 @@ export interface API {
 	getProxiedImage: (imageUrl: string) => Promise<GetProxiedImageResponse>;
 	prepareSwap: (params: PrepareSwapRequest) => Promise<{ unsignedTransaction: string; solFeeBreakdown?: SolFeeBreakdown; totalSolRequired: string; tradingFeeSol: string }>;
 	listTrades: (params: ListTradesRequest) => Promise<ListTradesResponse>;
-	getFullSwapQuoteOrchestrated: (amount: string, fromCoin: Coin, toCoin: Coin, includeFeeBreakdown?: boolean, userPublicKey?: string) => Promise<FullSwapQuoteDetails>;
+	getFullSwapQuoteOrchestrated: (amount: string, fromCoin: Coin, toCoin: Coin, includeFeeBreakdown?: boolean, userPublicKey?: string, allowMultiHop?: boolean) => Promise<FullSwapQuoteDetails>;
 	getNewCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
 	getTrendingCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
 	getTopGainersCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
