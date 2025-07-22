@@ -866,10 +866,33 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 			}
 		}
 	} else {
-		// No fee breakdown requested - use default values
+		// No detailed fee breakdown requested - but still extract basic fees from Jupiter
 		feeBreakdown = nil
-		totalSolRequired = "0"
-		tradingFeeSol = "0"
+		
+		// Extract basic SOL fees from Jupiter quote
+		var routeFee, platformFee uint64
+		const solMint = "So11111111111111111111111111111111111111112"
+		
+		// Extract route fees
+		for _, route := range quote.RoutePlan {
+			if route.SwapInfo.FeeMint == solMint && route.SwapInfo.FeeAmount != "" {
+				if feeAmount, err := strconv.ParseUint(route.SwapInfo.FeeAmount, 10, 64); err == nil {
+					routeFee += feeAmount
+				}
+			}
+		}
+		
+		// Extract platform fees
+		if quote.PlatformFee != nil && quote.PlatformFee.FeeMint == solMint {
+			if platformAmount, err := strconv.ParseUint(quote.PlatformFee.Amount, 10, 64); err == nil {
+				platformFee = platformAmount
+			}
+		}
+		
+		// Convert to SOL (divide by 10^9)
+		totalFeeLamports := routeFee + platformFee
+		totalSolRequired = fmt.Sprintf("%.9f", float64(totalFeeLamports)/1e9)
+		tradingFeeSol = fmt.Sprintf("%.9f", float64(routeFee+platformFee)/1e9)
 	}
 
 	// Log detailed quote information
