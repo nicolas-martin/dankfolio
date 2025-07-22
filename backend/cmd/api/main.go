@@ -402,6 +402,7 @@ func main() {
 		config.PlatformFeeAccountAddress,
 		config.PlatformPrivateKey,
 		tradeMetrics,
+		false, // showDetailedBreakdown - disabled by default
 	)
 
 	walletService := wallet.New(solanaClient, store, coinService)

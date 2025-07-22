@@ -57,6 +57,11 @@ export const useStyles = () => {
 				backgroundColor: theme.colors.surfaceVariant,
 				marginBottom: theme.spacing.xl,
 			},
+			routingLabel: {
+				color: theme.colors.onSurface,
+				fontSize: theme.typography.fontSize.md,
+				fontWeight: '600',
+			},
 			routingLabelContainer: {
 				alignItems: 'center',
 				flexDirection: 'row',
@@ -69,11 +74,6 @@ export const useStyles = () => {
 			routingTextContainer: {
 				flex: 1,
 				marginRight: theme.spacing.md,
-			},
-			routingLabel: {
-				color: theme.colors.onSurface,
-				fontSize: theme.typography.fontSize.md,
-				fontWeight: '600',
 			},
 			infoIcon: {
 				margin: 0,

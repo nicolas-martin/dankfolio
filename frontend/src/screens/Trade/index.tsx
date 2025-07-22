@@ -187,9 +187,9 @@ const Trade: React.FC = () => {
 			// Determine which amount to set based on direction
 			const setTargetAmount = direction === 'from' ? setToAmount : setFromAmount;
 			try {
-				// Always request detailed fee breakdown when wallet is connected
-				// This ensures we get accurate total SOL required for every quote
-				const shouldIncludeFeeBreakdown = !!wallet?.address;
+				// Disable detailed fee breakdown as per backend feature flag
+				// The backend will handle insufficient funds errors when user submits
+				const shouldIncludeFeeBreakdown = false;
 
 				const quoteData = await grpcApi.getFullSwapQuoteOrchestrated(
 					currentAmount,

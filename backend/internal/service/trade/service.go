@@ -41,6 +41,7 @@ type Service struct {
 	platformPrivateKey        *solanago.PrivateKey  // Platform private key for ATA creation
 	feeMintSelector           *FeeMintSelector      // Handles fee mint selection logic
 	metrics                   *trademetrics.TradeMetrics // Trade-related metrics
+	showDetailedBreakdown     bool                  // Feature flag for detailed trade breakdown
 }
 
 // NewService creates a new TradeService instance
@@ -54,6 +55,7 @@ func NewService(
 	configuredPlatformFeeAccountAddress string, // Platform fee account address
 	platformPrivateKeyBase64 string, // Platform private key for ATA creation
 	metrics *trademetrics.TradeMetrics,
+	showDetailedBreakdown bool, // Feature flag for detailed trade breakdown
 ) *Service {
 	// Parse platform private key
 	var platformKey *solanago.PrivateKey
@@ -79,6 +81,7 @@ func NewService(
 		platformFeeAccountAddress: configuredPlatformFeeAccountAddress,
 		platformPrivateKey:        platformKey,
 		metrics:                   metrics,
+		showDetailedBreakdown:     showDetailedBreakdown,
 	}
 
 	// Initialize fee mint selector with ATA checker and creator
@@ -263,11 +266,21 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 		return nil, fmt.Errorf("failed to create swap transaction: %w", err)
 	}
 
-	// Calculate comprehensive SOL fee breakdown using both quote and swap responses
-	feeBreakdown, totalSolRequired, tradingFeeSol, err := s.calculateSolFeeBreakdown(ctx, tradeQuote, swapResponse, params.UserWalletAddress, params.FromCoinMintAddress, params.ToCoinMintAddress)
-	if err != nil {
-		slog.Warn("Failed to calculate SOL fee breakdown", "error", err)
-		// Use fallback values
+	// Calculate comprehensive SOL fee breakdown only if feature flag is enabled
+	var feeBreakdown *SolFeeBreakdown
+	var totalSolRequired, tradingFeeSol string
+	
+	if s.showDetailedBreakdown {
+		feeBreakdown, totalSolRequired, tradingFeeSol, err = s.calculateSolFeeBreakdown(ctx, tradeQuote, swapResponse, params.UserWalletAddress, params.FromCoinMintAddress, params.ToCoinMintAddress)
+		if err != nil {
+			slog.Warn("Failed to calculate SOL fee breakdown", "error", err)
+			// Use fallback values
+			feeBreakdown = nil
+			totalSolRequired = "0"
+			tradingFeeSol = "0"
+		}
+	} else {
+		// When detailed breakdown is disabled, use minimal values
 		feeBreakdown = nil
 		totalSolRequired = "0"
 		tradingFeeSol = "0"
@@ -550,13 +563,34 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 	}
 	sig, err := s.chainClient.SendRawTransaction(ctx, rawTxBytes, opts)
 	if err != nil {
-		trade.Status = "failed"
 		originalChainError := err // Store the original error
 		errStr := originalChainError.Error()
-		trade.Error = errStr
-		if errUpdate := s.store.Trades().Update(ctx, trade); errUpdate != nil {
-			slog.Warn("Failed to update failed trade status", "error", errUpdate)
+		
+		// Check if error is due to insufficient funds
+		insufficientFundsError := strings.Contains(strings.ToLower(errStr), "insufficient") || 
+			strings.Contains(strings.ToLower(errStr), "0x1") // Solana error code for insufficient funds
+		
+		if insufficientFundsError && !s.showDetailedBreakdown {
+			// Delete the trade record for insufficient funds errors when detailed breakdown is disabled
+			if deleteErr := s.store.Trades().Delete(ctx, fmt.Sprintf("%d", trade.ID)); deleteErr != nil {
+				slog.Warn("Failed to delete trade record after insufficient funds error", 
+					"error", deleteErr, 
+					"trade_id", trade.ID,
+					"original_error", errStr)
+			} else {
+				slog.Info("Deleted trade record due to insufficient funds error",
+					"trade_id", trade.ID,
+					"error", errStr)
+			}
+		} else {
+			// For other errors or when detailed breakdown is enabled, update the trade as failed
+			trade.Status = "failed"
+			trade.Error = errStr
+			if errUpdate := s.store.Trades().Update(ctx, trade); errUpdate != nil {
+				slog.Warn("Failed to update failed trade status", "error", errUpdate)
+			}
 		}
+		
 		return nil, fmt.Errorf("failed to execute trade on blockchain: %w", originalChainError)
 	}
 
@@ -742,7 +776,7 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 	var feeBreakdown *SolFeeBreakdown
 	var totalSolRequired, tradingFeeSol string
 
-	if includeFeeBreakdown {
+	if includeFeeBreakdown && s.showDetailedBreakdown {
 		if userPublicKey == "" {
 			return nil, fmt.Errorf("user_public_key is required when includeFeeBreakdown=true")
 		}
