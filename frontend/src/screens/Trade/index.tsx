@@ -599,73 +599,13 @@ const Trade: React.FC = () => {
 						</Text>
 					</View>
 
-					{/* Total amount required (trade amount + fees) */}
-					{fromCoin?.symbol === 'SOL' && (
-						<View style={styles.detailRow}>
-							<Text style={styles.detailLabel}>Total SOL Required</Text>
-							<Text testID="trade-details-total-amount-required" style={styles.detailValue}>
-								{(parseFloat(fromAmount) + parseFloat(tradeDetails.totalSolRequired || tradeDetails.totalFee || '0')).toFixed(6)} SOL
-							</Text>
-						</View>
-					)}
 
-					{/* Enhanced fee breakdown display */}
-					{tradeDetails.solFeeBreakdown ? (
-						<>
-							<View style={styles.detailRow}>
-								<Text style={styles.detailLabel}>Total Network Fee</Text>
-								<Text testID="trade-details-total-fee" style={styles.detailValue}>
-									{tradeDetails.totalSolRequired || tradeDetails.totalFee} SOL
-								</Text>
-							</View>
-
-							{/* Detailed fee breakdown */}
-							{parseFloat(tradeDetails.solFeeBreakdown.tradingFee) > 0 && (
-								<View style={styles.detailRow}>
-									<Text style={styles.detailSubLabel}>• Trading Fee</Text>
-									<Text testID="trade-details-trading-fee" style={styles.detailSubValue}>
-										{parseFloat(tradeDetails.solFeeBreakdown.tradingFee).toFixed(6)} SOL
-									</Text>
-								</View>
-							)}
-
-							{parseFloat(tradeDetails.solFeeBreakdown.transactionFee) > 0 && (
-								<View style={styles.detailRow}>
-									<Text style={styles.detailSubLabel}>• Transaction Fee</Text>
-									<Text testID="trade-details-tx-fee" style={styles.detailSubValue}>
-										{parseFloat(tradeDetails.solFeeBreakdown.transactionFee).toFixed(6)} SOL
-									</Text>
-								</View>
-							)}
-
-							{parseFloat(tradeDetails.solFeeBreakdown.accountCreationFee) > 0 && (
-								<View style={styles.detailRow}>
-									<Text style={styles.detailSubLabel}>
-										• Account Creation
-										{tradeDetails.solFeeBreakdown.accountsToCreate > 0 &&
-											` (${tradeDetails.solFeeBreakdown.accountsToCreate} account${tradeDetails.solFeeBreakdown.accountsToCreate > 1 ? 's' : ''})`
-										}
-									</Text>
-									<Text testID="trade-details-account-fee" style={styles.detailSubValue}>
-										{parseFloat(tradeDetails.solFeeBreakdown.accountCreationFee).toFixed(6)} SOL
-									</Text>
-								</View>
-							)}
-
-							{parseFloat(tradeDetails.solFeeBreakdown.priorityFee) > 0 && (
-								<View style={styles.detailRow}>
-									<Text style={styles.detailSubLabel}>• Priority Fee</Text>
-									<Text testID="trade-details-priority-fee" style={styles.detailSubValue}>
-										{parseFloat(tradeDetails.solFeeBreakdown.priorityFee).toFixed(6)} SOL
-									</Text>
-								</View>
-							)}
-						</>
-					) : (
+					{/* Basic network fees from Jupiter */}
+					{(tradeDetails.totalSolRequired && parseFloat(tradeDetails.totalSolRequired) > 0) && (
 						<View style={styles.detailRow}>
 							<Text style={styles.detailLabel}>Network Fee</Text>
 							<Text testID="trade-details-network-fee" style={styles.detailValue}>
-								{tradeDetails.totalSolRequired || tradeDetails.totalFee} SOL
+								{tradeDetails.totalSolRequired} SOL
 							</Text>
 						</View>
 					)}
