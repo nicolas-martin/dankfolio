@@ -80,39 +80,6 @@ func (a *GoGenericCacheAdapter[T]) Get(key string) (T, bool) {
 		return zero, false
 	}
 
-	// Check if cachedValue is nil using reflection-free approach
-	if isNil(cachedValue) {
-		slog.Info("🔍 Cache access - MISS (nil value)",
-			slog.String("service", a.logPrefix),
-			slog.String("key", key),
-			slog.String("outcome", "miss"),
-			slog.Duration("accessDuration", duration),
-			slog.Uint64("hits", metrics.Hits()),
-			slog.Uint64("misses", metrics.Misses()),
-			slog.Float64("hitRatio", metrics.Ratio()),
-		)
-		return zero, false
-	}
-
-	ttl, ttlExists := a.ristrettoCache.GetTTL(key)
-	if !ttlExists {
-		slog.Error("⚠️ Cache inconsistency detected - item exists but no TTL found",
-			slog.String("service", a.logPrefix),
-			slog.String("key", key))
-	}
-
-	// Cache hit with enhanced metrics
-	slog.Info("⚡ Cache access - HIT",
-		slog.String("service", a.logPrefix),
-		slog.String("key", key),
-		slog.String("outcome", "hit"),
-		slog.Duration("accessDuration", duration),
-		slog.Duration("remainingTTL", ttl),
-		slog.Uint64("hits", metrics.Hits()),
-		slog.Uint64("misses", metrics.Misses()),
-		slog.Float64("hitRatio", metrics.Ratio()),
-	)
-
 	return cachedValue, true
 }
 
@@ -121,7 +88,6 @@ func (a *GoGenericCacheAdapter[T]) Set(key string, data T, expiration time.Durat
 	startTime := time.Now()
 	err := a.cacheManager.Set(context.Background(), key, data, store.WithExpiration(expiration))
 	duration := time.Since(startTime)
-	metrics := a.ristrettoCache.Metrics
 
 	if err != nil {
 		slog.Error("❌ Failed to store item in cache",
@@ -131,16 +97,6 @@ func (a *GoGenericCacheAdapter[T]) Set(key string, data T, expiration time.Durat
 			slog.Duration("storeDuration", duration),
 			slog.String("error", err.Error()),
 		)
-	} else {
-		slog.Info("💾 Successfully stored item in cache",
-			slog.String("service", a.logPrefix),
-			slog.String("key", key),
-			slog.Duration("expiration", expiration),
-			slog.Duration("storeDuration", duration),
-			slog.Uint64("totalHits", metrics.Hits()),
-			slog.Uint64("totalMisses", metrics.Misses()),
-			slog.Float64("hitRatio", metrics.Ratio()),
-		)
 	}
 }
 
@@ -149,7 +105,7 @@ func (a *GoGenericCacheAdapter[T]) Delete(key string) {
 	startTime := time.Now()
 	err := a.cacheManager.Delete(context.Background(), key)
 	duration := time.Since(startTime)
-	
+
 	if err != nil {
 		slog.Error("❌ Failed to delete item from cache",
 			slog.String("service", a.logPrefix),
@@ -157,18 +113,5 @@ func (a *GoGenericCacheAdapter[T]) Delete(key string) {
 			slog.Duration("deleteDuration", duration),
 			slog.String("error", err.Error()),
 		)
-	} else {
-		slog.Info("🗑️ Successfully deleted item from cache",
-			slog.String("service", a.logPrefix),
-			slog.String("key", key),
-			slog.Duration("deleteDuration", duration),
-		)
 	}
-}
-
-// isNil checks if a value is nil without using reflection
-func isNil[T any](v T) bool {
-	// For pointer types, we can compare to nil directly
-	// For other types, this will always return false
-	return any(v) == nil
 }
