@@ -8,8 +8,10 @@ export const useStyles = () => {
 	return useMemo(() => {
 		const styles = StyleSheet.create({
 			arrowIcon: {
+				height: 36,
 				margin: 0,
-				marginHorizontal: theme.spacing.xs,
+				marginHorizontal: theme.spacing.md,
+				width: 36,
 			},
 			cardContent: {
 				paddingHorizontal: theme.spacing.md,
@@ -23,8 +25,8 @@ export const useStyles = () => {
 			},
 			coinAmount: {
 				color: theme.colors.onSurfaceVariant,
-				fontSize: theme.typography.fontSize.xs,
-				marginTop: 2,
+				fontSize: theme.typography.fontSize.sm,
+				marginTop: theme.spacing.xs,
 			},
 			coinColumn: {
 				alignItems: 'center',
@@ -32,8 +34,14 @@ export const useStyles = () => {
 			},
 			coinIcon: {
 				borderRadius: theme.spacing.xl,
-				height: 32,
-				width: 32,
+				height: 36,
+				width: 36,
+			},
+			coinIconContainer: {
+				alignItems: 'center',
+				height: 36,
+				justifyContent: 'center',
+				width: 36,
 			},
 			coinSymbol: {
 				color: theme.colors.onSurface,
@@ -97,22 +105,52 @@ export const useStyles = () => {
 				flexGrow: 1,
 			},
 			statusChip: {
+				borderRadius: 18,
+				height: 36,
 				marginTop: theme.spacing.xs,
+				minWidth: 120,
+				paddingHorizontal: theme.spacing.lg,
 			},
 			statusChipCompleted: {
 				backgroundColor: theme.success + '20',
+				borderRadius: 18,
+				height: 36,
 				marginTop: theme.spacing.xs,
+				minWidth: 120,
+				paddingHorizontal: theme.spacing.lg,
 			},
 			statusChipFailed: {
 				backgroundColor: theme.colors.error + '20',
+				borderRadius: 18,
+				height: 36,
 				marginTop: theme.spacing.xs,
+				minWidth: 120,
+				paddingHorizontal: theme.spacing.lg,
 			},
 			statusChipPending: {
 				backgroundColor: theme.warning + '20',
+				borderRadius: 18,
+				height: 36,
 				marginTop: theme.spacing.xs,
+				minWidth: 120,
+				paddingHorizontal: theme.spacing.lg,
 			},
 			statusChipText: {
-				fontSize: theme.typography.fontSize.xs,
+				fontSize: theme.typography.fontSize.sm,
+				fontWeight: '600',
+				textTransform: 'capitalize',
+			},
+			customStatusBadge: {
+				alignItems: 'center',
+				borderRadius: 18,
+				height: 36,
+				justifyContent: 'center',
+				marginTop: theme.spacing.xs,
+				minWidth: 90,
+				paddingHorizontal: theme.spacing.md,
+			},
+			customStatusText: {
+				fontSize: theme.typography.fontSize.sm,
 				fontWeight: '600',
 				textTransform: 'capitalize',
 			},
@@ -136,7 +174,8 @@ export const useStyles = () => {
 			},
 			transactionDate: {
 				color: theme.colors.onSurfaceVariant,
-				fontSize: theme.typography.fontSize.xs,
+				fontSize: theme.typography.fontSize.sm,
+				marginBottom: theme.spacing.xs,
 			},
 			transactionDetails: {
 				color: theme.colors.onSurfaceVariant,
@@ -146,6 +185,7 @@ export const useStyles = () => {
 			transactionHeader: {
 				alignItems: 'center',
 				flexDirection: 'row',
+				marginBottom: theme.spacing.xs,
 			},
 			transactionIcon: {
 				margin: 0,
@@ -156,14 +196,15 @@ export const useStyles = () => {
 			transactionItem: {
 				borderBottomColor: theme.colors.surfaceVariant,
 				borderBottomWidth: StyleSheet.hairlineWidth,
-				paddingHorizontal: theme.spacing.md,
-				paddingVertical: theme.spacing.sm,
+				paddingHorizontal: theme.spacing.lg,
+				paddingVertical: theme.spacing.lg,
+				minHeight: 88,
 			},
 			transactionItemLast: {
 				borderBottomWidth: 0,
 			},
 			transactionLeft: {
-				flex: 1,
+				flex: 0.6,
 			},
 			transactionMainRow: {
 				flexDirection: 'row',
@@ -171,11 +212,14 @@ export const useStyles = () => {
 			},
 			transactionRight: {
 				alignItems: 'flex-end',
-				justifyContent: 'center',
+				flex: 1,
+				justifyContent: 'space-between',
 			},
 			transactionRow: {
+				alignItems: 'center',
 				flexDirection: 'row',
-				justifyContent: 'space-between',
+				justifyContent: 'flex-start',
+				marginTop: theme.spacing.xs,
 			},
 			transactionTop: {
 				alignItems: 'center',
@@ -184,7 +228,7 @@ export const useStyles = () => {
 			},
 			transactionType: {
 				color: theme.colors.onSurface,
-				fontSize: theme.typography.fontSize.sm,
+				fontSize: theme.typography.fontSize.base,
 				fontWeight: '600',
 			},
 			transactionTypeIcon: {

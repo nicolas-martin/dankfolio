@@ -1,5 +1,5 @@
-import { View, ScrollView, ActivityIndicator, RefreshControl, Linking } from 'react-native';
-import { Text, Chip, IconButton } from 'react-native-paper';
+import { View, ActivityIndicator, Linking, ScrollView } from 'react-native';
+import { Text, IconButton } from 'react-native-paper';
 import { useTransactionsStore } from '@/store/transactions';
 import { Transaction, TransactionType, TransactionStatus } from '@/types';
 import { useStyles } from './transactionslist_styles';
@@ -65,6 +65,34 @@ const TransactionsList = () => {
 		}
 	};
 
+	const getCustomStatusStyle = (status: Transaction['status']) => {
+		const baseStyle = styles.customStatusBadge;
+		switch (status) {
+			case TransactionStatus.COMPLETED:
+				return [baseStyle, { backgroundColor: styles.theme.success + '20' }];
+			case TransactionStatus.PENDING:
+				return [baseStyle, { backgroundColor: styles.theme.warning + '20' }];
+			case TransactionStatus.FAILED:
+				return [baseStyle, { backgroundColor: styles.colors.error + '20' }];
+			default:
+				return [baseStyle, { backgroundColor: styles.colors.surfaceVariant }];
+		}
+	};
+
+	const getCustomStatusTextStyle = (status: Transaction['status']) => {
+		const baseStyle = styles.customStatusText;
+		switch (status) {
+			case TransactionStatus.COMPLETED:
+				return [baseStyle, { color: styles.theme.success }];
+			case TransactionStatus.PENDING:
+				return [baseStyle, { color: styles.theme.warning }];
+			case TransactionStatus.FAILED:
+				return [baseStyle, { color: styles.colors.error }];
+			default:
+				return [baseStyle, { color: styles.colors.onSurfaceVariant }];
+		}
+	};
+
 	const handleStatusPress = (transaction: Transaction) => {
 		if (transaction.status === TransactionStatus.COMPLETED && transaction.transactionHash) {
 			const solscanUrl = getSolscanUrl(transaction.transactionHash);
@@ -110,12 +138,14 @@ const TransactionsList = () => {
 							</Text>
 						</View>
 						<View style={styles.transactionRow}>
-							{fromIconURI && (
-								<CachedImage
-									uri={fromIconURI}
-									style={styles.coinIcon}
-								/>
-							)}
+							<View style={styles.coinIconContainer}>
+								{fromIconURI && (
+									<CachedImage
+										uri={fromIconURI}
+										style={styles.coinIcon}
+									/>
+								)}
+							</View>
 							{isSwap && (
 								<>
 									<IconButton
@@ -124,12 +154,14 @@ const TransactionsList = () => {
 										iconColor={styles.colors.onSurfaceVariant}
 										style={styles.arrowIcon}
 									/>
-									{toIconURI && (
-										<CachedImage
-											uri={toIconURI}
-											style={styles.coinIcon}
-										/>
-									)}
+									<View style={styles.coinIconContainer}>
+										{toIconURI && (
+											<CachedImage
+												uri={toIconURI}
+												style={styles.coinIcon}
+											/>
+										)}
+									</View>
 								</>
 							)}
 						</View>
@@ -141,15 +173,13 @@ const TransactionsList = () => {
 						<Text style={styles.transactionDate}>
 							{formatTransactionDate(item.date)}
 						</Text>
-						<Chip
-							mode="flat"
-							compact
-							textStyle={styles.statusChipText}
-							style={getStatusChipStyle(item.status)}
-							onPress={() => handleStatusPress(item)}
+						<View 
+							style={getCustomStatusStyle(item.status)}
 						>
-							{item.status}
-						</Chip>
+							<Text style={getCustomStatusTextStyle(item.status)}>
+								{item.status}
+							</Text>
+						</View>
 					</View>
 				</View>
 			</View>
@@ -186,16 +216,7 @@ const TransactionsList = () => {
 	}
 
 	return (
-		<ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}
-			refreshControl={
-				<RefreshControl
-					refreshing={isRefreshing}
-					onRefresh={handleRefresh}
-					colors={refreshControlColors}
-					tintColor={styles.colors.primary}
-				/>
-			}
-		>
+		<ScrollView style={styles.container}>
 			<View style={styles.listContainer}>
 				{transactions.map((transaction, index) => renderTransaction(transaction, index))}
 			</View>

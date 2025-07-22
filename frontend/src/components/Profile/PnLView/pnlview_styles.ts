@@ -103,7 +103,8 @@ export const useStyles = () => {
 				alignItems: 'center',
 				borderBottomColor: theme.colors.surfaceVariant,
 				borderBottomWidth: 1,
-				minHeight: 72,
+				minHeight: 96,
+				paddingVertical: theme.spacing.md,
 			},
 			tokenAmount: {
 				color: theme.colors.onSurfaceVariant,

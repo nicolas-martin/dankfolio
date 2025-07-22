@@ -1,4 +1,4 @@
-import { View, ScrollView, RefreshControl } from 'react-native';
+import { View, ScrollView } from 'react-native';
 import { Text, IconButton, DataTable } from 'react-native-paper';
 import { usePortfolioStore } from '@/store/portfolio';
 import { useStyles } from './pnlview_styles';
@@ -78,18 +78,7 @@ const PnLView = () => {
 	}
 
 	return (
-		<ScrollView
-			style={styles.container}
-			contentContainerStyle={styles.scrollContent}
-			refreshControl={
-				<RefreshControl
-					refreshing={isPnlLoading}
-					onRefresh={handleRefresh}
-					colors={refreshControlColors}
-					tintColor={styles.colors.primary}
-				/>
-			}
-		>
+		<ScrollView style={styles.container}>
 			<View style={styles.contentContainer}>
 				<DataTable>
 					<DataTable.Header style={styles.tableHeader}>

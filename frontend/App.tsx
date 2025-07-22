@@ -9,7 +9,7 @@ Sentry.init({
 	// Environment configuration
 	environment: __DEV__ ? 'development' : 'production',
 	release: Constants.expoConfig?.version || '1.0.0',
-	debug: __DEV__,
+	debug: false,
 
 	// Performance monitoring
 	tracesSampleRate: __DEV__ ? 1.0 : 0.1, // 100% in dev, 10% in production
@@ -29,6 +29,19 @@ Sentry.init({
 
 	// Enable Spotlight for development debugging
 	spotlight: __DEV__,
+
+	// Filter touch events and user interactions from breadcrumbs
+	beforeBreadcrumb(breadcrumb) {
+		// Filter out touch events and user interactions
+		if (breadcrumb.category === 'touch' || 
+		    breadcrumb.category === 'ui.click' ||
+		    breadcrumb.category === 'user' ||
+		    breadcrumb.message?.includes('Touch') ||
+		    breadcrumb.message?.includes('UserInteraction')) {
+			return null; // Drop the breadcrumb
+		}
+		return breadcrumb;
+	},
 
 	// Filtering sensitive data
 	beforeSend(event) {
@@ -68,6 +81,15 @@ import { retrieveWalletFromStorage } from '@/utils/keychainService'; // Import f
 import { logger } from '@/utils/logger';
 import { initializeFirebaseServices } from '@/services/firebaseInit';
 import { useThemeStore } from '@/store/theme';
+
+// Suppress React Native Paper key prop warning
+const originalWarn = console.warn;
+console.warn = (...args) => {
+	if (typeof args[0] === 'string' && args[0].includes('key" prop is being spread into JSX')) {
+		return;
+	}
+	originalWarn.apply(console, args);
+};
 
 // DEBUG: Log all environment variables at app startup
 console.log('| ==== ENVIRONMENT VARIABLES DEBUG ====');
