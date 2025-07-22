@@ -8,6 +8,10 @@ ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 LOG_FILE := $(ROOT_DIR)/$(BACKEND_DIR)/server.log
 MOCKERY_VERSION := v3.3.2
 
+dash:
+	@scp ./deploy/dashboards/* linode:/var/lib/grafana/dashboards/
+	@ssh linode 'systemctl restart grafana-server.service'
+
 # prod-build: backend-test
 prod-build:
 	@cd ${BACKEND_DIR} && GOOS=linux GOARCH=amd64 go build -o bin/dankfolio ./cmd/api
