@@ -591,6 +591,11 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 			}
 		}
 		
+		// Check for insufficient funds error and provide user-friendly message
+		if isInsufficientFundsError(originalChainError) {
+			return nil, fmt.Errorf("insufficient SOL balance to complete this transaction. Please add more SOL to your wallet to cover network fees and try again")
+		}
+		
 		return nil, fmt.Errorf("failed to execute trade on blockchain: %w", originalChainError)
 	}
 
@@ -925,6 +930,32 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 }
 
 // Helper functions for string manipulation
+// isInsufficientFundsError checks if the error is due to insufficient lamports/SOL
+func isInsufficientFundsError(err error) bool {
+	if err == nil {
+		return false
+	}
+	
+	errorString := err.Error()
+	
+	// Check for common insufficient funds patterns in Solana errors
+	insufficientPatterns := []string{
+		"Transfer: insufficient lamports",
+		"insufficient lamports",
+		"insufficient funds",
+		"Attempt to debit an account but found no record of a prior credit",
+		"custom program error: 0x1", // This is the custom error code for insufficient funds
+	}
+	
+	for _, pattern := range insufficientPatterns {
+		if strings.Contains(errorString, pattern) {
+			return true
+		}
+	}
+	
+	return false
+}
+
 func truncateDecimals(input string, digits int) string {
 	i := strings.IndexByte(input, '.')
 	if i == -1 || len(input) < i+digits+1 {

@@ -17,6 +17,9 @@ export const normalizeAddressForJupiter = (address: string): string => {
 	return address === NATIVE_SOL_ADDRESS ? SOLANA_ADDRESS : address;
 };
 
+// Feature flag to control frontend SOL balance validation
+const ENABLE_FRONTEND_SOL_VALIDATION = false;
+
 // Validate SOL balance for transaction fees after quote is received
 export const validateSolBalanceForQuote = (
 	solPortfolioToken: { amount: number } | undefined,
@@ -26,6 +29,13 @@ export const validateSolBalanceForQuote = (
 	fromAmount?: string,
 	fromCoin?: Coin | null,
 ): boolean => {
+	// If frontend validation is disabled, always allow the trade to proceed
+	// The backend will handle insufficient funds errors properly
+	if (!ENABLE_FRONTEND_SOL_VALIDATION) {
+		setHasSufficientSolBalance(true);
+		return true;
+	}
+
 	const solBalance = solPortfolioToken?.amount ?? 0;
 	const networkFees = parseFloat(totalSolRequired) || 0;
 
