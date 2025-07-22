@@ -32,6 +32,9 @@ const CachedImage: React.FC<CachedImageProps> = React.memo(({
 		onLoadStartProp?.();
 	}, [onLoadStartProp]);
 
+	// Resolve IPFS URLs to HTTP gateway URLs - moved before callbacks
+	const resolvedUri = useMemo(() => resolveIpfsUrl(uri), [uri]);
+
 	const handleLoadEnd = useCallback(() => {
 		setIsLoading(false);
 		if (loadStartTime > 0) {
@@ -55,12 +58,6 @@ const CachedImage: React.FC<CachedImageProps> = React.memo(({
 	// Default to circular if no borderRadius is provided
 	const finalBorderRadius = borderRadius !== undefined ? borderRadius : size / 2;
 
-	// Resolve IPFS URLs to HTTP gateway URLs
-	const resolvedUri = useMemo(() => resolveIpfsUrl(uri), [uri]);
-
-	// All hooks must be at top level before any conditional returns
-	const imageSource = useMemo(() => ({ uri: resolvedUri }), [resolvedUri]);
-
 	// Memoize the style array to avoid re-creating on each render
 	const imageStyle = useMemo(() => {
 		const baseStyle = styles.createImageStyle(size, finalBorderRadius, style);
@@ -76,6 +73,9 @@ const CachedImage: React.FC<CachedImageProps> = React.memo(({
 			/>
 		);
 	}
+
+	// Create imageSource after the guard to ensure resolvedUri is defined
+	const imageSource = useMemo(() => ({ uri: resolvedUri }), [resolvedUri]);
 
 	return (
 		<View style={styles.createContainerStyle(size)}>
