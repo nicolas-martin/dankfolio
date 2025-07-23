@@ -32,6 +32,7 @@ export default [
 			'jest.config.js',
 			'src/components/Chart/CoinChart/**',
 			'src/components/Chart/SparklineChart/**',
+			'src/__mocks__/**/*.js',
 		],
 	}, js.configs.recommended,
 	{

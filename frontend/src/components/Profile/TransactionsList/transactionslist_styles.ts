@@ -52,6 +52,20 @@ export const useStyles = () => {
 			container: {
 				flex: 1,
 			},
+			customStatusBadge: {
+				alignItems: 'center',
+				borderRadius: 18,
+				height: 36,
+				justifyContent: 'center',
+				marginTop: theme.spacing.xs,
+				minWidth: 90,
+				paddingHorizontal: theme.spacing.md,
+			},
+			customStatusText: {
+				fontSize: theme.typography.fontSize.sm,
+				fontWeight: '600',
+				textTransform: 'capitalize',
+			},
 			emptyContainer: {
 				alignItems: 'center',
 				flex: 1,
@@ -140,20 +154,6 @@ export const useStyles = () => {
 				fontWeight: '600',
 				textTransform: 'capitalize',
 			},
-			customStatusBadge: {
-				alignItems: 'center',
-				borderRadius: 18,
-				height: 36,
-				justifyContent: 'center',
-				marginTop: theme.spacing.xs,
-				minWidth: 90,
-				paddingHorizontal: theme.spacing.md,
-			},
-			customStatusText: {
-				fontSize: theme.typography.fontSize.sm,
-				fontWeight: '600',
-				textTransform: 'capitalize',
-			},
 			swapArrow: {
 				color: theme.colors.onSurfaceVariant,
 				fontSize: theme.typography.fontSize.sm,
@@ -196,9 +196,9 @@ export const useStyles = () => {
 			transactionItem: {
 				borderBottomColor: theme.colors.surfaceVariant,
 				borderBottomWidth: StyleSheet.hairlineWidth,
+				minHeight: 88,
 				paddingHorizontal: theme.spacing.lg,
 				paddingVertical: theme.spacing.lg,
-				minHeight: 88,
 			},
 			transactionItemLast: {
 				borderBottomWidth: 0,

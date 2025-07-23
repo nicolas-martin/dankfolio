@@ -53,35 +53,6 @@ export const useStyles = () => {
 				backgroundColor: theme.colors.surfaceVariant,
 				marginBottom: theme.spacing['2xl'],
 			},
-			infoIcon: {
-				color: theme.colors.onSurfaceVariant,
-			},
-			routingCard: {
-				backgroundColor: theme.colors.surfaceVariant,
-				marginBottom: theme.spacing.xl,
-			},
-			routingDescription: {
-				color: theme.colors.onSurfaceVariant,
-				fontSize: theme.typography.fontSize.sm,
-			},
-			routingLabel: {
-				color: theme.colors.onSurface,
-				fontSize: theme.typography.fontSize.base,
-				fontWeight: '600',
-			},
-			routingLabelContainer: {
-				alignItems: 'center',
-				flexDirection: 'row',
-			},
-			routingRow: {
-				alignItems: 'center',
-				flexDirection: 'row',
-				justifyContent: 'space-between',
-			},
-			routingTextContainer: {
-				flex: 1,
-				marginRight: theme.spacing.md,
-			},
 			detailsContent: {
 				paddingTop: 0,
 			},
@@ -142,29 +113,31 @@ export const useStyles = () => {
 				alignItems: 'center',
 				marginBottom: theme.spacing['3xl'],
 			},
+			infoIcon: {
+				color: theme.colors.onSurfaceVariant,
+			},
 			loadingContainer: {
 				alignItems: 'center',
 				flex: 1,
 				justifyContent: 'center',
-				padding: theme.spacing.xl,
+				paddingVertical: theme.spacing['4xl'],
 			},
 			loadingText: {
 				color: theme.colors.onSurfaceVariant,
 				fontSize: theme.typography.fontSize.base,
-				marginTop: theme.spacing.lg,
-				textAlign: 'center',
+				marginTop: theme.spacing.md,
 			},
 			noWalletContainer: {
 				alignItems: 'center',
 				backgroundColor: theme.colors.background,
 				flex: 1,
 				justifyContent: 'center',
-				padding: theme.spacing.xl,
+				padding: theme.spacing['2xl'],
 			},
 			noWalletText: {
-				color: theme.colors.onSurface,
+				color: theme.colors.onSurfaceVariant,
 				fontSize: theme.typography.fontSize.base,
-				marginBottom: theme.spacing.xl,
+				marginTop: theme.spacing.lg,
 				textAlign: 'center',
 			},
 			refreshProgressBar: {
@@ -172,29 +145,55 @@ export const useStyles = () => {
 				height: 6, // No exact match
 			},
 			refreshProgressContainer: {
-				backgroundColor: theme.colors.surfaceVariant,
+				backgroundColor: theme.colors.surface,
 				borderRadius: theme.borderRadius.md,
+				elevation: 2,
 				marginBottom: theme.spacing.xl,
 				padding: theme.spacing.lg,
 			},
 			refreshProgressHeader: {
 				alignItems: 'center',
 				flexDirection: 'row',
-				marginBottom: theme.spacing.md,
+				marginBottom: theme.spacing.sm,
 			},
 			refreshProgressIcon: {
 				marginRight: theme.spacing.sm,
 			},
 			refreshProgressLabel: {
-				color: theme.colors.onSurfaceVariant,
-				fontSize: theme.typography.fontSize.xs,
-				marginTop: theme.spacing.sm,
-				textAlign: 'center',
+				color: theme.colors.onSurface,
+				flex: 1,
+				fontSize: theme.typography.fontSize.sm,
 			},
 			refreshProgressText: {
 				color: theme.colors.onSurfaceVariant,
+				fontSize: theme.typography.fontSize.xs,
+				marginLeft: theme.spacing['3xl'],
+			},
+			routingCard: {
+				backgroundColor: theme.colors.surfaceVariant,
+				marginBottom: theme.spacing.xl,
+			},
+			routingDescription: {
+				color: theme.colors.onSurfaceVariant,
 				fontSize: theme.typography.fontSize.sm,
-				fontWeight: '500',
+			},
+			routingLabel: {
+				color: theme.colors.onSurface,
+				fontSize: theme.typography.fontSize.base,
+				fontWeight: '600',
+			},
+			routingLabelContainer: {
+				alignItems: 'center',
+				flexDirection: 'row',
+			},
+			routingRow: {
+				alignItems: 'center',
+				flexDirection: 'row',
+				justifyContent: 'space-between',
+			},
+			routingTextContainer: {
+				flex: 1,
+				marginRight: theme.spacing.md,
 			},
 			scrollView: {
 				flex: 1,
