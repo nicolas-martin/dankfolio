@@ -4,7 +4,7 @@ import { Text, Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { TabView, TabBar } from 'react-native-tab-view';
-import { handleTokenPress, formatAddress, sortTokensByValue, calculateTotalPortfolioValue, createCoinCardProps } from './profile_scripts';
+import { handleTokenPress, formatAddress, sortTokensByValue, createCoinCardProps } from './profile_scripts';
 import CopyToClipboard from '@/components/Common/CopyToClipboard';
 import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions';
@@ -20,7 +20,7 @@ import { formatPrice } from 'utils/numberFormat';
 const Profile = () => {
 	const navigation = useNavigation<ProfileScreenNavigationProp>();
 	const { showToast } = useToast();
-	const { wallet, tokens, fetchPortfolioBalance, isLoading: isPortfolioLoading } = usePortfolioStore();
+	const { wallet, tokens, fetchPortfolioBalance, isLoading: isPortfolioLoading, totalPortfolioValue, fetchPortfolioPnL } = usePortfolioStore();
 	const styles = useStyles();
 	const layout = useWindowDimensions();
 
@@ -56,11 +56,16 @@ const Profile = () => {
 		}
 	}, [wallet?.address, fetchRecentTransactions, transactionsHasFetched]);
 
+	useEffect(() => {
+		if (wallet?.address) {
+			logger.info('ProfileScreen: Wallet address available, fetching portfolio PnL.');
+			fetchPortfolioPnL(wallet.address);
+		}
+	}, [wallet?.address, fetchPortfolioPnL]);
+
 	const [isRefreshing, setIsRefreshing] = useState(false);
 
-	const totalValue = useMemo(() => {
-		return calculateTotalPortfolioValue(tokens);
-	}, [tokens]);
+	const totalValue = totalPortfolioValue ?? 0;
 
 	const sortedTokens = useMemo(() => {
 		return sortTokensByValue(tokens);

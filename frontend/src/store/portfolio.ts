@@ -22,6 +22,10 @@ interface PortfolioState {
 	error: string | null;
 	tokens: PortfolioToken[];
 	pnlData: TokenPnL[] | null;
+	totalPortfolioValue: number | null;
+	totalCostBasis: number | null;
+	totalUnrealizedPnl: number | null;
+	totalPnlPercentage: number | null;
 	isPnlLoading: boolean;
 	pnlError: string | null;
 	setWallet: (publicKey: string) => Promise<void>;
@@ -36,6 +40,10 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 	error: null,
 	tokens: [],
 	pnlData: null,
+	totalPortfolioValue: null,
+	totalCostBasis: null,
+	totalUnrealizedPnl: null,
+	totalPnlPercentage: null,
 	isPnlLoading: false,
 	pnlError: null,
 
@@ -108,7 +116,17 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 
 	clearWallet: () => {
 		logger.info('[PortfolioStore] Clearing wallet and tokens');
-		set({ wallet: null, tokens: [], error: null, pnlData: null, pnlError: null });
+		set({ 
+			wallet: null, 
+			tokens: [], 
+			error: null, 
+			pnlData: null, 
+			pnlError: null,
+			totalPortfolioValue: null,
+			totalCostBasis: null,
+			totalUnrealizedPnl: null,
+			totalPnlPercentage: null
+		});
 	},
 
 	fetchPortfolioBalance: async (address: string, forceRefresh?: boolean) => {
@@ -256,12 +274,20 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 				const sortedPnLs = [...response.tokenPnls].sort((a, b) => b.unrealizedPnl - a.unrealizedPnl);
 				set({
 					pnlData: sortedPnLs,
+					totalPortfolioValue: response.totalPortfolioValue,
+					totalCostBasis: response.totalCostBasis,
+					totalUnrealizedPnl: response.totalUnrealizedPnl,
+					totalPnlPercentage: response.totalPnlPercentage,
 					isPnlLoading: false,
 					pnlError: null
 				});
 			} else {
 				set({
 					pnlData: [],
+					totalPortfolioValue: 0,
+					totalCostBasis: 0,
+					totalUnrealizedPnl: 0,
+					totalPnlPercentage: 0,
 					isPnlLoading: false,
 					pnlError: null
 				});

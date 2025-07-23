@@ -706,8 +706,16 @@ type TokenPnLData struct {
 // GetPortfolioPnL calculates profit and loss for a wallet
 func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (totalValue float64, totalCostBasis float64, totalUnrealizedPnL float64, totalPnLPercentage float64, totalHoldings int32, tokenPnLs []TokenPnLData, err error) {
 	// Note: We calculate PnL based only on trades in our database
-	// This gives accurate trading performance metrics
+	// But total portfolio value includes ALL coins in the wallet
 
+	// First, get the actual wallet balances to calculate total portfolio value
+	walletBalances, err := s.GetWalletBalances(ctx, walletAddress)
+	if err != nil {
+		slog.Warn("Failed to get wallet balances for total value calculation", "error", err)
+		// Continue with trade-based calculation only
+		walletBalances = &WalletBalance{Balances: []Balance{}}
+	}
+	
 	// Get all completed trades for this wallet
 	sortBy := "created_at"
 	sortDesc := false
@@ -877,8 +885,33 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 		tokenPnLList = append(tokenPnLList, tokenPnL)
 	}
 
+	// Now calculate the ACTUAL total portfolio value from ALL wallet balances
+	// This includes tokens we may not have trade history for
+	actualTotalPortfolioValue := 0.0
+	for _, balance := range walletBalances.Balances {
+		if balance.Amount <= 0 {
+			continue
+		}
+		
+		// Get current price for this token
+		coin, err := s.coinService.GetCoinByAddress(ctx, balance.ID)
+		if err != nil {
+			slog.Warn("Failed to get coin info for wallet balance", "coin_id", balance.ID, "error", err)
+			continue
+		}
+		
+		if coin != nil && coin.Price > 0 {
+			currentValue := balance.Amount * coin.Price
+			actualTotalPortfolioValue += currentValue
+		}
+	}
+	
 	// Calculate overall portfolio metrics
-	totalUnrealizedPnL = totalPortfolioValue - totalPortfolioCostBasis
+	// IMPORTANT: PnL calculations are based ONLY on tokens with trade history
+	// totalPortfolioValue from traded tokens was already calculated in the loop above
+	totalTradedPortfolioValue := totalPortfolioValue // Save the traded portfolio value for PnL calculation
+	
+	totalUnrealizedPnL = totalTradedPortfolioValue - totalPortfolioCostBasis
 	totalUnrealizedPnL = math.Round(totalUnrealizedPnL*1e8) / 1e8 // Round to 8 decimal places
 	
 	totalPnLPercentage = 0.0
@@ -886,6 +919,9 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 		totalPnLPercentage = totalUnrealizedPnL / totalPortfolioCostBasis // Keep as decimal
 		totalPnLPercentage = math.Round(totalPnLPercentage*10000) / 10000 // Round to 4 decimal places
 	}
+	
+	// Now use the actual portfolio value from ALL wallet balances for the total
+	totalPortfolioValue = actualTotalPortfolioValue
 
 	return totalPortfolioValue, totalPortfolioCostBasis, totalUnrealizedPnL, totalPnLPercentage, int32(len(tokenPnLList)), tokenPnLList, nil
 }

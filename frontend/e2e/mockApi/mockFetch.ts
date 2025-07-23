@@ -675,7 +675,10 @@ async function handleGetPortfolioPnL(options?: FetchInit) {
 	const requestData = parseRequestBody(options);
 	const walletAddress = requestData.walletAddress || '';
 	
-	// Create mock token PnL data
+	// First, get all wallet balances to calculate total portfolio value
+	const walletBalances = MOCK_WALLET_BALANCES;
+	
+	// Create mock token PnL data (only for tokens with trade history)
 	const tokenPnls = [
 		create(TokenPnLSchema, {
 			coinId: 'So11111111111111111111111111111111111111112',
@@ -751,13 +754,23 @@ async function handleGetPortfolioPnL(options?: FetchInit) {
 		}),
 	];
 	
-	// Calculate totals
-	const totalPortfolioValue = tokenPnls.reduce((sum, token) => sum + token.currentValue, 0);
+	// Calculate totals for PnL (based only on traded tokens)
 	const totalCostBasis = tokenPnls
 		.filter(token => token.hasPurchaseData)
 		.reduce((sum, token) => sum + (token.amountHeld * token.costBasis), 0);
 	const totalUnrealizedPnl = tokenPnls.reduce((sum, token) => sum + token.unrealizedPnl, 0);
 	const totalPnlPercentage = totalCostBasis > 0 ? (totalUnrealizedPnl / totalCostBasis) * 100 : 0;
+	
+	// Calculate ACTUAL total portfolio value from ALL wallet balances
+	let actualTotalPortfolioValue = 0;
+	for (const balance of walletBalances) {
+		const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
+			c.address.toLowerCase() === balance.id.toLowerCase()
+		);
+		if (coin && balance.amount > 0) {
+			actualTotalPortfolioValue += balance.amount * coin.price;
+		}
+	}
 	
 	// Special cases for testing
 	if (walletAddress.includes('empty') || walletAddress.includes('no-holdings')) {
@@ -787,8 +800,19 @@ async function handleGetPortfolioPnL(options?: FetchInit) {
 				hasPurchaseData: true,
 			}),
 		];
+		// Still calculate actual portfolio value from all balances for loss scenario
+		let lossScenarioTotalValue = 0;
+		for (const balance of walletBalances) {
+			const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
+				c.address.toLowerCase() === balance.id.toLowerCase()
+			);
+			if (coin && balance.amount > 0) {
+				lossScenarioTotalValue += balance.amount * coin.price;
+			}
+		}
+		
 		return create(GetPortfolioPnLResponseSchema, {
-			totalPortfolioValue: 12.30,
+			totalPortfolioValue: lossScenarioTotalValue, // Use actual wallet total
 			totalCostBasis: 20.0,
 			totalUnrealizedPnl: -7.70,
 			totalPnlPercentage: -38.5,
@@ -798,7 +822,7 @@ async function handleGetPortfolioPnL(options?: FetchInit) {
 	}
 	
 	return create(GetPortfolioPnLResponseSchema, {
-		totalPortfolioValue: totalPortfolioValue,
+		totalPortfolioValue: actualTotalPortfolioValue, // Use wallet balances total
 		totalCostBasis: totalCostBasis,
 		totalUnrealizedPnl: totalUnrealizedPnl,
 		totalPnlPercentage: totalPnlPercentage,

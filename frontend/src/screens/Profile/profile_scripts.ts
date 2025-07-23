@@ -10,10 +10,6 @@ export const sortTokensByValue = (tokens: PortfolioToken[]): PortfolioToken[] =>
 	return [...tokens].sort((a, b) => b.value - a.value);
 };
 
-export const calculateTotalPortfolioValue = (tokens: PortfolioToken[]): number => {
-	return tokens.reduce((sum, token) => sum + token.value, 0);
-};
-
 export const createCoinCardProps = (token: PortfolioToken) => ({
 	...token.coin,
 	value: token.value,
