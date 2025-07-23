@@ -198,17 +198,14 @@ const Profile = () => {
 
 
 
-	const renderScene = ({ route }) => {
+	const renderScene = ({ route }: { route: { key: string } }) => {
 		logger.info(`Rendering scene for route: ${route.key}`);
 		switch (route.key) {
 			case 'tokens':
-				logger.info('Rendering TokensTab');
 				return <TokensTab />;
 			case 'transactions':
-				logger.info('Rendering TransactionsList');
 				return <TransactionsList />;
 			case 'pnl':
-				logger.info('Rendering PnLView');
 				return <PnLView />;
 			default:
 				logger.warn(`Unknown route key: ${route.key}`);
@@ -247,10 +244,10 @@ const Profile = () => {
 			renderIcon={({ route, focused }) => {
 				const tab = tabs.find(t => t.key === route.key);
 				return tab ? (
-					<Icon 
-						source={tab.icon} 
-						size={20} 
-						color={focused ? styles.colors.primary : styles.colors.onSurfaceVariant} 
+					<Icon
+						source={tab.icon}
+						size={20}
+						color={focused ? styles.colors.primary : styles.colors.onSurfaceVariant}
 					/>
 				) : null;
 			}}

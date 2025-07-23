@@ -34,9 +34,11 @@ Dankfolio is a Solana-based meme coin trading application with a React Native fr
 ### Grafana Dashboard Deployment
 - `scp ./deploy/dashboards/* linode:/var/lib/grafana/dashboards/` - Copy dashboard files to server
 - `ssh linode 'systemctl restart grafana-server.service'` - Restart Grafana service
+- `make dash` - SCP dashboard and restart Grafana on prod server
 - Dashboard URL: `https://corsairsoftware.io/grafana/d/{dashboard-id}/{dashboard-name}`
 - Basic Auth: Get credentials from `/etc/grafana/grafana.ini` on server
-- Use Puppeteer to validate with basic auth credentials in URL
+- Use Puppeteer to validate dashboard with basic auth credentials
+- Validate dashboard output using Puppeteer after uploading
 
 ## Architecture
 
