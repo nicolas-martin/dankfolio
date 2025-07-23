@@ -32,7 +32,7 @@ import {
 	GetProxiedImageResponseSchema,
 } from '@/gen/dankfolio/v1/utility_pb';
 
-import { MOCK_TRENDING_COINS, MOCK_TOP_GAINER_COINS, MOCK_NEW_COINS, ALL_MOCK_COINS, MOCK_WALLET_BALANCES, CAPTURED_TRANSACTION_DATA } from './mockData';
+import { MOCK_TRENDING_COINS, MOCK_TOP_GAINER_COINS, MOCK_NEW_COINS, ALL_MOCK_COINS, MOCK_WALLET_BALANCES, CAPTURED_TRANSACTION_DATA, MOCK_XSTOCKS_COINS } from './mockData';
 import { generatePriceHistory } from './helpers';
 
 type FetchInput = string | URL | Request;
@@ -70,11 +70,11 @@ async function handleGetAvailableCoins(options?: FetchInit) {
 	const requestData = parseRequestBody(options);
 	const limit = requestData.limit || 50;
 	const offset = requestData.offset || 0;
-	
+
 	// Return all mock coins with pagination
 	const paginatedCoins = ALL_MOCK_COINS.slice(offset, offset + limit);
 	console.log(`🎭 handleGetAvailableCoins returning ${paginatedCoins.length} coins (total: ${ALL_MOCK_COINS.length})`);
-	
+
 	const response = create(GetAvailableCoinsResponseSchema, {
 		coins: paginatedCoins,
 		totalCount: ALL_MOCK_COINS.length,
@@ -88,10 +88,10 @@ async function handleGetNewCoins(options?: FetchInit) {
 	const requestData = parseRequestBody(options);
 	const limit = requestData.limit || 20;
 	const offset = requestData.offset || 0;
-	
+
 	// Return new coins with pagination
 	const paginatedCoins = MOCK_NEW_COINS.slice(offset, offset + limit);
-	
+
 	return create(GetAvailableCoinsResponseSchema, {
 		coins: paginatedCoins,
 		totalCount: MOCK_NEW_COINS.length,
@@ -102,10 +102,10 @@ async function handleGetTrendingCoins(options?: FetchInit) {
 	const requestData = parseRequestBody(options);
 	const limit = requestData.limit || 20;
 	const offset = requestData.offset || 0;
-	
+
 	// Return trending coins with pagination
 	const paginatedCoins = MOCK_TRENDING_COINS.slice(offset, offset + limit);
-	
+
 	return create(GetAvailableCoinsResponseSchema, {
 		coins: paginatedCoins,
 		totalCount: MOCK_TRENDING_COINS.length,
@@ -116,13 +116,27 @@ async function handleGetTopGainersCoins(options?: FetchInit) {
 	const requestData = parseRequestBody(options);
 	const limit = requestData.limit || 20;
 	const offset = requestData.offset || 0;
-	
+
 	// Return top gainer coins with pagination
 	const paginatedCoins = MOCK_TOP_GAINER_COINS.slice(offset, offset + limit);
-	
+
 	return create(GetAvailableCoinsResponseSchema, {
 		coins: paginatedCoins,
 		totalCount: MOCK_TOP_GAINER_COINS.length,
+	});
+}
+
+async function handleGetXStocksCoins(options?: FetchInit) {
+	const requestData = parseRequestBody(options);
+	const limit = requestData.limit || 20;
+	const offset = requestData.offset || 0;
+
+	// Return XStocks coins with pagination
+	const paginatedCoins = MOCK_XSTOCKS_COINS.slice(offset, offset + limit);
+
+	return create(GetAvailableCoinsResponseSchema, {
+		coins: paginatedCoins,
+		totalCount: MOCK_XSTOCKS_COINS.length,
 	});
 }
 
@@ -132,11 +146,11 @@ async function handleSearchCoins(options?: FetchInit) {
 	// Check if this is a request for top gainers (sorted by price change percentage)
 	// Handle both string and numeric enum values
 	const isTopGainerRequest = (
-		(requestData.sortBy === CoinSortField.PRICE_CHANGE_PERCENTAGE_24H || 
-		 requestData.sortBy === 'COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H') && 
+		(requestData.sortBy === CoinSortField.PRICE_CHANGE_PERCENTAGE_24H ||
+			requestData.sortBy === 'COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H') &&
 		requestData.sortDesc
 	);
-	
+
 	if (isTopGainerRequest) {
 		return create(SearchResponseSchema, {
 			coins: MOCK_TOP_GAINER_COINS,
@@ -147,10 +161,10 @@ async function handleSearchCoins(options?: FetchInit) {
 	// Check if this is a request for new coins (sorted by jupiter_listed_at)
 	// Handle both string and numeric enum values
 	const isNewCoinsRequest = (
-		requestData.sortBy === CoinSortField.JUPITER_LISTED_AT || 
+		requestData.sortBy === CoinSortField.JUPITER_LISTED_AT ||
 		requestData.sortBy === 'COIN_SORT_FIELD_JUPITER_LISTED_AT'
 	);
-	
+
 	if (isNewCoinsRequest) {
 		return create(SearchResponseSchema, {
 			coins: MOCK_NEW_COINS,
@@ -206,7 +220,7 @@ async function handleGetCoinsByIDs(options?: FetchInit) {
 
 	// Find all matching coins
 	const coins = addresses
-		.map((address: string) => 
+		.map((address: string) =>
 			ALL_MOCK_COINS.find((c: ProtobufCoin) =>
 				c.address.toLowerCase() === address.toLowerCase()
 			)
@@ -397,9 +411,9 @@ async function handleGetSwapQuote(options?: FetchInit) {
 	const accountsToCreate = requestData.includeFeeBreakdown ? 1 : 0; // Simulate 1 ATA creation if detailed breakdown requested
 	const accountCreationFee = accountsToCreate > 0 ? '0.00203928' : '0'; // ATA creation cost
 	const totalSolFees = (
-		parseFloat(tradingFeeSol) + 
-		parseFloat(transactionFee) + 
-		parseFloat(priorityFee) + 
+		parseFloat(tradingFeeSol) +
+		parseFloat(transactionFee) +
+		parseFloat(priorityFee) +
 		parseFloat(accountCreationFee)
 	).toFixed(9);
 
@@ -454,9 +468,9 @@ async function handlePrepareSwap(options?: FetchInit) {
 	const accountsToCreate = 1; // Simulate 1 ATA creation for PrepareSwap
 	const accountCreationFee = '0.00203928'; // ATA creation cost
 	const totalSolFees = (
-		parseFloat(tradingFeeSol) + 
-		parseFloat(transactionFee) + 
-		parseFloat(priorityFee) + 
+		parseFloat(tradingFeeSol) +
+		parseFloat(transactionFee) +
+		parseFloat(priorityFee) +
 		parseFloat(accountCreationFee)
 	).toFixed(9);
 
@@ -471,7 +485,7 @@ async function handlePrepareSwap(options?: FetchInit) {
 	});
 
 	const mockTransactionBase64 = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAGCekCd/S1HV8txmyKfIAWKWxswDuUWLUqjZYc6PbaNJgCS6xdNRGIgknfxCI44w8fMixamF6aM2jvWuJv9F6HQGCYGhB4xuDMrDdhavUhIeB7Cm55/scPKspWwzD2R6pEoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAAAEedVb8jHAbu50xW7OaBUH/bGy3qP0jlECsc2iVrwTjwbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fm0P/on9df2SnTAmx8pWHneSwmrNt/J3VFLMhqns4zl6Ay7y3ZxksVsqzi2N3jHaFEqLW3iYBGcYX3hKK2J6TtECAQABQILSwIABAAJA6AsAAAAAAAABwYAAgAPAwYBAQMCAAIMAgAAAIwMCAAAAAAABgECAREHBgABABEDBgEBBRsGAAIBBREFCAUOCw4NCgIBEQ8JDgAGBhAODAUj5RfLl3rjrSoBAAAAJmQAAYwMCAAAAAAA3IhZ0AEAAABQAAAGAwIAAAEJAWpgiN9xbBUoxnUHH86lRaehpUhg3jmT4dhHYEv2EYR2BX9ZW36DBC4CdVo=';
-	
+
 	return create(PrepareSwapResponseSchema, {
 		unsignedTransaction: mockTransactionBase64,
 		solFeeBreakdown: solFeeBreakdown,
@@ -493,7 +507,7 @@ async function handleCreateWallet(_options?: FetchInit) {
 	const mockPublicKey = 'E2eMockWallet' + Math.random().toString(36).substring(2, 15);
 	const mockSecretKey = 'MockSecret' + Math.random().toString(36).substring(2, 50);
 	const mockMnemonic = 'mock test wallet seed phrase example words for testing purposes only twelve words total';
-	
+
 	return create(CreateWalletResponseSchema, {
 		publicKey: mockPublicKey,
 		secretKey: mockSecretKey,
@@ -558,7 +572,7 @@ async function handleListTrades(options?: FetchInit) {
 	const requestData = parseRequestBody(options);
 	const limit = requestData.limit || 20;
 	const offset = requestData.offset || 0;
-	
+
 	// Create diverse mock trades for testing
 	const mockTrades = [
 		create(TradeSchema, {
@@ -646,7 +660,7 @@ async function handleListTrades(options?: FetchInit) {
 			completedAt: timestampFromDate(new Date(Date.now() - 86340000)),
 		}),
 	];
-	
+
 	// Apply filters if provided
 	let filteredTrades = mockTrades;
 	if (requestData.status) {
@@ -661,10 +675,10 @@ async function handleListTrades(options?: FetchInit) {
 	if (requestData.toCoinAddress) {
 		filteredTrades = filteredTrades.filter(t => t.toCoinId === requestData.toCoinAddress);
 	}
-	
+
 	// Apply pagination
 	const paginatedTrades = filteredTrades.slice(offset, offset + limit);
-	
+
 	return create(ListTradesResponseSchema, {
 		trades: paginatedTrades,
 		totalCount: filteredTrades.length,
@@ -674,10 +688,10 @@ async function handleListTrades(options?: FetchInit) {
 async function handleGetPortfolioPnL(options?: FetchInit) {
 	const requestData = parseRequestBody(options);
 	const walletAddress = requestData.walletAddress || '';
-	
+
 	// First, get all wallet balances to calculate total portfolio value
 	const walletBalances = MOCK_WALLET_BALANCES;
-	
+
 	// Create mock token PnL data (only for tokens with trade history)
 	const tokenPnls = [
 		create(TokenPnLSchema, {
@@ -753,14 +767,14 @@ async function handleGetPortfolioPnL(options?: FetchInit) {
 			hasPurchaseData: false, // Received via airdrop or transfer
 		}),
 	];
-	
+
 	// Calculate totals for PnL (based only on traded tokens)
 	const totalCostBasis = tokenPnls
 		.filter(token => token.hasPurchaseData)
 		.reduce((sum, token) => sum + (token.amountHeld * token.costBasis), 0);
 	const totalUnrealizedPnl = tokenPnls.reduce((sum, token) => sum + token.unrealizedPnl, 0);
 	const totalPnlPercentage = totalCostBasis > 0 ? (totalUnrealizedPnl / totalCostBasis) * 100 : 0;
-	
+
 	// Calculate ACTUAL total portfolio value from ALL wallet balances
 	let actualTotalPortfolioValue = 0;
 	for (const balance of walletBalances) {
@@ -771,7 +785,7 @@ async function handleGetPortfolioPnL(options?: FetchInit) {
 			actualTotalPortfolioValue += balance.amount * coin.price;
 		}
 	}
-	
+
 	// Special cases for testing
 	if (walletAddress.includes('empty') || walletAddress.includes('no-holdings')) {
 		return create(GetPortfolioPnLResponseSchema, {
@@ -783,7 +797,7 @@ async function handleGetPortfolioPnL(options?: FetchInit) {
 			tokenPnls: [],
 		});
 	}
-	
+
 	if (walletAddress.includes('loss') || walletAddress.includes('negative')) {
 		// Return a portfolio with overall losses
 		const lossTokens = [
@@ -810,7 +824,7 @@ async function handleGetPortfolioPnL(options?: FetchInit) {
 				lossScenarioTotalValue += balance.amount * coin.price;
 			}
 		}
-		
+
 		return create(GetPortfolioPnLResponseSchema, {
 			totalPortfolioValue: lossScenarioTotalValue, // Use actual wallet total
 			totalCostBasis: 20.0,
@@ -820,7 +834,7 @@ async function handleGetPortfolioPnL(options?: FetchInit) {
 			tokenPnls: lossTokens,
 		});
 	}
-	
+
 	return create(GetPortfolioPnLResponseSchema, {
 		totalPortfolioValue: actualTotalPortfolioValue, // Use wallet balances total
 		totalCostBasis: totalCostBasis,
@@ -836,37 +850,38 @@ async function handleGetPortfolioPnL(options?: FetchInit) {
 const endpointHandlers: { [key: string]: (options?: FetchInit) => Promise<any> } = {
 	// Legacy endpoint
 	'/dankfolio.v1.coinservice/getavailablecoins': handleGetAvailableCoins,
-	
+
 	// New specific RPC endpoints
 	'/dankfolio.v1.coinservice/getnewcoins': handleGetNewCoins,
 	'/dankfolio.v1.coinservice/gettrendingcoins': handleGetTrendingCoins,
 	'/dankfolio.v1.coinservice/gettopgainerscoins': handleGetTopGainersCoins,
-	
+	'/dankfolio.v1.coinservice/getxstockscoins': handleGetXStocksCoins,
+
 	// Search endpoints
 	'/dankfolio.v1.coinservice/search': handleSearchCoins, // Proper proto endpoint
 	'/dankfolio.v1.coinservice/searchcoinbymint': handleSearchCoinByMint,
 	'/dankfolio.v1.coinservice/searchcoinbyaddress': handleSearchCoinByMint, // Support both mint and address
-	
+
 	// Coin info endpoints
 	'/dankfolio.v1.coinservice/getcoinbyid': handleGetCoinById,
 	'/dankfolio.v1.coinservice/getcoinsbyids': handleGetCoinsByIDs,
 	'/dankfolio.v1.coinservice/getallcoins': handleGetAllCoins,
-	
+
 	// Wallet endpoints
 	'/dankfolio.v1.walletservice/getwalletbalances': handleGetWalletBalances,
 	'/dankfolio.v1.walletservice/createwallet': handleCreateWallet,
 	'/dankfolio.v1.walletservice/preparetransfer': handlePrepareTransfer,
 	'/dankfolio.v1.walletservice/submittransfer': handleSubmitTransfer,
 	'/dankfolio.v1.walletservice/getportfoliopnl': handleGetPortfolioPnL,
-	
+
 	// Utility endpoints
 	'/dankfolio.v1.utilityservice/getproxiedimage': handleGetProxiedImage,
-	
+
 	// Price endpoints
 	'/dankfolio.v1.priceservice/getpricehistory': handleGetPriceHistory,
 	'/dankfolio.v1.priceservice/getcoinprices': handleGetCoinPrices,
 	'/dankfolio.v1.priceservice/getpricehistoriesbyids': handleGetPriceHistoriesByIDs,
-	
+
 	// Trade endpoints
 	'/dankfolio.v1.tradeservice/getswapquote': handleGetSwapQuote,
 	'/dankfolio.v1.tradeservice/prepareswap': handlePrepareSwap,

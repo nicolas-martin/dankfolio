@@ -77,7 +77,7 @@ const Profile = () => {
 		setIsRefreshing(true);
 		try {
 			const { fetchPortfolioPnL } = usePortfolioStore.getState();
-			
+
 			// Refresh all portfolio-related data in parallel
 			await Promise.all([
 				fetchPortfolioBalance(wallet.address, true), // Force refresh to get updated prices
