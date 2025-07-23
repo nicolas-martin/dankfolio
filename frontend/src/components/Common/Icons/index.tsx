@@ -51,6 +51,9 @@ export const WarningIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase 
 export const InfoIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="info" {...props} />;
 export const ChevronDownIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="chevron-down" {...props} />;
 
+// Chart icons
+export const ChartLineIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="activity" {...props} />;
+
 export const ChangeIcon: React.FC<IconBaseProps> = (props) => <MaterialIcons name="currency-exchange" {...props} />;
 
 // Trend icons

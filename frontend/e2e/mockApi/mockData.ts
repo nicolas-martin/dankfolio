@@ -383,3 +383,40 @@ export const MOCK_WALLET_BALANCES: Balance[] = [
 	create(BalanceSchema, { id: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', amount: 10000000.0 }), // BONK
 	create(BalanceSchema, { id: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', amount: 150.0 }), // JUP
 ];
+
+// Mock PnL data for different scenarios
+export const MOCK_PNL_SCENARIOS = {
+	profit: {
+		totalPortfolioValue: 1500.25,
+		totalCostBasis: 1200.00,
+		totalUnrealizedPnl: 300.25,
+		totalPnlPercentage: 25.02,
+	},
+	loss: {
+		totalPortfolioValue: 850.50,
+		totalCostBasis: 1100.00,
+		totalUnrealizedPnl: -249.50,
+		totalPnlPercentage: -22.68,
+	},
+	breakeven: {
+		totalPortfolioValue: 1000.00,
+		totalCostBasis: 998.50,
+		totalUnrealizedPnl: 1.50,
+		totalPnlPercentage: 0.15,
+	},
+};
+
+// Mock trade statuses for different scenarios
+export const MOCK_TRADE_STATUSES = {
+	completed: 'completed',
+	pending: 'pending',
+	failed: 'failed',
+	processing: 'processing',
+};
+
+// Mock transaction hashes for testing
+export const MOCK_TX_HASHES = {
+	success: '5xYz9876543210abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+	pending: '4aBc1234567890zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA',
+	failed: '3dEf0987654321fedcbazyxwvutsrqponmlkjihgABCDEFGHIJKLMNOPQRSTUVWXYZ',
+};

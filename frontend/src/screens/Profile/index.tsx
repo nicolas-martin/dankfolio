@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, RefreshControl, SafeAreaView, useWindowDimensions } from 'react-native';
-import { Text, Button, Icon, IconButton } from 'react-native-paper';
+import { View, ScrollView, RefreshControl, SafeAreaView, useWindowDimensions, Pressable } from 'react-native';
+import { Text, Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { TabView, TabBar } from 'react-native-tab-view';
@@ -11,7 +11,7 @@ import { useTransactionsStore } from '@/store/transactions';
 import { useStyles } from './profile_styles';
 import TokenListCard from '@/components/Home/TokenListCard';
 import TransactionsList from '@/components/Profile/TransactionsList';
-import { ProfileIcon, WalletIcon, CoinsIcon, SendIcon, } from '@components/Common/Icons';
+import { ProfileIcon, WalletIcon, CoinsIcon, SendIcon, SettingsIcon, SwapIcon, ChartLineIcon } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
 import type { ProfileScreenNavigationProp } from './profile_types';
 import PnLView from '@/components/Profile/PnLView';
@@ -25,9 +25,9 @@ const Profile = () => {
 	const layout = useWindowDimensions();
 
 	const tabs = [
-		{ key: 'tokens', title: 'Tokens', icon: 'wallet-outline' },
-		{ key: 'transactions', title: 'Transactions', icon: 'swap-horizontal' },
-		{ key: 'pnl', title: 'PnL', icon: 'chart-line' },
+		{ key: 'tokens', title: 'Tokens', icon: WalletIcon },
+		{ key: 'transactions', title: 'Transactions', icon: SwapIcon },
+		{ key: 'pnl', title: 'PnL', icon: ChartLineIcon },
 	];
 
 	const [index, setIndex] = useState(0);
@@ -103,10 +103,7 @@ const Profile = () => {
 					<ProfileIcon size={28} color={styles.colors.onSurface} />
 					<Text style={styles.profileTitle} accessible={true} testID="portfolio-title">Portfolio</Text>
 				</View>
-				<IconButton
-					icon="cog-outline"
-					size={24}
-					iconColor={styles.colors.onSurface}
+				<Pressable
 					onPress={() => {
 						logger.breadcrumb({ category: 'navigation', message: 'Navigating to SettingsScreen from Profile' });
 						navigation.navigate('Settings');
@@ -114,7 +111,12 @@ const Profile = () => {
 					style={styles.settingsButton}
 					accessible={true}
 					testID="settings-button"
-				/>
+				>
+					<SettingsIcon
+						size={24}
+						color={styles.colors.onSurface}
+					/>
+				</Pressable>
 			</View>
 			{wallet && (
 				<View style={styles.walletAddressContainer} accessible={false}>
@@ -172,7 +174,7 @@ const Profile = () => {
 						</View>
 						<View style={styles.emptyStateContainer} accessible={false}>
 							<View style={styles.emptyStateIcon}>
-								<Icon source="wallet-outline" size={48} color={styles.colors.onSurfaceVariant} />
+								<WalletIcon size={48} color={styles.colors.onSurfaceVariant} />
 							</View>
 							<Text style={styles.emptyStateTitle} accessible={true}>No Tokens Found</Text>
 							<Text style={styles.emptyStateText} accessible={true}>
@@ -250,13 +252,14 @@ const Profile = () => {
 			style={styles.tabBar}
 			renderIcon={({ route, focused }) => {
 				const tab = tabs.find(t => t.key === route.key);
-				return tab ? (
-					<Icon
-						source={tab.icon}
+				if (!tab) return null;
+				const IconComponent = tab.icon;
+				return (
+					<IconComponent
 						size={20}
 						color={focused ? styles.colors.primary : styles.colors.onSurfaceVariant}
 					/>
-				) : null;
+				);
 			}}
 			renderLabel={({ route, focused }) => {
 				const tab = tabs.find(t => t.key === route.key);

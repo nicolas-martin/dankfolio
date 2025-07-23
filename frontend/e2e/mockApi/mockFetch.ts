@@ -1,6 +1,7 @@
 /// <reference lib="dom" />
 import { env } from '@/utils/env';
 import { create } from '@bufbuild/protobuf';
+import { timestampFromDate } from '@bufbuild/protobuf/wkt';
 import {
 	GetAvailableCoinsResponseSchema, SearchResponseSchema, SearchCoinByAddressResponseSchema, type Coin as ProtobufCoin, CoinSchema, CoinSortField,
 	GetCoinsByIDsResponseSchema, GetAllCoinsResponseSchema,
@@ -10,6 +11,8 @@ import {
 	BalanceSchema,
 	WalletBalanceSchema,
 	CreateWalletResponseSchema,
+	GetPortfolioPnLResponseSchema,
+	TokenPnLSchema,
 } from '@/gen/dankfolio/v1/wallet_pb';
 import {
 	GetPriceHistoryResponseSchema,
@@ -551,25 +554,256 @@ async function handleGetTrade(_options?: FetchInit) {
 	});
 }
 
-async function handleListTrades(_options?: FetchInit) {
-	const mockTrade = create(TradeSchema, {
-		id: 'mock_trade_id_e2e_test_67890',
-		userId: 'mock_user_id',
-		fromCoinId: 'So11111111111111111111111111111111111111112',
-		toCoinId: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-		coinSymbol: 'SOL',
-		type: 'swap',
-		amount: 1.25,
-		price: 0.95,
-		fee: 0.0025,
-		status: 'completed',
-		transactionHash: 'mock_transaction_hash_abcdef123456',
-		confirmations: 32,
-		finalized: true,
-	});
+async function handleListTrades(options?: FetchInit) {
+	const requestData = parseRequestBody(options);
+	const limit = requestData.limit || 20;
+	const offset = requestData.offset || 0;
+	
+	// Create diverse mock trades for testing
+	const mockTrades = [
+		create(TradeSchema, {
+			id: 'mock_trade_1_success',
+			userId: requestData.userId || 'mock_user_id',
+			fromCoinId: 'So11111111111111111111111111111111111111112',
+			toCoinId: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+			coinSymbol: 'SOL',
+			type: 'swap',
+			amount: 2.5,
+			price: 98.45,
+			fee: 0.005,
+			status: 'completed',
+			transactionHash: 'mock_tx_hash_success_1',
+			confirmations: 32,
+			finalized: true,
+			createdAt: timestampFromDate(new Date(Date.now() - 3600000)), // 1 hour ago
+			completedAt: timestampFromDate(new Date(Date.now() - 3540000)), // 59 minutes ago
+		}),
+		create(TradeSchema, {
+			id: 'mock_trade_2_profit',
+			userId: requestData.userId || 'mock_user_id',
+			fromCoinId: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+			toCoinId: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
+			coinSymbol: 'USDC',
+			type: 'swap',
+			amount: 100.0,
+			price: 1.0,
+			fee: 0.25,
+			status: 'completed',
+			transactionHash: 'mock_tx_hash_profit_2',
+			confirmations: 64,
+			finalized: true,
+			createdAt: timestampFromDate(new Date(Date.now() - 7200000)), // 2 hours ago
+			completedAt: timestampFromDate(new Date(Date.now() - 7140000)),
+		}),
+		create(TradeSchema, {
+			id: 'mock_trade_3_pending',
+			userId: requestData.userId || 'mock_user_id',
+			fromCoinId: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
+			toCoinId: 'So11111111111111111111111111111111111111112',
+			coinSymbol: 'JUP',
+			type: 'swap',
+			amount: 50.0,
+			price: 0.87,
+			fee: 0.1,
+			status: 'pending',
+			transactionHash: 'mock_tx_hash_pending_3',
+			confirmations: 2,
+			finalized: false,
+			createdAt: timestampFromDate(new Date(Date.now() - 300000)), // 5 minutes ago
+		}),
+		create(TradeSchema, {
+			id: 'mock_trade_4_failed',
+			userId: requestData.userId || 'mock_user_id',
+			fromCoinId: 'DankCoin1111111111111111111111111111111',
+			toCoinId: 'So11111111111111111111111111111111111111112',
+			coinSymbol: 'DANK',
+			type: 'swap',
+			amount: 1000.0,
+			price: 0.000042,
+			fee: 0.002,
+			status: 'failed',
+			transactionHash: 'mock_tx_hash_failed_4',
+			confirmations: 0,
+			finalized: false,
+			error: 'Insufficient liquidity in pool',
+			createdAt: timestampFromDate(new Date(Date.now() - 10800000)), // 3 hours ago
+		}),
+		create(TradeSchema, {
+			id: 'mock_trade_5_loss',
+			userId: requestData.userId || 'mock_user_id',
+			fromCoinId: 'MoonToken111111111111111111111111111111',
+			toCoinId: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+			coinSymbol: 'MOON',
+			type: 'swap',
+			amount: 500.0,
+			price: 0.00123,
+			fee: 0.001,
+			status: 'completed',
+			transactionHash: 'mock_tx_hash_loss_5',
+			confirmations: 128,
+			finalized: true,
+			createdAt: timestampFromDate(new Date(Date.now() - 86400000)), // 1 day ago
+			completedAt: timestampFromDate(new Date(Date.now() - 86340000)),
+		}),
+	];
+	
+	// Apply filters if provided
+	let filteredTrades = mockTrades;
+	if (requestData.status) {
+		filteredTrades = filteredTrades.filter(t => t.status === requestData.status);
+	}
+	if (requestData.type) {
+		filteredTrades = filteredTrades.filter(t => t.type === requestData.type);
+	}
+	if (requestData.fromCoinAddress) {
+		filteredTrades = filteredTrades.filter(t => t.fromCoinId === requestData.fromCoinAddress);
+	}
+	if (requestData.toCoinAddress) {
+		filteredTrades = filteredTrades.filter(t => t.toCoinId === requestData.toCoinAddress);
+	}
+	
+	// Apply pagination
+	const paginatedTrades = filteredTrades.slice(offset, offset + limit);
+	
 	return create(ListTradesResponseSchema, {
-		trades: [mockTrade],
-		totalCount: 1,
+		trades: paginatedTrades,
+		totalCount: filteredTrades.length,
+	});
+}
+
+async function handleGetPortfolioPnL(options?: FetchInit) {
+	const requestData = parseRequestBody(options);
+	const walletAddress = requestData.walletAddress || '';
+	
+	// Create mock token PnL data
+	const tokenPnls = [
+		create(TokenPnLSchema, {
+			coinId: 'So11111111111111111111111111111111111111112',
+			symbol: 'SOL',
+			name: 'Wrapped SOL',
+			amountHeld: 5.25,
+			costBasis: 85.50, // Average buy price
+			currentPrice: 98.45,
+			currentValue: 516.86, // 5.25 * 98.45
+			unrealizedPnl: 67.74, // (98.45 - 85.50) * 5.25
+			pnlPercentage: 15.15, // ((98.45 - 85.50) / 85.50) * 100
+			hasPurchaseData: true,
+		}),
+		create(TokenPnLSchema, {
+			coinId: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
+			symbol: 'BONK',
+			name: 'Bonk',
+			amountHeld: 1500000,
+			costBasis: 0.0000065, // Average buy price
+			currentPrice: 0.0000089,
+			currentValue: 13.35, // 1500000 * 0.0000089
+			unrealizedPnl: 3.60, // (0.0000089 - 0.0000065) * 1500000
+			pnlPercentage: 36.92, // ((0.0000089 - 0.0000065) / 0.0000065) * 100
+			hasPurchaseData: true,
+		}),
+		create(TokenPnLSchema, {
+			coinId: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
+			symbol: 'JUP',
+			name: 'Jupiter',
+			amountHeld: 150,
+			costBasis: 0.95, // Average buy price
+			currentPrice: 0.87,
+			currentValue: 130.50, // 150 * 0.87
+			unrealizedPnl: -12.00, // (0.87 - 0.95) * 150
+			pnlPercentage: -8.42, // ((0.87 - 0.95) / 0.95) * 100
+			hasPurchaseData: true,
+		}),
+		create(TokenPnLSchema, {
+			coinId: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+			symbol: 'USDC',
+			name: 'USD Coin',
+			amountHeld: 250.0,
+			costBasis: 1.0,
+			currentPrice: 1.0,
+			currentValue: 250.0,
+			unrealizedPnl: 0.0,
+			pnlPercentage: 0.0,
+			hasPurchaseData: true,
+		}),
+		create(TokenPnLSchema, {
+			coinId: 'DankCoin1111111111111111111111111111111',
+			symbol: 'DANK',
+			name: 'DankCoin',
+			amountHeld: 50000,
+			costBasis: 0.000025, // Average buy price
+			currentPrice: 0.000042,
+			currentValue: 2.10, // 50000 * 0.000042
+			unrealizedPnl: 0.85, // (0.000042 - 0.000025) * 50000
+			pnlPercentage: 68.0, // ((0.000042 - 0.000025) / 0.000025) * 100
+			hasPurchaseData: true,
+		}),
+		create(TokenPnLSchema, {
+			coinId: 'MoonToken111111111111111111111111111111',
+			symbol: 'MOON',
+			name: 'Safe Moon',
+			amountHeld: 2500,
+			costBasis: 0.0, // No purchase data
+			currentPrice: 0.00123,
+			currentValue: 3.075, // 2500 * 0.00123
+			unrealizedPnl: 0.0,
+			pnlPercentage: 0.0,
+			hasPurchaseData: false, // Received via airdrop or transfer
+		}),
+	];
+	
+	// Calculate totals
+	const totalPortfolioValue = tokenPnls.reduce((sum, token) => sum + token.currentValue, 0);
+	const totalCostBasis = tokenPnls
+		.filter(token => token.hasPurchaseData)
+		.reduce((sum, token) => sum + (token.amountHeld * token.costBasis), 0);
+	const totalUnrealizedPnl = tokenPnls.reduce((sum, token) => sum + token.unrealizedPnl, 0);
+	const totalPnlPercentage = totalCostBasis > 0 ? (totalUnrealizedPnl / totalCostBasis) * 100 : 0;
+	
+	// Special cases for testing
+	if (walletAddress.includes('empty') || walletAddress.includes('no-holdings')) {
+		return create(GetPortfolioPnLResponseSchema, {
+			totalPortfolioValue: 0,
+			totalCostBasis: 0,
+			totalUnrealizedPnl: 0,
+			totalPnlPercentage: 0,
+			totalHoldings: 0,
+			tokenPnls: [],
+		});
+	}
+	
+	if (walletAddress.includes('loss') || walletAddress.includes('negative')) {
+		// Return a portfolio with overall losses
+		const lossTokens = [
+			create(TokenPnLSchema, {
+				coinId: 'MoonToken111111111111111111111111111111',
+				symbol: 'MOON',
+				name: 'Safe Moon',
+				amountHeld: 10000,
+				costBasis: 0.002,
+				currentPrice: 0.00123,
+				currentValue: 12.30,
+				unrealizedPnl: -7.70,
+				pnlPercentage: -38.5,
+				hasPurchaseData: true,
+			}),
+		];
+		return create(GetPortfolioPnLResponseSchema, {
+			totalPortfolioValue: 12.30,
+			totalCostBasis: 20.0,
+			totalUnrealizedPnl: -7.70,
+			totalPnlPercentage: -38.5,
+			totalHoldings: 1,
+			tokenPnls: lossTokens,
+		});
+	}
+	
+	return create(GetPortfolioPnLResponseSchema, {
+		totalPortfolioValue: totalPortfolioValue,
+		totalCostBasis: totalCostBasis,
+		totalUnrealizedPnl: totalUnrealizedPnl,
+		totalPnlPercentage: totalPnlPercentage,
+		totalHoldings: tokenPnls.length,
+		tokenPnls: tokenPnls,
 	});
 }
 
@@ -599,6 +833,7 @@ const endpointHandlers: { [key: string]: (options?: FetchInit) => Promise<any> }
 	'/dankfolio.v1.walletservice/createwallet': handleCreateWallet,
 	'/dankfolio.v1.walletservice/preparetransfer': handlePrepareTransfer,
 	'/dankfolio.v1.walletservice/submittransfer': handleSubmitTransfer,
+	'/dankfolio.v1.walletservice/getportfoliopnl': handleGetPortfolioPnL,
 	
 	// Utility endpoints
 	'/dankfolio.v1.utilityservice/getproxiedimage': handleGetProxiedImage,
