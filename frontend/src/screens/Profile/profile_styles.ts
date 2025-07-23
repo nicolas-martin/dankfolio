@@ -223,6 +223,8 @@ export const useStyles = () => {
 				backgroundColor: theme.colors.surface,
 				borderBottomColor: theme.colors.surfaceVariant,
 				borderBottomWidth: 1,
+				borderTopLeftRadius: theme.spacing.xl,
+				borderTopRightRadius: theme.spacing.xl,
 				elevation: 0,
 				shadowOpacity: 0,
 			},
@@ -247,9 +249,17 @@ export const useStyles = () => {
 				color: theme.colors.onSurfaceVariant,
 			},
 			tabViewContainer: {
-				backgroundColor: theme.colors.background,
+				backgroundColor: theme.colors.surface,
+				borderRadius: theme.spacing.xl,
+				elevation: 4, // No exact match
 				flex: 1,
+				marginBottom: theme.spacing['2xl'],
 				minHeight: 500,
+				overflow: 'hidden',
+				shadowColor: theme.shadows.sm.shadowColor,
+				shadowOffset: theme.shadows.md.shadowOffset,
+				shadowOpacity: 0.1, // No exact match
+				shadowRadius: theme.spacing.sm,
 			},
 			themeToggleContainer: {
 				alignItems: 'center',
