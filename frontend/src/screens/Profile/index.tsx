@@ -213,7 +213,6 @@ const Profile = () => {
 
 
 	const renderScene = ({ route }: { route: { key: string } }) => {
-		logger.info(`Rendering scene for route: ${route.key}`);
 		switch (route.key) {
 			case 'tokens':
 				return <TokensTab />;

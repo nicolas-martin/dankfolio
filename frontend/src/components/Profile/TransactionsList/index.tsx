@@ -4,22 +4,17 @@ import { useTransactionsStore } from '@/store/transactions';
 import { Transaction, TransactionType, TransactionStatus } from '@/types';
 import { useStyles } from './transactionslist_styles';
 import { formatPrice } from '@/utils/numberFormat';
-import { useCallback, useState, useMemo, useEffect } from 'react';
-import { usePortfolioStore } from '@/store/portfolio';
+import { useState, useEffect } from 'react';
 import { useCoinStore } from '@/store/coins';
 import CachedImage from '@/components/Common/CachedImage';
 import { Coin } from '@/types';
 import { formatTransactionDate, getTransactionIcon, getSolscanUrl } from './transactionslist_scripts';
 
 const TransactionsList = () => {
-	const { transactions, isLoading, error, fetchRecentTransactions } = useTransactionsStore();
-	const { wallet } = usePortfolioStore();
+	const { transactions, isLoading, error } = useTransactionsStore();
 	const { getCoinByID, coinMap } = useCoinStore();
 	const styles = useStyles();
-	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [coinData, setCoinData] = useState<Record<string, Coin>>({});
-
-	const refreshControlColors = useMemo(() => [styles.colors.primary], [styles.colors.primary]);
 
 	// Fetch coin data for transactions
 	useEffect(() => {
@@ -51,20 +46,6 @@ const TransactionsList = () => {
 		}
 	}, [transactions, getCoinByID]); // Remove coinMap and coinData from dependencies
 
-
-	const getStatusChipStyle = (status: Transaction['status']) => {
-		switch (status) {
-			case TransactionStatus.COMPLETED:
-				return styles.statusChipCompleted;
-			case TransactionStatus.PENDING:
-				return styles.statusChipPending;
-			case TransactionStatus.FAILED:
-				return styles.statusChipFailed;
-			default:
-				return styles.statusChip;
-		}
-	};
-
 	const getCustomStatusStyle = (status: Transaction['status']) => {
 		const baseStyle = styles.customStatusBadge;
 		switch (status) {
@@ -73,7 +54,7 @@ const TransactionsList = () => {
 			case TransactionStatus.PENDING:
 				return [baseStyle, { backgroundColor: styles.theme.warning + '20' }];
 			case TransactionStatus.FAILED:
-				return [baseStyle, { backgroundColor: styles.colors.error + '20' }];
+				return [baseStyle, { backgroundColor: styles.colors.error + '90' }];
 			default:
 				return [baseStyle, { backgroundColor: styles.colors.surfaceVariant }];
 		}
@@ -87,7 +68,7 @@ const TransactionsList = () => {
 			case TransactionStatus.PENDING:
 				return [baseStyle, { color: styles.theme.warning }];
 			case TransactionStatus.FAILED:
-				return [baseStyle, { color: styles.colors.error }];
+				return [baseStyle, { color: '#FFFFFF' }];
 			default:
 				return [baseStyle, { color: styles.colors.onSurfaceVariant }];
 		}
@@ -99,16 +80,6 @@ const TransactionsList = () => {
 			Linking.openURL(solscanUrl);
 		}
 	};
-
-	const handleRefresh = useCallback(async () => {
-		if (!wallet?.address) return;
-		setIsRefreshing(true);
-		try {
-			await fetchRecentTransactions(wallet.address);
-		} finally {
-			setIsRefreshing(false);
-		}
-	}, [wallet?.address, fetchRecentTransactions]);
 
 	const renderTransaction = (item: Transaction, index: number) => {
 		const isSwap = item.type === TransactionType.SWAP;
@@ -173,12 +144,10 @@ const TransactionsList = () => {
 						<Text style={styles.transactionDate}>
 							{formatTransactionDate(item.date)}
 						</Text>
-						<View 
+						<View
 							style={getCustomStatusStyle(item.status)}
 						>
-							<Text style={getCustomStatusTextStyle(item.status)}>
-								{item.status}
-							</Text>
+							<Text style={getCustomStatusTextStyle(item.status)}> {item.status} </Text>
 						</View>
 					</View>
 				</View>
@@ -186,7 +155,7 @@ const TransactionsList = () => {
 		);
 	};
 
-	if (isLoading && !isRefreshing) {
+	if (isLoading) {
 		return (
 			<View style={styles.centerContainer}>
 				<ActivityIndicator size="large" color={styles.colors.primary} />
