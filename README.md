@@ -20,24 +20,6 @@ The `setup-backend.sh` script will attempt to:
 - Run `mockery` to generate necessary mock files within the `backend` directory.
 - Create a `backend/.env` file from `backend/.env.example` if it doesn't already exist.
 
-### Running the Scripts
-
-1.  Make sure the scripts are executable:
-    ```bash
-    chmod +x setup-frontend.sh setup-backend.sh
-    ```
-2.  Run the desired script(s) from the root of the project:
-    To set up the frontend:
-    ```bash
-    ./setup-frontend.sh
-    ```
-    To set up the backend:
-    ```bash
-    ./setup-backend.sh
-    ```
-    You can run one or both, depending on your needs.
-
-3.  Pay attention to the output of the scripts. They will guide you if any dependencies are missing or if any manual steps are required.
 
 ### After Running the Scripts
 
@@ -186,3 +168,72 @@ Snapshots:   0 total
 Time:        2.628 s, estimated 3 s
 ✨  Done in 3.31s.
 ```
+
+
+### Missing features
+
+  🚨 Critical Missing Features (Top Priority)
+
+  1. Fiat On-Ramp Integration
+    - Apple Pay integration (Moonshot's killer feature)
+    - Credit/debit card support
+    - Bank transfers
+    - PayPal integration
+  2. Advanced Trading Features
+    - Stop loss orders
+    - Limit orders
+    - Trailing stop losses
+    - DCA (Dollar Cost Averaging) automation
+  3. Price Alerts & Push Notifications
+    - Price threshold alerts
+    - Percentage change alerts
+    - Volume spike alerts
+    - Transaction notifications
+    - Whale movement alerts
+  4. Social Trading Features
+    - Follow friends' trades
+    - Trade sharing/copying
+    - Group trading rooms
+    - Leaderboards
+    - Social feed with trade activities
+
+  📱 Important Missing Features (Medium Priority)
+
+  5. Token Creation & Launch
+    - Create meme coins directly from app
+    - Fair launch mechanism
+    - Custom pool creation
+  6. Cross-Chain Support
+    - Multi-chain trading (Ethereum, Base, etc.)
+    - Seamless bridging
+    - Cross-chain swaps
+  7. Enhanced Discovery
+    - Curated meme coin lists
+    - Trending tokens by category
+    - New token alerts
+    - Community voting/ratings
+  8. Watchlist & Favorites
+    - Multiple watchlists
+    - Quick access favorites
+    - Watchlist price alerts
+
+  🎯 Nice-to-Have Features (Lower Priority)
+
+  9. Advanced Portfolio Analytics
+    - Detailed P&L breakdowns
+    - Tax reporting tools
+    - CSV export functionality
+    - Historical performance charts
+  10. Security Enhancements
+    - Face ID/Touch ID for transactions
+    - Hardware wallet support
+    - Multi-signature support
+  11. User Experience
+    - Email/social login (no seed phrases)
+    - Username-based transfers
+    - Quick wallet import via QR
+    - Dark/light mode toggle
+  12. Community Features
+    - In-app chat/messaging
+    - Token-specific discussion boards
+    - Tips/rewards system
