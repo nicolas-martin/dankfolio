@@ -25,7 +25,7 @@ export function generatePriceHistory(basePrice: number, isStablecoin = false): P
 		currentPrice = Math.min(currentPrice, basePrice * 2); // Prevent going above 200% of base
 
 		items.push(create(PriceHistoryItemSchema, {
-			unixTime: BigInt(Math.floor(timestamp / 1000)), // Convert to seconds and BigInt as per protobuf
+			unixTime: BigInt(Math.floor(timestamp / 1000)).toString(), // Convert to seconds and BigInt as per protobuf
 			value: currentPrice,
 		}));
 	}

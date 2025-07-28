@@ -3,7 +3,7 @@ import { env } from '@/utils/env';
 import { create } from '@bufbuild/protobuf';
 import { timestampFromDate } from '@bufbuild/protobuf/wkt';
 import {
-	GetAvailableCoinsResponseSchema, SearchResponseSchema, SearchCoinByAddressResponseSchema, type Coin as ProtobufCoin, CoinSchema, CoinSortField,
+	GetAvailableCoinsResponseSchema, SearchResponseSchema, SearchCoinByAddressResponseSchema, type Coin as ProtobufCoin, CoinSchema,
 	GetCoinsByIDsResponseSchema, GetAllCoinsResponseSchema,
 } from '@/gen/dankfolio/v1/coin_pb';
 import {
@@ -146,8 +146,7 @@ async function handleSearchCoins(options?: FetchInit) {
 	// Check if this is a request for top gainers (sorted by price change percentage)
 	// Handle both string and numeric enum values
 	const isTopGainerRequest = (
-		(requestData.sortBy === CoinSortField.PRICE_CHANGE_PERCENTAGE_24H ||
-			requestData.sortBy === 'COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H') &&
+		requestData.sortBy === 'COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H' &&
 		requestData.sortDesc
 	);
 
@@ -161,7 +160,6 @@ async function handleSearchCoins(options?: FetchInit) {
 	// Check if this is a request for new coins (sorted by jupiter_listed_at)
 	// Handle both string and numeric enum values
 	const isNewCoinsRequest = (
-		requestData.sortBy === CoinSortField.JUPITER_LISTED_AT ||
 		requestData.sortBy === 'COIN_SORT_FIELD_JUPITER_LISTED_AT'
 	);
 

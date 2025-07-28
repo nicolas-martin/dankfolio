@@ -29,8 +29,6 @@ service CoinService {
   rpc GetXStocksCoins(GetXStocksCoinsRequest) returns (GetAvailableCoinsResponse);
 }
 
-// Removed CoinSortField enum - using string for sort_by instead
-
 // Coin represents a coin or currency (unified definition)
 // Field names aligned with BirdEye API for consistency
 message Coin {
