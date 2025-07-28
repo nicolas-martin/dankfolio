@@ -25,6 +25,7 @@ const Profile = () => {
 	const layout = useWindowDimensions();
 
 	const tabs = [
+		{ key: 'overview', title: 'Overview', icon: ProfileIcon },
 		{ key: 'tokens', title: 'Tokens', icon: WalletIcon },
 		{ key: 'transactions', title: 'Transactions', icon: SwapIcon },
 		{ key: 'pnl', title: 'PnL', icon: ChartLineIcon },
@@ -102,7 +103,7 @@ const Profile = () => {
 	};
 
 	const renderHeader = () => (
-		<View style={styles.headerSection} accessible={false}>
+		<View style={styles.fixedHeader} accessible={false}>
 			<View style={styles.profileHeader} accessible={false}>
 				<View style={styles.profileIconContainer} accessible={false}>
 					<ProfileIcon size={28} color={styles.colors.onSurface} />
@@ -137,40 +138,42 @@ const Profile = () => {
 		</View>
 	);
 
-	const renderPortfolioCard = () => (
-		<View style={styles.portfolioCard} accessible={false}>
-			<View style={styles.portfolioHeader} accessible={false}>
-				<Text style={styles.portfolioTitle} accessible={true}>Total Portfolio Value</Text>
-				<Text style={styles.portfolioValue} accessible={true}>
-					{formatPrice(totalValue, true)}
-				</Text>
-				<Text style={styles.portfolioSubtext} accessible={true}>
-					{tokens.length} Token{tokens.length !== 1 ? 's' : ''}
-				</Text>
+	const OverviewTab = () => (
+		<View style={styles.tabContainer}>
+			<View style={styles.tabContentContainer}>
+				<View style={styles.portfolioSection}>
+					<Text style={styles.portfolioTitle} accessible={true}>Total Portfolio Value</Text>
+					<Text style={styles.portfolioValue} accessible={true}>
+						{formatPrice(totalValue, true)}
+					</Text>
+					<Text style={styles.portfolioSubtext} accessible={true}>
+						{tokens.length} Token{tokens.length !== 1 ? 's' : ''}
+					</Text>
+					<Button
+						mode="contained"
+						icon={sendButtonIcon}
+						onPress={() => {
+							logger.breadcrumb({ category: 'navigation', message: 'Navigating to SendTokensScreen from Profile' });
+							navigation.navigate('SendTokens');
+						}}
+						{...styles.sendButtonStyle}
+						contentStyle={styles.sendButtonContent}
+						disabled={tokens.length === 0}
+						accessible={true}
+						testID="send-tokens-button"
+					>
+						<Text style={styles.sendButtonText}>Send Tokens</Text>
+					</Button>
+				</View>
 			</View>
-			<Button
-				mode="contained"
-				icon={sendButtonIcon}
-				onPress={() => {
-					logger.breadcrumb({ category: 'navigation', message: 'Navigating to SendTokensScreen from Profile' });
-					navigation.navigate('SendTokens');
-				}}
-				{...styles.sendButtonStyle}
-				contentStyle={styles.sendButtonContent}
-				disabled={tokens.length === 0}
-				accessible={true}
-				testID="send-tokens-button"
-			>
-				<Text style={styles.sendButtonText}>Send Tokens</Text>
-			</Button>
 		</View>
 	);
 
 	const TokensTab = () => (
-		<ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-			<View style={styles.tokensSection} accessible={false}>
+		<View style={styles.tabContainer}>
+			<View style={styles.tabContentContainer}>
 				{sortedTokens.length === 0 ? (
-					<>
+					<View style={styles.emptyTokensContainer}>
 						<View style={styles.tokensHeader} accessible={false}>
 							<View style={styles.tokensIcon}>
 								<CoinsIcon size={24} color={styles.colors.onSurface} />
@@ -186,7 +189,7 @@ const Profile = () => {
 								Your wallet doesn&apos;t contain any tokens yet. Start trading to build your portfolio!
 							</Text>
 						</View>
-					</>
+					</View>
 				) : (
 					<TokenListCard
 						title=''
@@ -207,13 +210,15 @@ const Profile = () => {
 					/>
 				)}
 			</View>
-		</ScrollView>
+		</View>
 	);
 
 
 
 	const renderScene = ({ route }: { route: { key: string } }) => {
 		switch (route.key) {
+			case 'overview':
+				return <OverviewTab />;
 			case 'tokens':
 				return <TokensTab />;
 			case 'transactions':
@@ -284,34 +289,33 @@ const Profile = () => {
 	return (
 		<SafeAreaView style={styles.safeArea} accessible={false}>
 			<View style={styles.container} accessible={false} testID="profile-screen">
-				<ScrollView
-					accessible={false}
-					contentContainerStyle={styles.scrollContent}
-					refreshControl={
-						<RefreshControl
-							refreshing={isRefreshing || isPortfolioLoading || isTransactionsLoading}
-							onRefresh={handleRefresh}
-							colors={styles.refreshControlColors}
-							tintColor={styles.colors.primary}
-						/>
-					}
-				>
-					<View style={styles.contentPadding} accessible={false}>
-						{renderHeader()}
-						{renderPortfolioCard()}
-						<View style={styles.tabViewContainer}>
-							<TabView
-								renderTabBar={renderTabBar}
-								navigationState={{ index, routes }}
-								renderScene={renderScene}
-								onIndexChange={setIndex}
-								initialLayout={{ width: layout.width }}
-								swipeEnabled={true}
-								style={styles.tabContent}
-							/>
-						</View>
-					</View>
-				</ScrollView>
+				{renderHeader()}
+				<View style={styles.tabViewContainer}>
+					<TabView
+						renderTabBar={renderTabBar}
+						navigationState={{ index, routes }}
+						renderScene={(sceneProps) => (
+							<ScrollView
+								accessible={false}
+								contentContainerStyle={styles.scrollContent}
+								refreshControl={
+									<RefreshControl
+										refreshing={isRefreshing || isPortfolioLoading || isTransactionsLoading}
+										onRefresh={handleRefresh}
+										colors={styles.refreshControlColors}
+										tintColor={styles.colors.primary}
+									/>
+								}
+							>
+								{renderScene(sceneProps)}
+							</ScrollView>
+						)}
+						onIndexChange={setIndex}
+						initialLayout={{ width: layout.width }}
+						swipeEnabled={false}
+						style={styles.tabContent}
+					/>
+				</View>
 			</View>
 		</SafeAreaView>
 	);

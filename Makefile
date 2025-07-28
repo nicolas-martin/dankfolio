@@ -1,6 +1,8 @@
 
 .PHONY: dev setup run backend-kill test run-mobile mobile-kill help frontend-test backend-build mocks frontend-lint proto db-migrate-up psql db-reset
 
+# xcodebuild -project /Users/nma/dev/WebDriverAgent/WebDriverAgent.xcodeproj -scheme WebDriverAgentRunner -destination 'platform=iOS Simulator,name=iPhone 16e' test
+
 # Variables
 BACKEND_DIR := backend
 MOBILE_DIR := frontend

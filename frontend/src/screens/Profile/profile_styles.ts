@@ -46,10 +46,6 @@ export const useStyles = () => {
 				backgroundColor: theme.colors.background,
 				flex: 1,
 			},
-			contentPadding: {
-				paddingHorizontal: theme.spacing.xl,
-				paddingTop: theme.spacing.xl,
-			},
 			copyButton: {
 				marginLeft: theme.spacing.xs,
 				marginTop: -2, // No exact match
@@ -91,6 +87,17 @@ export const useStyles = () => {
 				fontWeight: '600',
 				marginBottom: theme.spacing.sm,
 				textAlign: 'center',
+			},
+			emptyTokensContainer: {
+				padding: theme.spacing.xl,
+			},
+			fixedHeader: {
+				backgroundColor: theme.colors.background,
+				borderBottomColor: theme.colors.surfaceVariant,
+				borderBottomWidth: 1,
+				paddingBottom: theme.spacing.lg,
+				paddingHorizontal: theme.spacing.xl,
+				paddingTop: theme.spacing.xl,
 			},
 			headerSection: {
 				marginBottom: theme.spacing['2xl'],
@@ -141,19 +148,11 @@ export const useStyles = () => {
 				fontSize: theme.typography.fontSize.xs,
 				fontWeight: '500',
 			},
-			portfolioCard: {
-				backgroundColor: theme.colors.surface,
-				borderRadius: theme.spacing.xl,
-				elevation: 4, // No exact match
-				marginBottom: theme.spacing['2xl'],
-				padding: theme.spacing['2xl'],
-				shadowColor: theme.shadows.sm.shadowColor,
-				shadowOffset: theme.shadows.md.shadowOffset,
-				shadowOpacity: 0.1, // No exact match
-				shadowRadius: theme.spacing.sm,
-			},
 			portfolioHeader: {
 				marginBottom: theme.spacing.lg,
+			},
+			portfolioSection: {
+				padding: theme.spacing['2xl'],
 			},
 			portfolioSubtext: {
 				color: theme.colors.onSurfaceVariant,
@@ -228,8 +227,14 @@ export const useStyles = () => {
 				elevation: 0,
 				shadowOpacity: 0,
 			},
+			tabContainer: {
+				flex: 1,
+			},
 			tabContent: {
 				flex: 1,
+			},
+			tabContentContainer: {
+				backgroundColor: theme.colors.surface,
 			},
 			tabIndicator: {
 				backgroundColor: theme.colors.primary,
@@ -239,7 +244,7 @@ export const useStyles = () => {
 				paddingVertical: theme.spacing.md,
 			},
 			tabLabel: {
-				fontSize: theme.typography.fontSize.sm,
+				fontSize: theme.typography.fontSize.xs,
 				fontWeight: '600',
 			},
 			tabLabelActive: {
@@ -249,17 +254,7 @@ export const useStyles = () => {
 				color: theme.colors.onSurfaceVariant,
 			},
 			tabViewContainer: {
-				backgroundColor: theme.colors.surface,
-				borderRadius: theme.spacing.xl,
-				elevation: 4, // No exact match
 				flex: 1,
-				marginBottom: theme.spacing['2xl'],
-				minHeight: 500,
-				overflow: 'hidden',
-				shadowColor: theme.shadows.sm.shadowColor,
-				shadowOffset: theme.shadows.md.shadowOffset,
-				shadowOpacity: 0.1, // No exact match
-				shadowRadius: theme.spacing.sm,
 			},
 			themeToggleContainer: {
 				alignItems: 'center',
@@ -292,9 +287,6 @@ export const useStyles = () => {
 			},
 			tokensIcon: {
 				marginRight: theme.spacing.md,
-			},
-			tokensSection: {
-				flex: 1,
 			},
 			tokensTitle: {
 				color: theme.colors.onSurface,
