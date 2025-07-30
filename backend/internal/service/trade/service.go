@@ -36,12 +36,12 @@ type Service struct {
 	priceService              price.PriceServiceAPI    // Use PriceServiceAPI interface from price package
 	jupiterClient             jupiter.ClientAPI
 	store                     db.Store
-	platformFeeBps            int                   // Platform fee in basis points
-	platformFeeAccountAddress string                // Solana address for collecting platform fees
-	platformPrivateKey        *solanago.PrivateKey  // Platform private key for ATA creation
-	feeMintSelector           *FeeMintSelector      // Handles fee mint selection logic
+	platformFeeBps            int                        // Platform fee in basis points
+	platformFeeAccountAddress string                     // Solana address for collecting platform fees
+	platformPrivateKey        *solanago.PrivateKey       // Platform private key for ATA creation
+	feeMintSelector           *FeeMintSelector           // Handles fee mint selection logic
 	metrics                   *trademetrics.TradeMetrics // Trade-related metrics
-	showDetailedBreakdown     bool                  // Feature flag for detailed trade breakdown
+	showDetailedBreakdown     bool                       // Feature flag for detailed trade breakdown
 }
 
 // NewService creates a new TradeService instance
@@ -206,7 +206,7 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 		var jupiterQuote *jupiter.QuoteResponse
 		swapMode := "ExactIn" // Default
 		if tradeQuote.Raw != nil {
-			var quoteData map[string]interface{}
+			var quoteData map[string]any
 			if err := json.Unmarshal(tradeQuote.Raw, &quoteData); err == nil {
 				if mode, ok := quoteData["swapMode"].(string); ok {
 					swapMode = mode
@@ -269,7 +269,7 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	// Calculate comprehensive SOL fee breakdown only if feature flag is enabled
 	var feeBreakdown *SolFeeBreakdown
 	var totalSolRequired, tradingFeeSol string
-	
+
 	if s.showDetailedBreakdown {
 		feeBreakdown, totalSolRequired, tradingFeeSol, err = s.calculateSolFeeBreakdown(ctx, tradeQuote, swapResponse, params.UserWalletAddress, params.FromCoinMintAddress, params.ToCoinMintAddress)
 		if err != nil {
@@ -297,7 +297,7 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	}
 	// Calculate input amount in decimal form
 	inputAmountDecimal := float64(amountInt) / math.Pow(10, float64(fromCoinModel.Decimals))
-	
+
 	// For swaps, we need to get the output amount from the quote
 	// The input amount is what we're spending, but we store what we're receiving
 	outputAmount := 0.0
@@ -312,8 +312,21 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	}
 
 	// Calculate USD values for the trade
-	totalUSDCost := inputAmountDecimal * fromCoinModel.Price
-	
+	// For swaps, use the output value as the cost basis to account for slippage
+	// This ensures PnL starts at ~0% immediately after the trade
+	totalUSDCost := outputAmount * toCoinModel.Price
+
+	slog.Info("Trade amount tracking",
+		"from_token", fromCoinModel.Symbol,
+		"to_token", toCoinModel.Symbol,
+		"input_amount", inputAmountDecimal,
+		"output_amount", outputAmount,
+		"from_market_price", fromCoinModel.Price,
+		"to_market_price", toCoinModel.Price,
+		"input_value_usd", inputAmountDecimal * fromCoinModel.Price,
+		"output_value_usd", totalUSDCost,
+		"slippage_cost_usd", (inputAmountDecimal * fromCoinModel.Price) - totalUSDCost)
+
 	// Create trade record with essential information
 	trade := &model.Trade{
 		UserID:              fromPubKey.String(),
@@ -323,7 +336,7 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 		ToCoinPKID:          toCoinModel.ID,
 		CoinSymbol:          fromCoinModel.Symbol,
 		Type:                "swap",
-		Amount:              outputAmount, // Store the output amount (what we receive)
+		Amount:              outputAmount,        // Store the output amount (what we receive)
 		FromUSDPrice:        fromCoinModel.Price, // USD price of FROM token at trade time
 		ToUSDPrice:          toCoinModel.Price,   // USD price of TO token at trade time
 		TotalUSDCost:        totalUSDCost,        // Total USD cost of the trade
@@ -565,16 +578,16 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 	if err != nil {
 		originalChainError := err // Store the original error
 		errStr := originalChainError.Error()
-		
+
 		// Check if error is due to insufficient funds
-		insufficientFundsError := strings.Contains(strings.ToLower(errStr), "insufficient") || 
+		insufficientFundsError := strings.Contains(strings.ToLower(errStr), "insufficient") ||
 			strings.Contains(strings.ToLower(errStr), "0x1") // Solana error code for insufficient funds
-		
+
 		if insufficientFundsError && !s.showDetailedBreakdown {
 			// Delete the trade record for insufficient funds errors when detailed breakdown is disabled
 			if deleteErr := s.store.Trades().Delete(ctx, fmt.Sprintf("%d", trade.ID)); deleteErr != nil {
-				slog.Warn("Failed to delete trade record after insufficient funds error", 
-					"error", deleteErr, 
+				slog.Warn("Failed to delete trade record after insufficient funds error",
+					"error", deleteErr,
 					"trade_id", trade.ID,
 					"original_error", errStr)
 			} else {
@@ -590,12 +603,12 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 				slog.Warn("Failed to update failed trade status", "error", errUpdate)
 			}
 		}
-		
+
 		// Check for insufficient funds error and provide user-friendly message
 		if isInsufficientFundsError(originalChainError) {
 			return nil, fmt.Errorf("insufficient SOL balance to complete this transaction. Please add more SOL to your wallet to cover network fees and try again")
 		}
-		
+
 		return nil, fmt.Errorf("failed to execute trade on blockchain: %w", originalChainError)
 	}
 
@@ -650,10 +663,10 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 		slog.String("to_mint_address", toCoinMintAddress),
 		slog.String("amount", inputAmount),
 		slog.Bool("allow_multi_hop", allowMultiHop))
-		
+
 	fromCoin, err := s.coinService.GetCoinByAddress(ctx, fromCoinMintAddress) // Use new method
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to get from coin", 
+		slog.ErrorContext(ctx, "Failed to get from coin",
 			slog.String("mint_address", fromCoinMintAddress),
 			slog.Any("error", err))
 		return nil, fmt.Errorf("failed to get from coin %s: %w", fromCoinMintAddress, err)
@@ -665,7 +678,7 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 
 	toCoin, err := s.coinService.GetCoinByAddress(ctx, toCoinMintAddress) // Use new method
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to get to coin", 
+		slog.ErrorContext(ctx, "Failed to get to coin",
 			slog.String("mint_address", toCoinMintAddress),
 			slog.Any("error", err))
 		return nil, fmt.Errorf("failed to get to coin %s: %w", toCoinMintAddress, err)
@@ -873,11 +886,11 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 	} else {
 		// No detailed fee breakdown requested - but still extract basic fees from Jupiter
 		feeBreakdown = nil
-		
+
 		// Extract basic SOL fees from Jupiter quote
 		var routeFee, platformFee uint64
 		const solMint = "So11111111111111111111111111111111111111112"
-		
+
 		// Extract route fees
 		for _, route := range quote.RoutePlan {
 			if route.SwapInfo.FeeMint == solMint && route.SwapInfo.FeeAmount != "" {
@@ -886,14 +899,14 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 				}
 			}
 		}
-		
+
 		// Extract platform fees
 		if quote.PlatformFee != nil && quote.PlatformFee.FeeMint == solMint {
 			if platformAmount, err := strconv.ParseUint(quote.PlatformFee.Amount, 10, 64); err == nil {
 				platformFee = platformAmount
 			}
 		}
-		
+
 		// Convert to SOL (divide by 10^9)
 		totalFeeLamports := routeFee + platformFee
 		totalSolRequired = fmt.Sprintf("%.9f", float64(totalFeeLamports)/1e9)
@@ -913,7 +926,7 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 	// Use the actual decimals from the tokens for formatting
 	estimatedAmountFormat := fmt.Sprintf("%%.%df", toCoin.Decimals)
 	exchangeRateFormat := fmt.Sprintf("%%.%df", int(math.Max(float64(fromCoin.Decimals), float64(toCoin.Decimals))))
-	
+
 	return &TradeQuote{
 		EstimatedAmount:  fmt.Sprintf(estimatedAmountFormat, estimatedAmountInCoin),
 		ExchangeRate:     fmt.Sprintf(exchangeRateFormat, exchangeRate),
@@ -935,9 +948,9 @@ func isInsufficientFundsError(err error) bool {
 	if err == nil {
 		return false
 	}
-	
+
 	errorString := err.Error()
-	
+
 	// Check for common insufficient funds patterns in Solana errors
 	insufficientPatterns := []string{
 		"Transfer: insufficient lamports",
@@ -946,13 +959,13 @@ func isInsufficientFundsError(err error) bool {
 		"Attempt to debit an account but found no record of a prior credit",
 		"custom program error: 0x1", // This is the custom error code for insufficient funds
 	}
-	
+
 	for _, pattern := range insufficientPatterns {
 		if strings.Contains(errorString, pattern) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
