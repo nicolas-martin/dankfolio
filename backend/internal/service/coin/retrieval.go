@@ -77,7 +77,16 @@ func (s *Service) GetCoinByAddress(ctx context.Context, address string) (*model.
 		return nil, fmt.Errorf("invalid address: %s", address)
 	}
 
-	// Step 1: Always check database first
+	// Step 1: Check cache first for fresh data
+	cacheKey := fmt.Sprintf("coin:%s", address)
+	if cachedCoins, found := s.cache.Get(cacheKey); found && len(cachedCoins) > 0 {
+		slog.DebugContext(ctx, "Coin found in cache with fresh data",
+			slog.String("address", address),
+			slog.String("symbol", cachedCoins[0].Symbol))
+		return &cachedCoins[0], nil
+	}
+
+	// Step 2: Check database if not in cache
 	coin, err := s.store.Coins().GetByField(ctx, "address", address)
 	if err == nil {
 		slog.InfoContext(ctx, "Coin found in database", 
@@ -92,6 +101,8 @@ func (s *Service) GetCoinByAddress(ctx context.Context, address string) (*model.
 				slog.String("address", address), 
 				slog.String("lastUpdated", coin.LastUpdated),
 				slog.Float64("price", coin.Price))
+			// Cache the fresh coin for quick access
+			s.cache.Set(cacheKey, []model.Coin{*coin}, 2*time.Minute)
 			return coin, nil
 		}
 
@@ -99,7 +110,12 @@ func (s *Service) GetCoinByAddress(ctx context.Context, address string) (*model.
 		slog.InfoContext(ctx, "Coin found but market data is stale, refreshing", 
 			slog.String("address", address), 
 			slog.String("lastUpdated", coin.LastUpdated))
-		return s.updateCoinMarketData(ctx, coin)
+		updatedCoin, err := s.updateCoinMarketData(ctx, coin)
+		if err == nil && updatedCoin != nil {
+			// Cache the updated coin
+			s.cache.Set(cacheKey, []model.Coin{*updatedCoin}, 2*time.Minute)
+		}
+		return updatedCoin, err
 	}
 
 	if !errors.Is(err, db.ErrNotFound) {
@@ -109,9 +125,14 @@ func (s *Service) GetCoinByAddress(ctx context.Context, address string) (*model.
 		return nil, fmt.Errorf("error fetching coin %s from database: %w", address, err)
 	}
 
-	// Step 2: Fetch completely new coin from Birdeye
+	// Step 3: Fetch completely new coin from Birdeye
 	slog.InfoContext(ctx, "Coin not found in database, fetching from Birdeye", slog.String("address", address))
-	return s.fetchNewCoin(ctx, address)
+	newCoin, err := s.fetchNewCoin(ctx, address)
+	if err == nil && newCoin != nil {
+		// Cache the newly fetched coin
+		s.cache.Set(cacheKey, []model.Coin{*newCoin}, 2*time.Minute)
+	}
+	return newCoin, err
 }
 
 // isCoinMarketDataFresh checks if coin market data was updated within the last 24 hours

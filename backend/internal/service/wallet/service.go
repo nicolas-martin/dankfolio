@@ -803,6 +803,12 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 		}
 	}
 
+	// Create a map of actual wallet balances for filtering
+	walletBalanceMap := make(map[string]float64)
+	for _, balance := range walletBalances.Balances {
+		walletBalanceMap[balance.ID] = balance.Amount
+	}
+	
 	// Get current prices for all held tokens
 	var tokenPnLList []TokenPnLData
 	totalPortfolioValue := 0.0
@@ -816,6 +822,14 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 	for coinID, amount := range holdings {
 		// Skip if no balance or very small (rounding errors)
 		if amount <= 0.00000001 {
+			continue
+		}
+
+		// IMPORTANT: Check if this token still exists in the wallet
+		// If the user sold all tokens, don't show it in PnL
+		actualBalance, existsInWallet := walletBalanceMap[coinID]
+		if !existsInWallet || actualBalance <= 0.00000001 {
+			slog.Debug("Skipping token not in wallet", "coin_id", coinID, "trade_balance", amount, "wallet_balance", actualBalance)
 			continue
 		}
 
@@ -845,9 +859,13 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 			continue
 		}
 
-		// Calculate values based on our tracked holdings
-		currentValue := amount * currentPrice
-		totalCost := amount * costBasis
+		// Use the actual wallet balance for calculations, not the trade-calculated amount
+		// This ensures PnL reflects what the user actually holds
+		displayAmount := actualBalance
+		
+		// Calculate values based on actual wallet holdings
+		currentValue := displayAmount * currentPrice
+		totalCost := displayAmount * costBasis
 		unrealizedPnL := currentValue - totalCost
 		
 		// Round to avoid floating point precision issues
@@ -873,7 +891,7 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 			CoinID:          coinID,
 			Symbol:          coin.Symbol,
 			Name:            coin.Name,
-			AmountHeld:      amount, // Amount based on our trade records
+			AmountHeld:      displayAmount, // Use actual wallet balance
 			CostBasis:       costBasis,
 			CurrentPrice:    currentPrice,
 			CurrentValue:    currentValue,
