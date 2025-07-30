@@ -12,6 +12,7 @@ import (
 	dankfoliov1connect "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/v1connect"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db" // Added for db.ListOptions
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -245,8 +246,10 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 			}
 
 			// Handle different blockchain statuses for additional fields
-			switch status.Status {
-			case "Failed":
+			// Parse the status string into our enum for consistent handling
+			blockchainStatus := blockchain.ParseBlockchainTransactionStatus(status.Status)
+			switch blockchainStatus {
+			case blockchain.StatusFailed:
 				// Set error details and completion info for failed transactions
 				errMsg := "Transaction failed on-chain."
 				if status.Error != "" {
@@ -260,7 +263,7 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 					slog.Info("Trade failed on-chain", "trade_id", trade.ID, "error", errMsg)
 				}
 
-			case "Finalized":
+			case blockchain.StatusFinalized:
 				// Set completion info for finalized transactions
 				if trade.CompletedAt.IsZero() || !trade.Finalized {
 					trade.CompletedAt = now
@@ -270,7 +273,7 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 					slog.Info("Trade finalized on-chain", "trade_id", trade.ID)
 				}
 
-			case "Confirmed":
+			case blockchain.StatusConfirmed:
 				// For highly confirmed transactions, set completion info
 				if status.Confirmations != nil && *status.Confirmations >= 31 {
 					if trade.CompletedAt.IsZero() {
@@ -288,7 +291,7 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 					slog.Debug("Trade confirmed with lower confirmation count", "trade_id", trade.ID, "confirmations", confirmations)
 				}
 
-			case "Processed":
+			case blockchain.StatusProcessed:
 				// Transaction processed but not confirmed - log progress
 				confirmations := 0
 				if status.Confirmations != nil {
@@ -296,21 +299,13 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 				}
 				slog.Debug("Trade processed on-chain", "trade_id", trade.ID, "confirmations", confirmations)
 
-			case "Unknown", "Pending":
+			case blockchain.StatusUnknown, blockchain.StatusPending:
 				// Transaction status unknown or pending - log for monitoring
 				confirmations := 0
 				if status.Confirmations != nil {
 					confirmations = int(*status.Confirmations)
 				}
 				slog.Debug("Trade status pending/unknown", "trade_id", trade.ID, "status", status.Status, "confirmations", confirmations)
-
-			default:
-				// Unexpected status - log for monitoring
-				confirmations := 0
-				if status.Confirmations != nil {
-					confirmations = int(*status.Confirmations)
-				}
-				slog.Warn("Trade has unexpected blockchain status", "trade_id", trade.ID, "status", status.Status, "confirmations", confirmations)
 			}
 
 			// Handle explicit error from status

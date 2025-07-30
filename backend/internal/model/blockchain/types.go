@@ -1,5 +1,61 @@
 package blockchain
 
+import "strings"
+
+// BlockchainTransactionStatus represents the status of a blockchain transaction
+type BlockchainTransactionStatus int
+
+const (
+	// Transaction statuses ordered by lifecycle
+	StatusUnknown BlockchainTransactionStatus = iota
+	StatusPending
+	StatusProcessed
+	StatusConfirmed
+	StatusFinalized
+	StatusFailed
+)
+
+// String converts BlockchainTransactionStatus to its string representation
+func (s BlockchainTransactionStatus) String() string {
+	switch s {
+	case StatusUnknown:
+		return "unknown"
+	case StatusPending:
+		return "pending"
+	case StatusProcessed:
+		return "processed"
+	case StatusConfirmed:
+		return "confirmed"
+	case StatusFinalized:
+		return "finalized"
+	case StatusFailed:
+		return "failed"
+	default:
+		return "unknown"
+	}
+}
+
+// ParseBlockchainTransactionStatus converts a string to BlockchainTransactionStatus
+// Case-insensitive parsing to handle different blockchain APIs
+func ParseBlockchainTransactionStatus(status string) BlockchainTransactionStatus {
+	switch strings.ToLower(status) {
+	case "unknown":
+		return StatusUnknown
+	case "pending":
+		return StatusPending
+	case "processed":
+		return StatusProcessed
+	case "confirmed":
+		return StatusConfirmed
+	case "finalized":
+		return StatusFinalized
+	case "failed":
+		return StatusFailed
+	default:
+		return StatusUnknown
+	}
+}
+
 // Address represents a generic blockchain address.
 // For simplicity, using string. Could be a struct for more complex needs.
 type Address string
