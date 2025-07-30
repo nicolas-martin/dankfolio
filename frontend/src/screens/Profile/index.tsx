@@ -254,37 +254,41 @@ const Profile = () => {
 			</SafeAreaView>
 		);
 	}
-	const renderTabBar = props => (
-		<TabBar
-			{...props}
-			indicatorStyle={styles.tabIndicator}
-			style={styles.tabBar}
-			renderIcon={({ route, focused }) => {
-				const tab = tabs.find(t => t.key === route.key);
-				if (!tab) return null;
-				const IconComponent = tab.icon;
-				return (
-					<IconComponent
-						size={20}
-						color={focused ? styles.colors.primary : styles.colors.onSurfaceVariant}
-					/>
-				);
-			}}
-			renderLabel={({ route, focused }) => {
-				const tab = tabs.find(t => t.key === route.key);
-				return (
-					<Text style={[
-						styles.tabLabel,
-						focused ? styles.tabLabelActive : styles.tabLabelInactive
-					]}>
-						{tab ? tab.title : ''}
-					</Text>
-				);
-			}}
-			pressColor={styles.colors.primaryContainer}
-			labelStyle={styles.tabLabel}
-		/>
-	);
+	const renderTabBar = props => {
+		const { key, ...restProps } = props;
+		return (
+			<TabBar
+				key={key}
+				{...restProps}
+				indicatorStyle={styles.tabIndicator}
+				style={styles.tabBar}
+				renderIcon={({ route, focused }) => {
+					const tab = tabs.find(t => t.key === route.key);
+					if (!tab) return null;
+					const IconComponent = tab.icon;
+					return (
+						<IconComponent
+							size={20}
+							color={focused ? styles.colors.primary : styles.colors.onSurfaceVariant}
+						/>
+					);
+				}}
+				renderLabel={({ route, focused }) => {
+					const tab = tabs.find(t => t.key === route.key);
+					return (
+						<Text style={[
+							styles.tabLabel,
+							focused ? styles.tabLabelActive : styles.tabLabelInactive
+						]}>
+							{tab ? tab.title : ''}
+						</Text>
+					);
+				}}
+				pressColor={styles.colors.primaryContainer}
+				labelStyle={styles.tabLabel}
+			/>
+		);
+	};
 
 	return (
 		<SafeAreaView style={styles.safeArea} accessible={false}>
