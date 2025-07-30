@@ -196,8 +196,7 @@ export interface PriceHistoryBatchResponse {
 
 export interface API {
 	getAvailableCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
-	getCoinByID: (mintAddress: string) => Promise<Coin>;
-	getCoinsByIDs: (addresses: string[]) => Promise<Coin[]>;
+	getCoinsByIDs: (addresses: string[], forceRefresh?: boolean) => Promise<Coin[]>;
 	search: (params: SearchRequest) => Promise<SearchResponse>;
 	searchCoinByAddress: (mintAddress: string) => Promise<SearchCoinByAddressResponse>;
 	submitSwap: (payload: TradePayload) => Promise<SubmitSwapResponse>;

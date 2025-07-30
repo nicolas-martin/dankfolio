@@ -177,21 +177,10 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 						coinStore.setCoin(coin);
 					});
 				} catch (error) {
-					logger.error(`❌ [PortfolioStore] Batch fetch failed, falling back to individual calls:`, error);
-
-					// Fallback to individual calls if batch fails
-					const individualResults = await Promise.all(
-						addressesToFetch.map(id => coinStore.getCoinByID(id, forceRefresh))
-					);
-
-					fetchedCoins = individualResults.filter((coin): coin is NonNullable<typeof coin> => coin !== null);
-
-					// Track failed individual fetches
-					addressesToFetch.forEach((id, index) => {
-						if (!individualResults[index]) {
-							missingCoinIds.push(id);
-						}
-					});
+					logger.error(`❌ [PortfolioStore] Batch fetch failed:`, error);
+					// Since getCoinsByIDs already handles multiple addresses, we don't need individual calls
+					// Just mark all as missing since the batch failed
+					missingCoinIds.push(...addressesToFetch);
 				}
 			}
 

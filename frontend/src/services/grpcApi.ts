@@ -351,29 +351,6 @@ export const grpcApi: grpcModel.API = {
 		}
 	},
 
-	getCoinByID: async (address: string): Promise<grpcModel.Coin> => {
-		const serviceName = 'CoinService';
-		const methodName = 'getCoinByID';
-		try {
-			grpcUtils.logRequest(serviceName, methodName, { address });
-
-			const response = await coinClient.getCoinByID(
-				{ address },
-				{ headers: grpcUtils.getRequestHeaders() }
-			);
-
-			grpcUtils.logResponse(serviceName, methodName, response);
-
-			return mapGrpcCoinToFrontendCoin(response);
-		} catch (error: unknown) {
-			if (error instanceof Error) {
-				return grpcUtils.handleGrpcError(error, serviceName, methodName);
-			} else {
-				console.error("An unknown error occurred:", error);
-				throw new Error("An unknown error occurred in getCoinByID");
-			}
-		}
-	},
 
 	getCoinsByIDs: async (addresses: string[], forceRefresh: boolean = false): Promise<grpcModel.Coin[]> => {
 		const serviceName = 'CoinService';

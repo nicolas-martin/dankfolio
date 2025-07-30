@@ -31,8 +31,8 @@ const CoinDetail: React.FC = () => {
 
 	useEffect(() => {
 		const loadCoin = async () => {
-			const coin = await useCoinStore.getState().getCoinByID(mintAddress);
-			setDisplayCoin(coin || initialCoinFromParams);
+			const coins = await useCoinStore.getState().getCoinsByIDs([mintAddress]);
+			setDisplayCoin(coins[0] || initialCoinFromParams);
 		};
 		loadCoin();
 	}, [mintAddress, initialCoinFromParams]);
@@ -174,7 +174,7 @@ const CoinDetail: React.FC = () => {
 		if (mintAddress) {
 			setIsManualRefreshing(true);
 			try {
-				await useCoinStore.getState().getCoinByID(mintAddress, true);
+				await useCoinStore.getState().getCoinsByIDs([mintAddress], true);
 				// Also manually refresh price history
 				await fetchHistory(mintAddress, selectedTimeframe);
 			} catch (error: unknown) {

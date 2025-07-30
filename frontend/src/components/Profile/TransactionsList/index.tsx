@@ -12,7 +12,7 @@ import { formatTransactionDate, getTransactionIcon, getSolscanUrl } from './tran
 
 const TransactionsList = () => {
 	const { transactions, isLoading, error } = useTransactionsStore();
-	const { getCoinByID, coinMap } = useCoinStore();
+	const { getCoinsByIDs, coinMap } = useCoinStore();
 	const styles = useStyles();
 	const [coinData, setCoinData] = useState<Record<string, Coin>>({});
 
@@ -31,8 +31,8 @@ const TransactionsList = () => {
 				if (coinData[address] || coinMap[address]) {
 					continue;
 				}
-				const coin = await getCoinByID(address);
-				if (coin) newCoinData[address] = coin;
+				const coins = await getCoinsByIDs([address]);
+				if (coins.length > 0) newCoinData[address] = coins[0];
 			}
 
 			// Only update if we have new data
@@ -44,7 +44,7 @@ const TransactionsList = () => {
 		if (transactions.length > 0) {
 			fetchCoinData();
 		}
-	}, [transactions, getCoinByID]); // Remove coinMap and coinData from dependencies
+	}, [transactions, getCoinsByIDs]); // Remove coinMap and coinData from dependencies
 
 	const getCustomStatusStyle = (status: Transaction['status']) => {
 		const baseStyle = styles.customStatusBadge;

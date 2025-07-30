@@ -61,11 +61,11 @@ export const handleSearchPress = (
 
 export const getEnrichedCoinData = async (
 	coin: Coin,
-	getCoinByID: (id: string, forceRefresh?: boolean) => Promise<Coin | null>
+	getCoinsByIDs: (ids: string[], forceRefresh?: boolean) => Promise<Coin[]>
 ): Promise<Coin | null> => {
 	try {
-		const enrichedCoin = await getCoinByID(coin.address, true);
-		return enrichedCoin;
+		const enrichedCoins = await getCoinsByIDs([coin.address], true);
+		return enrichedCoins[0] || null;
 	} catch (error) {
 		logger.exception(error, { functionName: 'getEnrichedCoinData', params: { coinAddress: coin.address } });
 		return null;
@@ -87,7 +87,7 @@ export const handleCoinNavigation = (
 
 	// Trigger background fetch to update the coin data in the store
 	// The CoinDetail screen will automatically update when this completes
-	getEnrichedCoinData(coin, useCoinStore.getState().getCoinByID).catch(error => {
+	getEnrichedCoinData(coin, useCoinStore.getState().getCoinsByIDs).catch(error => {
 		logger.error(`[Search] Background fetch failed for ${coin.symbol}:`, { error, coinAddress: coin.address });
 		// Note: We don't show toast here since user has already navigated away
 	});

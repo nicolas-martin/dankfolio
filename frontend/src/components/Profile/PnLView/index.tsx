@@ -6,6 +6,7 @@ import { formatTokenBalance, formatPercentage, formatPrice } from '@/utils/numbe
 import { useCallback, useMemo } from 'react';
 import { useEffect } from 'react';
 import CachedImage from '@/components/Common/CachedImage';
+import { useCoinStore } from '@/store/coins';
 
 const PnLView = () => {
 	const { tokens, fetchPortfolioBalance, fetchPortfolioPnL, wallet, pnlData, isPnlLoading } = usePortfolioStore();
@@ -26,23 +27,14 @@ const PnLView = () => {
 			// Get current PnL data to know which coins to refresh
 			const currentPnlData = pnlData || [];
 			const pnlCoinAddresses = currentPnlData.map(item => item.coinId);
-			
+
 			if (pnlCoinAddresses.length > 0) {
-				// Import grpcApi and coinStore
-				const { grpcApi } = await import('@/services/grpcApi');
-				const { useCoinStore } = await import('@/store/coins');
-				
-				// Fetch fresh prices for PnL coins FIRST with force refresh
-				const freshCoins = await grpcApi.getCoinsByIDs(pnlCoinAddresses, true);
-				
-				// Update coin store with fresh prices
+				// Use coin store's method to fetch and cache fresh prices
 				const coinStore = useCoinStore.getState();
-				freshCoins.forEach(coin => {
-					coinStore.setCoin(coin);
-				});
+				await coinStore.getCoinsByIDs(pnlCoinAddresses, true);
 			}
-			
-			// THEN fetch PnL data which will use the fresh prices
+
+			// THEN fetch PnL data which will use the fresh prices from cache
 			await fetchPortfolioPnL(wallet.address);
 		} catch {
 			// Error handling is done in the store functions

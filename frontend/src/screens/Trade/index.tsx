@@ -45,7 +45,7 @@ const Trade: React.FC = () => {
 	const [fromCoin, setFromCoin] = useState<Coin | null>(route.params.initialFromCoin || null);
 	const [toCoin, setToCoin] = useState<Coin | null>(route.params.initialToCoin || null)
 	const { tokens, wallet, fetchPortfolioBalance } = usePortfolioStore();
-	const { getCoinByID } = useCoinStore();
+	const { getCoinsByIDs } = useCoinStore();
 	const [fromAmount, setFromAmount] = useState<string>('');
 	const [toAmount, setToAmount] = useState<string>('');
 	const [isQuoteLoading, setIsQuoteLoading] = useState<boolean>(false);
@@ -125,11 +125,11 @@ const Trade: React.FC = () => {
 		logger.log(`[Trade] Initialized with fromCoin: ${fromCoin?.symbol}, toCoin: ${toCoin?.symbol}`);
 
 		if (!fromCoin) {
-			getCoinByID(NATIVE_SOL_ADDRESS, false).then(solCoin => {
-				if (solCoin) setFromCoin(solCoin);
+			getCoinsByIDs([NATIVE_SOL_ADDRESS], false).then(coins => {
+				if (coins.length > 0) setFromCoin(coins[0]);
 			});
 		}
-	}, [fromCoin, getCoinByID, toCoin?.symbol]);
+	}, [fromCoin, getCoinsByIDs, toCoin?.symbol]);
 
 	// Reset fee breakdown flag when coin pair changes
 	useEffect(() => {

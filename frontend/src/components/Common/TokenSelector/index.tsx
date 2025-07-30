@@ -306,7 +306,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		if (enableUsdToggle && selectedToken?.address) {
 			// Fetch coin data, which includes price, and update the store
 			// The component will react to store changes via useCoinStore selector below
-			useCoinStore.getState().getCoinByID(selectedToken.address, true)
+			useCoinStore.getState().getCoinsByIDs([selectedToken.address], true)
 				.catch(error => logger.error('[TokenSelector] Failed to fetch coin data for price:', error));
 		}
 		// Reset unit and amounts if selectedToken is cleared

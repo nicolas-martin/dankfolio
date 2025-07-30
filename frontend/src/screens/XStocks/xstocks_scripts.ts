@@ -14,7 +14,7 @@ export const useXStocksData = () => {
 	const [xStocksTokens, setXStocksTokens] = useState<Coin[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
-	const { getCoinByID } = useCoinStore();
+	const { getCoinsByIDs } = useCoinStore();
 
 	const fetchXStocks = useCallback(async () => {
 		try {
@@ -54,11 +54,11 @@ export const useXStocksData = () => {
 
 	const handleCoinPress = useCallback(async (coin: Coin) => {
 		// Fetch and store coin details before navigation
-		const detailedCoin = await getCoinByID(coin.address);
-		if (detailedCoin) {
-			navigation.navigate('CoinDetail', { coin: detailedCoin });
+		const detailedCoins = await getCoinsByIDs([coin.address]);
+		if (detailedCoins.length > 0) {
+			navigation.navigate('CoinDetail', { coin: detailedCoins[0] });
 		}
-	}, [navigation, getCoinByID]);
+	}, [navigation, getCoinsByIDs]);
 
 	return {
 		xStocksTokens,

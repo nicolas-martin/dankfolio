@@ -38,7 +38,7 @@ interface CoinState {
 	fetchNewCoins: (limit?: number, offset?: number) => Promise<void>;
 	fetchTrendingCoins: (limit?: number, offset?: number) => Promise<void>;
 	fetchTopGainersCoins: (limit?: number, offset?: number) => Promise<void>;
-	getCoinByID: (address: string, forceRefresh?: boolean) => Promise<Coin | null>;
+	getCoinsByIDs: (addresses: string[], forceRefresh?: boolean) => Promise<Coin[]>;
 	setCoin: (coin: Coin) => void;
 }
 
@@ -115,46 +115,71 @@ export const useCoinStore = create<CoinState>((set, get) => {
 			}));
 		},
 
-		getCoinByID: async (address: string, forceRefresh: boolean = false) => {
+		getCoinsByIDs: async (addresses: string[], forceRefresh: boolean = false) => {
+			if (addresses.length === 0) return [];
+			
 			const state = get();
+			const coinsToFetch: string[] = [];
+			const cachedCoins: Coin[] = [];
 			
-			// Handle native SOL
-			if (address === NATIVE_SOL_MINT) {
-				if (!forceRefresh && state.coinMap[address]) {
-					return state.coinMap[address];
+			// Check which coins need fetching
+			for (const address of addresses) {
+				// Handle native SOL specially
+				if (address === NATIVE_SOL_MINT) {
+					if (!forceRefresh && state.coinMap[address]) {
+						cachedCoins.push(state.coinMap[address]);
+					} else {
+						// Create native SOL coin and mark wrapped SOL for fetching
+						const nativeSolCoin = createSolCoin(true);
+						cachedCoins.push(nativeSolCoin);
+						get().setCoin(nativeSolCoin);
+						// We'll fetch wrapped SOL to get the price
+						if (!coinsToFetch.includes(WRAPPED_SOL_MINT)) {
+							coinsToFetch.push(WRAPPED_SOL_MINT);
+						}
+					}
+				} else if (!forceRefresh && state.coinMap[address]) {
+					cachedCoins.push(state.coinMap[address]);
+				} else {
+					coinsToFetch.push(address);
 				}
-				// Create native SOL coin and fetch price from wrapped SOL
-				const nativeSolCoin = createSolCoin(true);
-				try {
-					const wrappedSolCoin = await grpcApi.getCoinByID(WRAPPED_SOL_MINT);
-					nativeSolCoin.price = wrappedSolCoin.price;
-					nativeSolCoin.price24hChangePercent = wrappedSolCoin.price24hChangePercent;
-					nativeSolCoin.marketcap = wrappedSolCoin.marketcap;
-					nativeSolCoin.volume24hUSD = wrappedSolCoin.volume24hUSD;
-				} catch (error) {
-					console.warn(`⚠️ [CoinStore] Could not fetch price for native SOL:`, error);
-				}
-				get().setCoin(nativeSolCoin);
-				return nativeSolCoin;
 			}
 			
-			// Handle wrapped SOL and other tokens
-			if (!forceRefresh && state.coinMap[address]) {
-				return state.coinMap[address];
+			// If all coins are cached and no force refresh, return cached
+			if (coinsToFetch.length === 0) {
+				return cachedCoins;
 			}
-
+			
 			try {
-				const coin = await grpcApi.getCoinByID(address);
-				// If it's wrapped SOL, ensure proper naming
-				if (address === WRAPPED_SOL_MINT) {
-					coin.symbol = 'wSOL';
-					coin.name = 'Wrapped SOL';
-				}
-				get().setCoin(coin);
-				return coin;
+				// Fetch missing coins with forceRefresh flag
+				const freshCoins = await grpcApi.getCoinsByIDs(coinsToFetch, forceRefresh);
+				
+				// Update the store with fresh coins
+				freshCoins.forEach(coin => {
+					// If it's wrapped SOL, ensure proper naming
+					if (coin.address === WRAPPED_SOL_MINT) {
+						coin.symbol = 'wSOL';
+						coin.name = 'Wrapped SOL';
+						
+						// Also update native SOL price if it was requested
+						const nativeSolIndex = cachedCoins.findIndex(c => c.address === NATIVE_SOL_MINT);
+						if (nativeSolIndex >= 0) {
+							cachedCoins[nativeSolIndex].price = coin.price;
+							cachedCoins[nativeSolIndex].price24hChangePercent = coin.price24hChangePercent;
+							cachedCoins[nativeSolIndex].marketcap = coin.marketcap;
+							cachedCoins[nativeSolIndex].volume24hUSD = coin.volume24hUSD;
+							get().setCoin(cachedCoins[nativeSolIndex]);
+						}
+					}
+					get().setCoin(coin);
+				});
+				
+				// Return all coins (cached + fresh)
+				return [...cachedCoins, ...freshCoins];
 			} catch (error) {
-				console.error(`❌ [CoinStore] Error fetching coin ${address}:`, error);
-				return null;
+				console.error(`❌ [CoinStore] Error fetching coins:`, error);
+				// Return what we have (cached coins)
+				return cachedCoins;
 			}
 		},
 	};
