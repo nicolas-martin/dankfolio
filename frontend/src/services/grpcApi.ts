@@ -375,11 +375,11 @@ export const grpcApi: grpcModel.API = {
 		}
 	},
 
-	getCoinsByIDs: async (addresses: string[]): Promise<grpcModel.Coin[]> => {
+	getCoinsByIDs: async (addresses: string[], forceRefresh: boolean = false): Promise<grpcModel.Coin[]> => {
 		const serviceName = 'CoinService';
 		const methodName = 'getCoinsByIDs';
 		try {
-			grpcUtils.logRequest(serviceName, methodName, { addresses, count: addresses.length });
+			grpcUtils.logRequest(serviceName, methodName, { addresses, count: addresses.length, forceRefresh });
 
 			// Validate batch size limit
 			const maxBatchSize = 50;
@@ -388,7 +388,7 @@ export const grpcApi: grpcModel.API = {
 			}
 
 			const response = await coinClient.getCoinsByIDs(
-				{ addresses },
+				{ addresses, forceRefresh },
 				{ headers: grpcUtils.getRequestHeaders() }
 			);
 

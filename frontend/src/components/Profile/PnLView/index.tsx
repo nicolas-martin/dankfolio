@@ -23,14 +23,31 @@ const PnLView = () => {
 	const handleRefresh = useCallback(async () => {
 		if (!wallet?.address) return;
 		try {
-			await Promise.all([
-				fetchPortfolioBalance(wallet.address, true),
-				fetchPortfolioPnL(wallet.address)
-			]);
+			// Get current PnL data to know which coins to refresh
+			const currentPnlData = pnlData || [];
+			const pnlCoinAddresses = currentPnlData.map(item => item.coinId);
+			
+			if (pnlCoinAddresses.length > 0) {
+				// Import grpcApi and coinStore
+				const { grpcApi } = await import('@/services/grpcApi');
+				const { useCoinStore } = await import('@/store/coins');
+				
+				// Fetch fresh prices for PnL coins FIRST with force refresh
+				const freshCoins = await grpcApi.getCoinsByIDs(pnlCoinAddresses, true);
+				
+				// Update coin store with fresh prices
+				const coinStore = useCoinStore.getState();
+				freshCoins.forEach(coin => {
+					coinStore.setCoin(coin);
+				});
+			}
+			
+			// THEN fetch PnL data which will use the fresh prices
+			await fetchPortfolioPnL(wallet.address);
 		} catch {
 			// Error handling is done in the store functions
 		}
-	}, [wallet?.address, fetchPortfolioBalance, fetchPortfolioPnL]);
+	}, [wallet?.address, fetchPortfolioPnL, pnlData]);
 
 	// Only show PnL data if loaded from backend
 	const displayData = pnlData || [];

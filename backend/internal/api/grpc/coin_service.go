@@ -105,8 +105,10 @@ func (s *coinServiceHandler) GetCoinsByIDs(ctx context.Context, req *connect.Req
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("batch size %d exceeds maximum allowed %d", len(req.Msg.Addresses), maxBatchSize))
 	}
 
-	// Call the batch service method
-	coins, err := s.coinService.GetCoinsByAddresses(ctx, req.Msg.Addresses)
+	// Call the batch service method with forceRefresh flag
+	// Note: req.Msg.ForceRefresh would be available after protobuf regeneration
+	forceRefresh := false // TODO: Use req.Msg.ForceRefresh when protobuf is regenerated
+	coins, err := s.coinService.GetCoinsByAddresses(ctx, req.Msg.Addresses, forceRefresh)
 	if err != nil {
 		slog.ErrorContext(ctx, "GetCoinsByIDs service call failed", "error", err, "addresses_count", len(req.Msg.Addresses))
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get coins by addresses: %w", err))

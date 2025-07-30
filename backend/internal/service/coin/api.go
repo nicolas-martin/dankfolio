@@ -11,6 +11,6 @@ import (
 type CoinServiceAPI interface {
 	GetCoinByID(ctx context.Context, id string) (*model.Coin, error)
 	GetCoinByAddress(ctx context.Context, address string) (*model.Coin, error)
-	GetCoinsByAddresses(ctx context.Context, addresses []string) ([]model.Coin, error)
+	GetCoinsByAddresses(ctx context.Context, addresses []string, forceRefresh bool) ([]model.Coin, error)
 	// Add other methods used by other services if necessary.
 }

@@ -170,7 +170,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 			if (addressesToFetch.length > 0) {
 				try {
 					logger.log(`📊 [PortfolioStore] Using batch API to fetch ${addressesToFetch.length} portfolio tokens`);
-					fetchedCoins = await grpcApi.getCoinsByIDs(addressesToFetch);
+					fetchedCoins = await grpcApi.getCoinsByIDs(addressesToFetch, forceRefresh);
 
 					// Update coin store with fetched coins
 					fetchedCoins.forEach(coin => {

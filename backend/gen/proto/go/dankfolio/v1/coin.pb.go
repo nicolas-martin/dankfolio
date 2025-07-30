@@ -387,6 +387,7 @@ func (x *GetCoinByIDRequest) GetAddress() string {
 type GetCoinsByIDsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Addresses     []string               `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`
+	ForceRefresh  bool                   `protobuf:"varint,2,opt,name=force_refresh,json=forceRefresh,proto3" json:"force_refresh,omitempty"` // Force fetching fresh data from external APIs
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -426,6 +427,13 @@ func (x *GetCoinsByIDsRequest) GetAddresses() []string {
 		return x.Addresses
 	}
 	return nil
+}
+
+func (x *GetCoinsByIDsRequest) GetForceRefresh() bool {
+	if x != nil {
+		return x.ForceRefresh
+	}
+	return false
 }
 
 type GetCoinsByIDsResponse struct {
@@ -1017,9 +1025,10 @@ const file_dankfolio_v1_coin_proto_rawDesc = "" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
 	"totalCount\".\n" +
 	"\x12GetCoinByIDRequest\x12\x18\n" +
-	"\aaddress\x18\x01 \x01(\tR\aaddress\"4\n" +
+	"\aaddress\x18\x01 \x01(\tR\aaddress\"Y\n" +
 	"\x14GetCoinsByIDsRequest\x12\x1c\n" +
-	"\taddresses\x18\x01 \x03(\tR\taddresses\"A\n" +
+	"\taddresses\x18\x01 \x03(\tR\taddresses\x12#\n" +
+	"\rforce_refresh\x18\x02 \x01(\bR\fforceRefresh\"A\n" +
 	"\x15GetCoinsByIDsResponse\x12(\n" +
 	"\x05coins\x18\x01 \x03(\v2\x12.dankfolio.v1.CoinR\x05coins\"6\n" +
 	"\x1aSearchCoinByAddressRequest\x12\x18\n" +

@@ -72,6 +72,7 @@ message GetCoinByIDRequest {
 
 message GetCoinsByIDsRequest {
   repeated string addresses = 1;
+  bool force_refresh = 2; // Force fetching fresh data from external APIs
 }
 
 message GetCoinsByIDsResponse {
