@@ -1,9 +1,9 @@
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, RefreshControl } from 'react-native';
 import { Text, IconButton, DataTable } from 'react-native-paper';
 import { usePortfolioStore } from '@/store/portfolio';
 import { useStyles } from './pnlview_styles';
 import { formatTokenBalance, formatPercentage, formatPrice } from '@/utils/numberFormat';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useEffect } from 'react';
 import CachedImage from '@/components/Common/CachedImage';
 import { useCoinStore } from '@/store/coins';
@@ -11,6 +11,7 @@ import { useCoinStore } from '@/store/coins';
 const PnLView = () => {
 	const { tokens, fetchPortfolioBalance, fetchPortfolioPnL, wallet, pnlData, isPnlLoading } = usePortfolioStore();
 	const styles = useStyles();
+	const [isRefreshing, setIsRefreshing] = useState(false);
 
 	const refreshControlColors = useMemo(() => [styles.colors.primary], [styles.colors.primary]);
 
@@ -23,6 +24,7 @@ const PnLView = () => {
 
 	const handleRefresh = useCallback(async () => {
 		if (!wallet?.address) return;
+		setIsRefreshing(true);
 		try {
 			// Get current PnL data to know which coins to refresh
 			const currentPnlData = pnlData || [];
@@ -38,6 +40,8 @@ const PnLView = () => {
 			await fetchPortfolioPnL(wallet.address);
 		} catch {
 			// Error handling is done in the store functions
+		} finally {
+			setIsRefreshing(false);
 		}
 	}, [wallet?.address, fetchPortfolioPnL, pnlData]);
 
@@ -87,7 +91,17 @@ const PnLView = () => {
 	}
 
 	return (
-		<ScrollView style={styles.container}>
+		<ScrollView 
+			style={styles.container}
+			refreshControl={
+				<RefreshControl
+					refreshing={isRefreshing}
+					onRefresh={handleRefresh}
+					colors={refreshControlColors}
+					tintColor={styles.colors.primary}
+				/>
+			}
+		>
 			<View style={styles.contentContainer}>
 				<DataTable>
 					<DataTable.Header style={styles.tableHeader}>

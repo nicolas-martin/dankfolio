@@ -175,8 +175,8 @@ func (_c *MockCoinServiceAPI_GetCoinByID_Call) RunAndReturn(run func(ctx context
 }
 
 // GetCoinsByAddresses provides a mock function for the type MockCoinServiceAPI
-func (_mock *MockCoinServiceAPI) GetCoinsByAddresses(ctx context.Context, addresses []string) ([]model.Coin, error) {
-	ret := _mock.Called(ctx, addresses)
+func (_mock *MockCoinServiceAPI) GetCoinsByAddresses(ctx context.Context, addresses []string, forceRefresh bool) ([]model.Coin, error) {
+	ret := _mock.Called(ctx, addresses, forceRefresh)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetCoinsByAddresses")
@@ -184,18 +184,18 @@ func (_mock *MockCoinServiceAPI) GetCoinsByAddresses(ctx context.Context, addres
 
 	var r0 []model.Coin
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []string) ([]model.Coin, error)); ok {
-		return returnFunc(ctx, addresses)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []string, bool) ([]model.Coin, error)); ok {
+		return returnFunc(ctx, addresses, forceRefresh)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []string) []model.Coin); ok {
-		r0 = returnFunc(ctx, addresses)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []string, bool) []model.Coin); ok {
+		r0 = returnFunc(ctx, addresses, forceRefresh)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]model.Coin)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, []string) error); ok {
-		r1 = returnFunc(ctx, addresses)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []string, bool) error); ok {
+		r1 = returnFunc(ctx, addresses, forceRefresh)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -210,11 +210,12 @@ type MockCoinServiceAPI_GetCoinsByAddresses_Call struct {
 // GetCoinsByAddresses is a helper method to define mock.On call
 //   - ctx context.Context
 //   - addresses []string
-func (_e *MockCoinServiceAPI_Expecter) GetCoinsByAddresses(ctx interface{}, addresses interface{}) *MockCoinServiceAPI_GetCoinsByAddresses_Call {
-	return &MockCoinServiceAPI_GetCoinsByAddresses_Call{Call: _e.mock.On("GetCoinsByAddresses", ctx, addresses)}
+//   - forceRefresh bool
+func (_e *MockCoinServiceAPI_Expecter) GetCoinsByAddresses(ctx interface{}, addresses interface{}, forceRefresh interface{}) *MockCoinServiceAPI_GetCoinsByAddresses_Call {
+	return &MockCoinServiceAPI_GetCoinsByAddresses_Call{Call: _e.mock.On("GetCoinsByAddresses", ctx, addresses, forceRefresh)}
 }
 
-func (_c *MockCoinServiceAPI_GetCoinsByAddresses_Call) Run(run func(ctx context.Context, addresses []string)) *MockCoinServiceAPI_GetCoinsByAddresses_Call {
+func (_c *MockCoinServiceAPI_GetCoinsByAddresses_Call) Run(run func(ctx context.Context, addresses []string, forceRefresh bool)) *MockCoinServiceAPI_GetCoinsByAddresses_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -224,9 +225,14 @@ func (_c *MockCoinServiceAPI_GetCoinsByAddresses_Call) Run(run func(ctx context.
 		if args[1] != nil {
 			arg1 = args[1].([]string)
 		}
+		var arg2 bool
+		if args[2] != nil {
+			arg2 = args[2].(bool)
+		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -237,7 +243,7 @@ func (_c *MockCoinServiceAPI_GetCoinsByAddresses_Call) Return(coins []model.Coin
 	return _c
 }
 
-func (_c *MockCoinServiceAPI_GetCoinsByAddresses_Call) RunAndReturn(run func(ctx context.Context, addresses []string) ([]model.Coin, error)) *MockCoinServiceAPI_GetCoinsByAddresses_Call {
+func (_c *MockCoinServiceAPI_GetCoinsByAddresses_Call) RunAndReturn(run func(ctx context.Context, addresses []string, forceRefresh bool) ([]model.Coin, error)) *MockCoinServiceAPI_GetCoinsByAddresses_Call {
 	_c.Call.Return(run)
 	return _c
 }

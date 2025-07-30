@@ -346,27 +346,28 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 	var finalFromCoinMint, finalToCoinMint string
 	var coinSymbol string // To store the symbol for the trade record
 
+	// Determine which coin address to fetch
+	var coinAddressToFetch string
 	if coinMintAddress == "" || coinMintAddress == model.SolMint { // Native SOL transfer
 		finalFromCoinMint = model.SolMint
 		finalToCoinMint = model.SolMint
-		solCoinModel, serviceErr := s.coinService.GetCoinByAddress(ctx, model.SolMint)
-		if serviceErr != nil {
-			return "", fmt.Errorf("failed to get SOL coin details for trade record: %w", serviceErr)
-		}
-		fromCoinPKID = solCoinModel.ID
-		toCoinPKID = solCoinModel.ID
-		coinSymbol = solCoinModel.Symbol
+		coinAddressToFetch = model.SolMint
 	} else { // SPL Token transfer
 		finalFromCoinMint = coinMintAddress
 		finalToCoinMint = coinMintAddress
-		coinModel, serviceErr := s.coinService.GetCoinByAddress(ctx, coinMintAddress)
-		if serviceErr != nil {
-			return "", fmt.Errorf("coin not found for mint %s for trade record: %w", coinMintAddress, serviceErr)
-		}
-		fromCoinPKID = coinModel.ID
-		toCoinPKID = coinModel.ID
-		coinSymbol = coinModel.Symbol
+		coinAddressToFetch = coinMintAddress
 	}
+
+	// Batch fetch coin data (single item in this case, but using batch API for consistency)
+	coins, serviceErr := s.coinService.GetCoinsByAddresses(ctx, []string{coinAddressToFetch}, false)
+	if serviceErr != nil || len(coins) == 0 {
+		return "", fmt.Errorf("failed to get coin details for %s: %w", coinAddressToFetch, serviceErr)
+	}
+	
+	coinModel := &coins[0]
+	fromCoinPKID = coinModel.ID
+	toCoinPKID = coinModel.ID
+	coinSymbol = coinModel.Symbol
 
 	tx, err := s.createTokenTransfer(ctx, from, to, coinMintAddress, amount) // createTokenTransfer still uses original coinMintAddress for SPL mint logic
 	if err != nil {
@@ -819,6 +820,8 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 		"holdings_count", len(holdings),
 		"trades_processed", len(trades))
 
+	// Collect all coin IDs that need price data
+	var coinIDsToFetch []string
 	for coinID, amount := range holdings {
 		// Skip if no balance or very small (rounding errors)
 		if amount <= 0.00000001 {
@@ -833,16 +836,50 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 			continue
 		}
 
-		// Get coin info and current price
-		coin, err := s.coinService.GetCoinByAddress(ctx, coinID)
+		coinIDsToFetch = append(coinIDsToFetch, coinID)
+	}
+
+	// Batch fetch all coin data for holdings
+	var coinDataMap map[string]*model.Coin
+	if len(coinIDsToFetch) > 0 {
+		coins, err := s.coinService.GetCoinsByAddresses(ctx, coinIDsToFetch, false)
 		if err != nil {
-			slog.Warn("Failed to get coin info", "coin_id", coinID, "error", err)
+			slog.Warn("Failed to batch fetch coin data", "error", err)
+			coinDataMap = make(map[string]*model.Coin)
+		} else {
+			coinDataMap = make(map[string]*model.Coin)
+			for i := range coins {
+				coinDataMap[coins[i].Address] = &coins[i]
+			}
+		}
+	} else {
+		coinDataMap = make(map[string]*model.Coin)
+	}
+
+	// Process holdings with fetched coin data
+	for coinID, amount := range holdings {
+		// Skip if no balance or very small (rounding errors)
+		if amount <= 0.00000001 {
+			continue
+		}
+
+		// IMPORTANT: Check if this token still exists in the wallet
+		// If the user sold all tokens, don't show it in PnL
+		actualBalance, existsInWallet := walletBalanceMap[coinID]
+		if !existsInWallet || actualBalance <= 0.00000001 {
+			continue
+		}
+
+		// Get coin info from batch fetch results
+		coin, exists := coinDataMap[coinID]
+		if !exists || coin == nil {
+			slog.Warn("Coin data not found in batch results", "coin_id", coinID)
 			continue
 		}
 
 		// Get current price
 		currentPrice := 0.0
-		if coin != nil && coin.Price > 0 {
+		if coin.Price > 0 {
 			currentPrice = coin.Price
 		}
 
@@ -906,19 +943,46 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 	// Now calculate the ACTUAL total portfolio value from ALL wallet balances
 	// This includes tokens we may not have trade history for
 	actualTotalPortfolioValue := 0.0
+	
+	// Collect all wallet balance coin IDs that need price data
+	var walletCoinIDs []string
+	for _, balance := range walletBalances.Balances {
+		if balance.Amount > 0 {
+			walletCoinIDs = append(walletCoinIDs, balance.ID)
+		}
+	}
+	
+	// Batch fetch prices for all wallet balances
+	var walletCoinDataMap map[string]*model.Coin
+	if len(walletCoinIDs) > 0 {
+		coins, err := s.coinService.GetCoinsByAddresses(ctx, walletCoinIDs, false)
+		if err != nil {
+			slog.Warn("Failed to batch fetch wallet coin data", "error", err)
+			walletCoinDataMap = make(map[string]*model.Coin)
+		} else {
+			walletCoinDataMap = make(map[string]*model.Coin)
+			for i := range coins {
+				walletCoinDataMap[coins[i].Address] = &coins[i]
+			}
+		}
+	} else {
+		walletCoinDataMap = make(map[string]*model.Coin)
+	}
+	
+	// Calculate total value using fetched prices
 	for _, balance := range walletBalances.Balances {
 		if balance.Amount <= 0 {
 			continue
 		}
 		
-		// Get current price for this token
-		coin, err := s.coinService.GetCoinByAddress(ctx, balance.ID)
-		if err != nil {
-			slog.Warn("Failed to get coin info for wallet balance", "coin_id", balance.ID, "error", err)
+		// Get coin from batch fetch results
+		coin, exists := walletCoinDataMap[balance.ID]
+		if !exists || coin == nil {
+			slog.Warn("Wallet coin data not found in batch results", "coin_id", balance.ID)
 			continue
 		}
 		
-		if coin != nil && coin.Price > 0 {
+		if coin.Price > 0 {
 			currentValue := balance.Amount * coin.Price
 			actualTotalPortfolioValue += currentValue
 		}

@@ -40,29 +40,11 @@ const Profile = () => {
 
 
 
-	const {
-		isLoading: isTransactionsLoading,
-		fetchRecentTransactions,
-		hasFetched: transactionsHasFetched
-	} = useTransactionsStore();
-
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed ProfileScreen' });
 	}, []);
 
-	useEffect(() => {
-		if (wallet?.address && !transactionsHasFetched) {
-			logger.info('ProfileScreen: Wallet address available, fetching recent transactions.');
-			fetchRecentTransactions(wallet.address);
-		}
-	}, [wallet?.address, fetchRecentTransactions, transactionsHasFetched]);
-
-	useEffect(() => {
-		if (wallet?.address) {
-			logger.info('ProfileScreen: Wallet address available, fetching portfolio PnL.');
-			fetchPortfolioPnL(wallet.address);
-		}
-	}, [wallet?.address, fetchPortfolioPnL]);
+	// PnL tab now fetches its own data when viewed
 
 	const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -77,14 +59,9 @@ const Profile = () => {
 		logger.breadcrumb({ category: 'profile', message: 'Portfolio refresh initiated from ProfileScreen' });
 		setIsRefreshing(true);
 		try {
-			const { fetchPortfolioPnL } = usePortfolioStore.getState();
-
-			// Refresh all portfolio-related data in parallel
-			await Promise.all([
-				fetchPortfolioBalance(wallet.address, true), // Force refresh to get updated prices
-				fetchRecentTransactions(wallet.address), // Refresh transactions
-				fetchPortfolioPnL(wallet.address) // Refresh PnL data
-			]);
+			// Only refresh portfolio balance for overview and tokens tabs
+			// Transactions and PnL tabs handle their own refresh
+			await fetchPortfolioBalance(wallet.address, true);
 		} catch (error: unknown) {
 			if (error instanceof Error) {
 				showToast({
@@ -298,22 +275,29 @@ const Profile = () => {
 					<TabView
 						renderTabBar={renderTabBar}
 						navigationState={{ index, routes }}
-						renderScene={(sceneProps) => (
-							<ScrollView
-								accessible={false}
-								contentContainerStyle={styles.scrollContent}
-								refreshControl={
-									<RefreshControl
-										refreshing={isRefreshing || isPortfolioLoading || isTransactionsLoading}
-										onRefresh={handleRefresh}
-										colors={styles.refreshControlColors}
-										tintColor={styles.colors.primary}
-									/>
-								}
-							>
-								{renderScene(sceneProps)}
-							</ScrollView>
-						)}
+						renderScene={(sceneProps) => {
+							// PnL and Transactions tabs handle their own refresh
+							if (sceneProps.route.key === 'pnl' || sceneProps.route.key === 'transactions') {
+								return renderScene(sceneProps);
+							}
+							// Overview and Tokens tabs use the portfolio refresh
+							return (
+								<ScrollView
+									accessible={false}
+									contentContainerStyle={styles.scrollContent}
+									refreshControl={
+										<RefreshControl
+											refreshing={isRefreshing || isPortfolioLoading}
+											onRefresh={handleRefresh}
+											colors={styles.refreshControlColors}
+											tintColor={styles.colors.primary}
+										/>
+									}
+								>
+									{renderScene(sceneProps)}
+								</ScrollView>
+							);
+						}}
 						onIndexChange={setIndex}
 						initialLayout={{ width: layout.width }}
 						swipeEnabled={false}

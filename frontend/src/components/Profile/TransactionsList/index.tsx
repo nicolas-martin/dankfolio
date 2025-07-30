@@ -1,20 +1,45 @@
-import { View, ActivityIndicator, Linking, ScrollView } from 'react-native';
+import { View, ActivityIndicator, Linking, ScrollView, RefreshControl } from 'react-native';
 import { Text, IconButton } from 'react-native-paper';
 import { useTransactionsStore } from '@/store/transactions';
 import { Transaction, TransactionType, TransactionStatus } from '@/types';
 import { useStyles } from './transactionslist_styles';
 import { formatPrice } from '@/utils/numberFormat';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useCoinStore } from '@/store/coins';
 import CachedImage from '@/components/Common/CachedImage';
 import { Coin } from '@/types';
 import { formatTransactionDate, getTransactionIcon, getSolscanUrl } from './transactionslist_scripts';
+import { usePortfolioStore } from '@/store/portfolio';
+import { logger } from '@/utils/logger';
 
 const TransactionsList = () => {
-	const { transactions, isLoading, error } = useTransactionsStore();
+	const { transactions, isLoading, error, fetchRecentTransactions, hasFetched } = useTransactionsStore();
 	const { getCoinsByIDs, coinMap } = useCoinStore();
+	const { wallet } = usePortfolioStore();
 	const styles = useStyles();
 	const [coinData, setCoinData] = useState<Record<string, Coin>>({});
+	const [isRefreshing, setIsRefreshing] = useState(false);
+
+	const refreshControlColors = useMemo(() => [styles.colors.primary], [styles.colors.primary]);
+
+	// Fetch transactions when component mounts and wallet is available
+	useEffect(() => {
+		if (wallet?.address && !hasFetched) {
+			logger.info('TransactionsList: Fetching transactions on mount');
+			fetchRecentTransactions(wallet.address);
+		}
+	}, [wallet?.address, fetchRecentTransactions, hasFetched]);
+
+	// Handle refresh
+	const handleRefresh = useCallback(async () => {
+		if (!wallet?.address) return;
+		setIsRefreshing(true);
+		try {
+			await fetchRecentTransactions(wallet.address);
+		} finally {
+			setIsRefreshing(false);
+		}
+	}, [wallet?.address, fetchRecentTransactions]);
 
 	// Fetch coin data for transactions
 	useEffect(() => {
@@ -185,7 +210,17 @@ const TransactionsList = () => {
 	}
 
 	return (
-		<ScrollView style={styles.container}>
+		<ScrollView 
+			style={styles.container}
+			refreshControl={
+				<RefreshControl
+					refreshing={isRefreshing}
+					onRefresh={handleRefresh}
+					colors={refreshControlColors}
+					tintColor={styles.colors.primary}
+				/>
+			}
+		>
 			<View style={styles.listContainer}>
 				{transactions.map((transaction, index) => renderTransaction(transaction, index))}
 			</View>
