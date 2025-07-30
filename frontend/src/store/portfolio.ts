@@ -176,11 +176,18 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 					fetchedCoins.forEach(coin => {
 						coinStore.setCoin(coin);
 					});
+
+					// Track which coins failed to fetch
+					const fetchedAddresses = new Set(fetchedCoins.map(coin => coin.address));
+					addressesToFetch.forEach(address => {
+						if (!fetchedAddresses.has(address)) {
+							missingCoinIds.push(address);
+						}
+					});
 				} catch (error) {
 					logger.error(`❌ [PortfolioStore] Batch fetch failed:`, error);
-					// Since getCoinsByIDs already handles multiple addresses, we don't need individual calls
-					// Just mark all as missing since the batch failed
-					missingCoinIds.push(...addressesToFetch);
+					// Continue with cached coins only, mark all requested as missing
+					addressesToFetch.forEach(address => missingCoinIds.push(address));
 				}
 			}
 
