@@ -3,6 +3,7 @@
 .env.*
 **/keys
 .opencode/
+*.crt
 
 
 # app check

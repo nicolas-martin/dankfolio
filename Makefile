@@ -1,5 +1,5 @@
 
-.PHONY: dev setup run backend-kill test run-mobile mobile-kill help frontend-test backend-build mocks frontend-lint proto db-migrate-up psql db-reset
+.PHONY: dev setup run backend-kill test mobile mobile-kill help frontend-test backend-build mocks frontend-lint proto psql psql-prod
 
 # xcodebuild -project /Users/nma/dev/WebDriverAgent/WebDriverAgent.xcodeproj -scheme WebDriverAgentRunner -destination 'platform=iOS Simulator,name=iPhone 16e' test
 
@@ -109,35 +109,17 @@ clean-build:
 	@cd frontend && npx expo run:ios
 	@echo "✅ Script finished."
 
-# Run psql with environment variables from backend/.env
 psql:
-	@echo "🔗 Connecting to Postgres with psql using DB_URL from .env..."
-	@echo "🔍 Debug: Checking for .env file in backend directory..."
-	@( \
-		cd backend && \
-		pwd && \
-		echo "📁 Current directory: $$(pwd)" && \
-		if [ -f .env ]; then \
-			echo "✅ Found .env file at: $$(pwd)/.env"; \
-			echo "📄 .env file contents:"; \
-			cat .env; \
-		else \
-			echo "❌ No .env file found at: $$(pwd)/.env"; \
-			echo "📂 Files in current directory:"; \
-			ls -la; \
-		fi && \
-		set -a && \
-		[ -f .env ] && . .env; \
-		set +a && \
-		echo "🔗 DB_URL being used: $$DB_URL" && \
-		psql "$$DB_URL" \
-	)
+	@cd backend && set -a && source .env && set +a && psql "$$DB_URL"
+
+psql-prod:
+	@cd backend && set -a && source .env.prod && set +a && psql "$$DB_URL"
 
 # Helpers
 help:
 	@echo "\033[33m🛠️  Available commands:\033[0m"
 	@echo "  \033[33mmake run\033[0m          - Run the backend server (stops existing instance first)"
-	@echo "  \033[33mmake run-mobile\033[0m   - Run the mobile frontend (stops existing instance first)"
+	@echo "  \033[33mmake mobile\033[0m   - Run the mobile frontend (stops existing instance first)"
 	@echo "  \033[33mmake test\033[0m         - Run all backend and frontend tests"
 	@echo "  \033[33mmake proto\033[0m        - Generate protobuf files"
 	@echo "  \033[33mmake frontend-test\033[0m - Run frontend Jest tests"
@@ -147,7 +129,6 @@ help:
 	@echo "  \033[33mmake backend-build\033[0m - Build and check backend Go code compilation"
 	@echo "  \033[33mmake backend-test\033[0m  - Run backend tests (includes build and mock generation)"
 	@echo "  \033[33mmake mocks\033[0m - Generate backend mocks"
-	@echo "  \033[33mmake db-migrate-up\033[0m - Apply database migrations"
-	@echo "  \033[33mmake db-reset\033[0m    - Reset the database"
 	@echo "  \033[33mmake psql\033[0m          - Connect to Postgres using DB_URL from .env"
+	@echo "  \033[33mmake psql-prod\033[0m     - Connect to Production Postgres using DB_URL from .env.prod"
 

@@ -35,7 +35,6 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/telemetry/otel"
 
-	// "github.com/nicolas-martin/dankfolio/backend/internal/db/postgres/schema" // Not directly needed for count if repo has Count
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
@@ -474,21 +473,21 @@ func maskSensitiveURL(url string) string {
 	if url == "" {
 		return ""
 	}
-	
+
 	// Simple approach: mask everything after the first @ and before the last /
 	// This will show the protocol and database name while hiding credentials and host details
 	parts := strings.Split(url, "@")
 	if len(parts) < 2 {
 		return url // No credentials to mask
 	}
-	
+
 	// Get the part after @
 	afterAt := parts[len(parts)-1]
 	hostAndPath := strings.Split(afterAt, "/")
 	if len(hostAndPath) < 2 {
 		return parts[0] + "@***"
 	}
-	
+
 	// Return protocol + masked credentials + database name
 	return parts[0] + "@***/***/" + hostAndPath[len(hostAndPath)-1]
 }
