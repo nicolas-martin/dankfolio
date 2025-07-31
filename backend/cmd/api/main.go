@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"log"
 	"log/slog"
@@ -42,10 +41,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/telemetry/trademetrics"
 )
 
-var populateNaughtyWords = flag.Bool("populate-naughty-words", false, "If set, fetches the naughty word list and populates the database.")
-
 func main() {
-	flag.Parse()
 	logLevel := slog.LevelInfo
 	var handler slog.Handler
 
@@ -238,9 +234,9 @@ func main() {
 	)
 	slog.Info("Coin service initialized.")
 
-	// Populate Naughty Words if the flag is set
-	if *populateNaughtyWords {
-		slog.Info("The --populate-naughty-words flag is set. Attempting to populate naughty words table...")
+	// Populate Naughty Words if the environment variable is set
+	if config.PopulateNaughtyWords {
+		slog.Info("The POPULATE_NAUGHTY_WORDS environment variable is set. Attempting to populate naughty words table...")
 		go func() { // Keep this in a goroutine to avoid blocking startup for HTTP fetch
 			ctx := context.Background()
 			// Check if the table is empty first
@@ -373,7 +369,7 @@ func main() {
 			}
 		}()
 	} else {
-		slog.Info("The --populate-naughty-words flag is not set. Skipping DB population of naughty words.")
+		slog.Info("The POPULATE_NAUGHTY_WORDS environment variable is not set. Skipping DB population of naughty words.")
 	}
 
 	priceCache, err := price.NewPriceHistoryCache()
@@ -510,6 +506,7 @@ type Config struct {
 	PlatformPrivateKey         string        `envconfig:"PLATFORM_PRIVATE_KEY"`                         // Base64 encoded private key for platform account
 	DevAppCheckToken           string        `envconfig:"DEV_APP_CHECK_TOKEN"`
 	InitializeXStocksOnStartup bool          `envconfig:"INITIALIZE_XSTOCKS_ON_STARTUP" default:"false"`
+	PopulateNaughtyWords       bool          `envconfig:"POPULATE_NAUGHTY_WORDS" default:"false"`
 	OTLPEndpoint               string        `envconfig:"OTLP_ENDPOINT"`
 }
 
