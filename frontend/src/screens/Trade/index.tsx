@@ -12,13 +12,7 @@ import AmountPercentageButtons from '@components/Common/AmountPercentageButtons'
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal';
 import { TradeScreenNavigationProp, TradeScreenRouteProp } from './types';
-
-import {
-	handleSwapCoins as swapCoinsUtil,
-	handleSelectToken,
-	handleTradeSubmit,
-	validateSolBalanceForQuote,
-} from './scripts';
+import { handleSwapCoins as swapCoinsUtil, handleSelectToken, handleTradeSubmit, validateSolBalanceForQuote, } from './scripts';
 import { signSwapTransaction } from '@/services/solana';
 import { getActiveWalletKeys } from '@/store/portfolio';
 import { SOLANA_ADDRESS, NATIVE_SOL_ADDRESS } from '@/utils/constants';
@@ -35,7 +29,6 @@ import { TradeStatusResponse } from '@/services/grpc/model';
 import { getUserFriendlyTradeError, isRetryableTradeError } from '@/utils/errorUtils';
 import { InfoIcon } from '@/components/Common/Icons';
 import InfoModal from '@/components/Common/InfoModal';
-
 
 const QUOTE_DEBOUNCE_MS = 1000;
 

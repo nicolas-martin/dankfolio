@@ -185,6 +185,7 @@ export const useStyles = () => {
 			routingLabelContainer: {
 				alignItems: 'center',
 				flexDirection: 'row',
+				gap: theme.spacing.sm,
 			},
 			routingRow: {
 				alignItems: 'center',
