@@ -52,7 +52,7 @@ export const useStyles = () => {
 				flexDirection: 'row',
 			},
 			listContainer: {
-				paddingBottom: 20,
+				paddingBottom: theme.spacing.sm,
 			},
 			listWrapper: {
 				backgroundColor: colors.surface,
@@ -60,6 +60,7 @@ export const useStyles = () => {
 				elevation: 2,
 				marginBottom: theme.spacing.lg,
 				marginHorizontal: theme.spacing.lg,
+				overflow: 'hidden',
 				shadowColor: theme.shadows.sm.shadowColor,
 				shadowOffset: theme.shadows.sm.shadowOffset,
 				shadowOpacity: 0.08,
