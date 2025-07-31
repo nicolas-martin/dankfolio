@@ -78,31 +78,18 @@ const Profile = () => {
 	};
 
 	const renderHeader = () => (
-		<>
-			<ScreenHeader
-				title="Portfolio"
-				rightAction={{
-					icon: <SettingsIcon size={24} color={styles.colors.onSurface} />,
-					onPress: () => {
-						logger.breadcrumb({ category: 'navigation', message: 'Navigating to SettingsScreen from Profile' });
-						navigation.navigate('Settings');
-					},
-					testID: "settings-button"
-				}}
-				showRightAction={true}
-			/>
-			{wallet && (
-				<View style={styles.walletAddressContainer} accessible={false}>
-					<Text style={styles.walletAddress} accessible={true}>
-						{formatAddress(wallet.address)}
-					</Text>
-					<CopyToClipboard
-						text={wallet.address}
-						testID="copy-wallet-button"
-					/>
-				</View>
-			)}
-		</>
+		<ScreenHeader
+			title="Portfolio"
+			rightAction={{
+				icon: <SettingsIcon size={24} color={styles.colors.onSurface} />,
+				onPress: () => {
+					logger.breadcrumb({ category: 'navigation', message: 'Navigating to SettingsScreen from Profile' });
+					navigation.navigate('Settings');
+				},
+				testID: "settings-button"
+			}}
+			showRightAction={true}
+		/>
 	);
 
 	const OverviewTab = () => (
@@ -116,6 +103,17 @@ const Profile = () => {
 					<Text style={styles.portfolioSubtext} accessible={true}>
 						{tokens.length} Token{tokens.length !== 1 ? 's' : ''}
 					</Text>
+					{wallet && (
+						<View style={styles.walletAddressContainer} accessible={false}>
+							<Text style={styles.walletAddress} accessible={true}>
+								{formatAddress(wallet.address)}
+							</Text>
+							<CopyToClipboard
+								text={wallet.address}
+								testID="copy-wallet-button"
+							/>
+						</View>
+					)}
 					<Button
 						mode="contained"
 						icon={sendButtonIcon}
