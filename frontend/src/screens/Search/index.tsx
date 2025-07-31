@@ -9,6 +9,7 @@ import { Coin } from '@/types';
 import SearchResultsList from './SearchResultsList';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useStyles } from './styles';
+import ScreenHeader from '@/components/Common/ScreenHeader';
 import { SearchIcon } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
 import { getUserFriendlySearchError } from '@/utils/errorUtils';
@@ -90,15 +91,9 @@ const SearchScreen: React.FC = () => {
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
+			<ScreenHeader title="Search" />
 			<View style={styles.container}>
 				<View style={styles.contentPadding}>
-					{/* Header Row */}
-					<View style={styles.headerRow}>
-						<SearchIcon size={32} color={styles.colors.onSurface} />
-						<Text variant="headlineSmall" style={styles.headerTextStyle}>
-							Search
-						</Text>
-					</View>
 					{/* Search Bar Card */}
 					<View style={styles.searchCardStyle}>
 						<TextInput

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ScrollView, SafeAreaView, View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useStyles } from "./termsofservice_styles";
+import ScreenHeader from "@/components/Common/ScreenHeader";
 import { handleAcceptTerms, handleCheckboxToggle, TERMS_CONTENT } from "./termsofservice_scripts";
 
 interface TermsOfServiceProps {
@@ -25,9 +26,7 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onTermsAccepted }) => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.flex}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Terms of Service</Text>
-        </View>
+        <ScreenHeader title="Terms of Service" />
 
         <ScrollView style={styles.flex} showsVerticalScrollIndicator={false}>
           <View style={styles.contentContainer}>

@@ -93,8 +93,6 @@ export const useStyles = () => {
 			},
 			fixedHeader: {
 				backgroundColor: theme.colors.background,
-				borderBottomColor: theme.colors.surfaceVariant,
-				borderBottomWidth: 1,
 				paddingBottom: theme.spacing.lg,
 				paddingHorizontal: theme.spacing.xl,
 				paddingTop: theme.spacing.xl,
@@ -219,9 +217,8 @@ export const useStyles = () => {
 				marginRight: -8, // No exact match
 			},
 			tabBar: {
-				backgroundColor: theme.colors.surface,
-				borderBottomColor: theme.colors.surfaceVariant,
-				borderBottomWidth: 1,
+				backgroundColor: 'transparent',
+				borderBottomWidth: 0,
 				borderTopLeftRadius: theme.borderRadius.lg,
 				borderTopRightRadius: theme.borderRadius.lg,
 				elevation: 0,
@@ -255,7 +252,17 @@ export const useStyles = () => {
 				color: theme.colors.onSurfaceVariant,
 			},
 			tabViewContainer: {
+				backgroundColor: theme.colors.surface,
+				borderRadius: theme.borderRadius.lg,
+				elevation: 2,
 				flex: 1,
+				marginHorizontal: theme.spacing.lg,
+				marginBottom: theme.spacing.lg,
+				overflow: 'hidden',
+				shadowColor: theme.shadows.sm.shadowColor,
+				shadowOffset: theme.shadows.sm.shadowOffset,
+				shadowOpacity: 0.08,
+				shadowRadius: theme.spacing.xs,
 			},
 			themeToggleContainer: {
 				alignItems: 'center',

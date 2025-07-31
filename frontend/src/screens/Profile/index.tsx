@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, RefreshControl, SafeAreaView, useWindowDimensions, Pressable } from 'react-native';
+import { View, ScrollView, RefreshControl, SafeAreaView, useWindowDimensions } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
@@ -10,6 +10,7 @@ import { usePortfolioStore } from '@store/portfolio';
 import { useStyles } from './profile_styles';
 import TokenListCard from '@/components/Home/TokenListCard';
 import TransactionsList from '@/components/Profile/TransactionsList';
+import ScreenHeader from '@/components/Common/ScreenHeader';
 import { ProfileIcon, WalletIcon, CoinsIcon, SendIcon, SettingsIcon, SwapIcon, ChartLineIcon } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
 import type { ProfileScreenNavigationProp } from './profile_types';
@@ -77,27 +78,19 @@ const Profile = () => {
 	};
 
 	const renderHeader = () => (
-		<View style={styles.fixedHeader} accessible={false}>
-			<View style={styles.profileHeader} accessible={false}>
-				<View style={styles.profileIconContainer} accessible={false}>
-					<ProfileIcon size={28} color={styles.colors.onSurface} />
-					<Text style={styles.profileTitle} accessible={true} testID="portfolio-title">Portfolio</Text>
-				</View>
-				<Pressable
-					onPress={() => {
+		<>
+			<ScreenHeader
+				title="Portfolio"
+				rightAction={{
+					icon: <SettingsIcon size={24} color={styles.colors.onSurface} />,
+					onPress: () => {
 						logger.breadcrumb({ category: 'navigation', message: 'Navigating to SettingsScreen from Profile' });
 						navigation.navigate('Settings');
-					}}
-					style={styles.settingsButton}
-					accessible={true}
-					testID="settings-button"
-				>
-					<SettingsIcon
-						size={24}
-						color={styles.colors.onSurface}
-					/>
-				</Pressable>
-			</View>
+					},
+					testID: "settings-button"
+				}}
+				showRightAction={true}
+			/>
 			{wallet && (
 				<View style={styles.walletAddressContainer} accessible={false}>
 					<Text style={styles.walletAddress} accessible={true}>
@@ -109,7 +102,7 @@ const Profile = () => {
 					/>
 				</View>
 			)}
-		</View>
+		</>
 	);
 
 	const OverviewTab = () => (

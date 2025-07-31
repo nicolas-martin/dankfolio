@@ -5,6 +5,7 @@ import { useStyles } from './xstocks_styles';
 import { formatPrice, formatCompactPercentage } from '@/utils/numberFormat';
 import { Coin } from '@/types';
 import CachedImage from '@/components/Common/CachedImage';
+import ScreenHeader from '@/components/Common/ScreenHeader';
 import { logger } from '@/utils/logger';
 
 const XStocks: React.FC = () => {
@@ -24,7 +25,7 @@ const XStocks: React.FC = () => {
 			logoURI: item.logoURI,
 			hasLogo: !!item.logoURI,
 		});
-		
+
 		const priceChangeColor = item.price24hChangePercent && item.price24hChangePercent >= 0
 			? styles.positiveChange
 			: styles.negativeChange;
@@ -60,41 +61,44 @@ const XStocks: React.FC = () => {
 		);
 	}, [styles, handleCoinPress]);
 
+	const renderHeader = () => (
+		<ScreenHeader title="xStocks" />
+	);
+
 	return (
 		<SafeAreaView style={styles.safeArea}>
 			<View style={styles.container}>
-				<Text style={styles.headerTitle}>xStocks</Text>
-
-			{loading && xStocksTokens.length === 0 ? (
-				<View style={styles.loadingContainer}>
-					<ActivityIndicator size="large" color={styles.loadingIndicator.color} />
-				</View>
-			) : (
-				<View style={styles.listWrapper}>
-					<FlatList
-						data={xStocksTokens}
-						renderItem={renderItem}
-						keyExtractor={(item) => item.address}
-						ItemSeparatorComponent={() => <View style={styles.separator} />}
-						refreshControl={
-							<RefreshControl
-								refreshing={refreshing}
-								onRefresh={handleRefresh}
-								tintColor={styles.loadingIndicator.color}
-							/>
-						}
-						ListEmptyComponent={
-							<View style={styles.emptyContainer}>
-								<Text style={styles.emptyText}>No xStocks tokens found</Text>
-								<TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
-									<Text style={styles.retryButtonText}>Retry</Text>
-								</TouchableOpacity>
-							</View>
-						}
-						contentContainerStyle={xStocksTokens.length === 0 ? styles.emptyListContainer : styles.listContainer}
-					/>
-				</View>
-			)}
+				{renderHeader()}
+				{loading && xStocksTokens.length === 0 ? (
+					<View style={styles.loadingContainer}>
+						<ActivityIndicator size="large" color={styles.loadingIndicator.color} />
+					</View>
+				) : (
+					<View style={styles.listWrapper}>
+						<FlatList
+							data={xStocksTokens}
+							renderItem={renderItem}
+							keyExtractor={(item) => item.address}
+							ItemSeparatorComponent={() => <View style={styles.separator} />}
+							refreshControl={
+								<RefreshControl
+									refreshing={refreshing}
+									onRefresh={handleRefresh}
+									tintColor={styles.loadingIndicator.color}
+								/>
+							}
+							ListEmptyComponent={
+								<View style={styles.emptyContainer}>
+									<Text style={styles.emptyText}>No xStocks tokens found</Text>
+									<TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+										<Text style={styles.retryButtonText}>Retry</Text>
+									</TouchableOpacity>
+								</View>
+							}
+							contentContainerStyle={xStocksTokens.length === 0 ? styles.emptyListContainer : styles.listContainer}
+						/>
+					</View>
+				)}
 			</View>
 		</SafeAreaView>
 	);

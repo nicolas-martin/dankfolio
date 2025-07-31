@@ -11,6 +11,12 @@ export const useStyles = () => {
 			container: {
 				flex: 1,
 			},
+			fixedHeader: {
+				backgroundColor: theme.colors.background,
+				paddingBottom: theme.spacing.lg,
+				paddingHorizontal: theme.spacing.xl,
+				paddingTop: theme.spacing.xl,
+			},
 			listWrapper: {
 				backgroundColor: colors.surface,
 				borderRadius: theme.borderRadius.lg,
@@ -41,9 +47,6 @@ export const useStyles = () => {
 				color: theme.colors.onSurface,
 				fontSize: theme.typography.fontSize['2xl'],
 				fontWeight: '700',
-				marginBottom: theme.spacing['2xl'],
-				marginTop: theme.spacing['2xl'],
-				textAlign: 'left',
 			},
 			itemContainer: {
 				backgroundColor: colors.surface,
