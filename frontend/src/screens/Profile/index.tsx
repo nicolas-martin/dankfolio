@@ -4,8 +4,7 @@ import { Text, Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { TabView, TabBar } from 'react-native-tab-view';
-import { handleTokenPress, formatAddress, sortTokensByValue, createCoinCardProps } from './profile_scripts';
-import CopyToClipboard from '@/components/Common/CopyToClipboard';
+import { handleTokenPress, sortTokensByValue, createCoinCardProps } from './profile_scripts';
 import { usePortfolioStore } from '@store/portfolio';
 import { useStyles } from './profile_styles';
 import TokenListCard from '@/components/Home/TokenListCard';
@@ -20,7 +19,7 @@ import { formatPrice } from 'utils/numberFormat';
 const Profile = () => {
 	const navigation = useNavigation<ProfileScreenNavigationProp>();
 	const { showToast } = useToast();
-	const { wallet, tokens, fetchPortfolioBalance, isLoading: isPortfolioLoading, totalPortfolioValue, fetchPortfolioPnL } = usePortfolioStore();
+	const { wallet, tokens, fetchPortfolioBalance, isLoading: isPortfolioLoading, totalPortfolioValue } = usePortfolioStore();
 	const styles = useStyles();
 	const layout = useWindowDimensions();
 
@@ -103,17 +102,6 @@ const Profile = () => {
 					<Text style={styles.portfolioSubtext} accessible={true}>
 						{tokens.length} Token{tokens.length !== 1 ? 's' : ''}
 					</Text>
-					{wallet && (
-						<View style={styles.walletAddressContainer} accessible={false}>
-							<Text style={styles.walletAddress} accessible={true}>
-								{formatAddress(wallet.address)}
-							</Text>
-							<CopyToClipboard
-								text={wallet.address}
-								testID="copy-wallet-button"
-							/>
-						</View>
-					)}
 					<Button
 						mode="contained"
 						icon={sendButtonIcon}

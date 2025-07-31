@@ -69,7 +69,7 @@ const TransactionsList = () => {
 		if (transactions.length > 0) {
 			fetchCoinData();
 		}
-	}, [transactions, getCoinsByIDs]); // Remove coinMap and coinData from dependencies
+	}, [transactions, getCoinsByIDs, coinData, coinMap]);
 
 	const getCustomStatusStyle = (status: Transaction['status']) => {
 		const baseStyle = styles.customStatusBadge;
@@ -99,7 +99,7 @@ const TransactionsList = () => {
 		}
 	};
 
-	const handleStatusPress = (transaction: Transaction) => {
+	const _handleStatusPress = (transaction: Transaction) => {
 		if (transaction.status === TransactionStatus.COMPLETED && transaction.transactionHash) {
 			const solscanUrl = getSolscanUrl(transaction.transactionHash);
 			Linking.openURL(solscanUrl);

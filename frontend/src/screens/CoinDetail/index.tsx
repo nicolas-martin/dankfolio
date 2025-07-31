@@ -188,7 +188,7 @@ const CoinDetail: React.FC = () => {
 				setIsManualRefreshing(false);
 			}
 		}
-	}, [mintAddress, showToast, fetchHistory]); // Added fetchHistory to dependencies
+	}, [mintAddress, showToast, fetchHistory, selectedTimeframe]);
 
 	const handleTradePress = useCallback(async () => {
 		if (displayCoin) {

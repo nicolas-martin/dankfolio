@@ -9,7 +9,7 @@ import CachedImage from '@/components/Common/CachedImage';
 import { useCoinStore } from '@/store/coins';
 
 const PnLView = () => {
-	const { tokens, fetchPortfolioBalance, fetchPortfolioPnL, wallet, pnlData, isPnlLoading } = usePortfolioStore();
+	const { tokens, fetchPortfolioPnL, wallet, pnlData, isPnlLoading } = usePortfolioStore();
 	const styles = useStyles();
 	const [isRefreshing, setIsRefreshing] = useState(false);
 

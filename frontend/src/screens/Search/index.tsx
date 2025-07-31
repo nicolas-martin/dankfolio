@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, TextInput, SafeAreaView } from 'react-native';
-import { Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 // Assuming RootStackParamList is here
 import { SearchScreenNavigationProp, SearchState } from './types';
@@ -10,7 +9,6 @@ import SearchResultsList from './SearchResultsList';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useStyles } from './styles';
 import ScreenHeader from '@/components/Common/ScreenHeader';
-import { SearchIcon } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
 import { getUserFriendlySearchError } from '@/utils/errorUtils';
 import InfoState from '@/components/Common/InfoState'; // Import InfoState

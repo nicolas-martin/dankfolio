@@ -82,7 +82,7 @@ const Trade: React.FC = () => {
 	}, [wallet?.address]);
 
 	// Memoize the polling function to ensure it's stable
-	const pollingFunction = useCallback(grpcApi.getSwapStatus, []);
+	const pollingFunction = useCallback((txHash: string) => grpcApi.getSwapStatus(txHash), []);
 
 	const {
 		txHash: polledTxHash,
@@ -152,7 +152,7 @@ const Trade: React.FC = () => {
 				tokens: tokens.map(t => ({ symbol: t.coin.symbol, amount: t.amount }))
 			});
 		}
-	}, [wallet?.address, tokens.length, fetchPortfolioBalance]);
+	}, [wallet?.address, tokens, fetchPortfolioBalance]);
 
 	// Memoized portfolio tokens
 	const fromPortfolioToken = useMemo(() => tokens.find(token => token.coin.address === fromCoin?.address), [tokens, fromCoin]);

@@ -7,7 +7,6 @@ import { useThemeStore } from '@/store/theme';
 import { usePortfolioStore } from '@/store/portfolio';
 import { useStyles } from './settings_styles';
 import CopyToClipboard from '@/components/Common/CopyToClipboard';
-import ScreenHeader from '@/components/Common/ScreenHeader';
 import { usePrivateKeyVisibility } from './settings_scripts';
 
 const Settings: React.FC = () => {

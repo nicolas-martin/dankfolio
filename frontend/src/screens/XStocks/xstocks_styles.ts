@@ -11,23 +11,6 @@ export const useStyles = () => {
 			container: {
 				flex: 1,
 			},
-			fixedHeader: {
-				backgroundColor: theme.colors.background,
-				paddingBottom: theme.spacing.lg,
-				paddingHorizontal: theme.spacing.xl,
-				paddingTop: theme.spacing.xl,
-			},
-			listWrapper: {
-				backgroundColor: colors.surface,
-				borderRadius: theme.borderRadius.lg,
-				elevation: 2,
-				marginBottom: theme.spacing.lg,
-				marginHorizontal: theme.spacing.lg,
-				shadowColor: theme.shadows.sm.shadowColor,
-				shadowOffset: theme.shadows.sm.shadowOffset,
-				shadowOpacity: 0.08,
-				shadowRadius: theme.spacing.xs,
-			},
 			emptyContainer: {
 				alignItems: 'center',
 				flex: 1,
@@ -42,6 +25,12 @@ export const useStyles = () => {
 				color: colors.onSurfaceVariant,
 				fontSize: 16,
 				marginBottom: 16,
+			},
+			fixedHeader: {
+				backgroundColor: theme.colors.background,
+				paddingBottom: theme.spacing.lg,
+				paddingHorizontal: theme.spacing.xl,
+				paddingTop: theme.spacing.xl,
 			},
 			headerTitle: {
 				color: theme.colors.onSurface,
@@ -64,6 +53,17 @@ export const useStyles = () => {
 			},
 			listContainer: {
 				paddingBottom: 20,
+			},
+			listWrapper: {
+				backgroundColor: colors.surface,
+				borderRadius: theme.borderRadius.lg,
+				elevation: 2,
+				marginBottom: theme.spacing.lg,
+				marginHorizontal: theme.spacing.lg,
+				shadowColor: theme.shadows.sm.shadowColor,
+				shadowOffset: theme.shadows.sm.shadowOffset,
+				shadowOpacity: 0.08,
+				shadowRadius: theme.spacing.xs,
 			},
 			loadingContainer: {
 				alignItems: 'center',
