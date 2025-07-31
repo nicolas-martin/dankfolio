@@ -222,8 +222,8 @@ export const useStyles = () => {
 				backgroundColor: theme.colors.surface,
 				borderBottomColor: theme.colors.surfaceVariant,
 				borderBottomWidth: 1,
-				borderTopLeftRadius: theme.spacing.xl,
-				borderTopRightRadius: theme.spacing.xl,
+				borderTopLeftRadius: theme.borderRadius.lg,
+				borderTopRightRadius: theme.borderRadius.lg,
 				elevation: 0,
 				shadowOpacity: 0,
 			},
@@ -235,6 +235,7 @@ export const useStyles = () => {
 			},
 			tabContentContainer: {
 				backgroundColor: theme.colors.surface,
+				flex: 1,
 			},
 			tabIndicator: {
 				backgroundColor: theme.colors.primary,

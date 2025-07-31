@@ -210,7 +210,7 @@ const TransactionsList = () => {
 	}
 
 	return (
-		<ScrollView 
+		<ScrollView
 			style={styles.container}
 			refreshControl={
 				<RefreshControl

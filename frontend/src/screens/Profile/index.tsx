@@ -7,7 +7,6 @@ import { TabView, TabBar } from 'react-native-tab-view';
 import { handleTokenPress, formatAddress, sortTokensByValue, createCoinCardProps } from './profile_scripts';
 import CopyToClipboard from '@/components/Common/CopyToClipboard';
 import { usePortfolioStore } from '@store/portfolio';
-import { useTransactionsStore } from '@/store/transactions';
 import { useStyles } from './profile_styles';
 import TokenListCard from '@/components/Home/TokenListCard';
 import TransactionsList from '@/components/Profile/TransactionsList';
@@ -43,8 +42,6 @@ const Profile = () => {
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed ProfileScreen' });
 	}, []);
-
-	// PnL tab now fetches its own data when viewed
 
 	const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -300,7 +297,7 @@ const Profile = () => {
 						}}
 						onIndexChange={setIndex}
 						initialLayout={{ width: layout.width }}
-						swipeEnabled={false}
+						swipeEnabled={true}
 						style={styles.tabContent}
 					/>
 				</View>

@@ -70,27 +70,30 @@ const XStocks: React.FC = () => {
 					<ActivityIndicator size="large" color={styles.loadingIndicator.color} />
 				</View>
 			) : (
-				<FlatList
-					data={xStocksTokens}
-					renderItem={renderItem}
-					keyExtractor={(item) => item.address}
-					refreshControl={
-						<RefreshControl
-							refreshing={refreshing}
-							onRefresh={handleRefresh}
-							tintColor={styles.loadingIndicator.color}
-						/>
-					}
-					ListEmptyComponent={
-						<View style={styles.emptyContainer}>
-							<Text style={styles.emptyText}>No xStocks tokens found</Text>
-							<TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
-								<Text style={styles.retryButtonText}>Retry</Text>
-							</TouchableOpacity>
-						</View>
-					}
-					contentContainerStyle={xStocksTokens.length === 0 ? styles.emptyListContainer : styles.listContainer}
-				/>
+				<View style={styles.listWrapper}>
+					<FlatList
+						data={xStocksTokens}
+						renderItem={renderItem}
+						keyExtractor={(item) => item.address}
+						ItemSeparatorComponent={() => <View style={styles.separator} />}
+						refreshControl={
+							<RefreshControl
+								refreshing={refreshing}
+								onRefresh={handleRefresh}
+								tintColor={styles.loadingIndicator.color}
+							/>
+						}
+						ListEmptyComponent={
+							<View style={styles.emptyContainer}>
+								<Text style={styles.emptyText}>No xStocks tokens found</Text>
+								<TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+									<Text style={styles.retryButtonText}>Retry</Text>
+								</TouchableOpacity>
+							</View>
+						}
+						contentContainerStyle={xStocksTokens.length === 0 ? styles.emptyListContainer : styles.listContainer}
+					/>
+				</View>
 			)}
 			</View>
 		</SafeAreaView>

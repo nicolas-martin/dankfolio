@@ -10,7 +10,17 @@ export const useStyles = () => {
 		const styles = StyleSheet.create({
 			container: {
 				flex: 1,
-				paddingHorizontal: theme.spacing.lg,
+			},
+			listWrapper: {
+				backgroundColor: colors.surface,
+				borderRadius: theme.borderRadius.lg,
+				elevation: 2,
+				marginBottom: theme.spacing.lg,
+				marginHorizontal: theme.spacing.lg,
+				shadowColor: theme.shadows.sm.shadowColor,
+				shadowOffset: theme.shadows.sm.shadowOffset,
+				shadowOpacity: 0.08,
+				shadowRadius: theme.spacing.xs,
 			},
 			emptyContainer: {
 				alignItems: 'center',
@@ -37,8 +47,6 @@ export const useStyles = () => {
 			},
 			itemContainer: {
 				backgroundColor: colors.surface,
-				borderRadius: 12,
-				marginVertical: 4,
 				padding: 16,
 			},
 			itemContent: {
@@ -112,6 +120,11 @@ export const useStyles = () => {
 			safeArea: {
 				backgroundColor: theme.colors.background,
 				flex: 1,
+			},
+			separator: {
+				backgroundColor: colors.outline,
+				height: StyleSheet.hairlineWidth,
+				marginHorizontal: 16,
 			},
 			symbol: {
 				color: theme.colors.onSurface,
