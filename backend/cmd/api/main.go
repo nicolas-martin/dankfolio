@@ -35,9 +35,11 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/telemetry/otel"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/imageproxy"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
+	s3client "github.com/nicolas-martin/dankfolio/backend/internal/clients/s3"
 	"github.com/nicolas-martin/dankfolio/backend/internal/telemetry/trademetrics"
 )
 
@@ -221,6 +223,20 @@ func main() {
 	}
 	slog.Info("Coin cache initialized successfully.")
 
+	// Initialize S3 client for image proxy (optional)
+	var imageProxyService *imageproxy.Service
+	if os.Getenv("S3_ACCESS_KEY_ID") != "" {
+		s3Client, err := s3client.NewClientFromEnv()
+		if err != nil {
+			slog.Warn("Failed to initialize S3 client for image proxy", "error", err)
+		} else {
+			imageProxyService = imageproxy.NewService(s3Client)
+			slog.Info("Image proxy service initialized with S3 backend")
+		}
+	} else {
+		slog.Info("S3 not configured, image proxy service disabled")
+	}
+
 	// Initialize coin service with all dependencies including cache
 	coinService := coin.NewService(
 		coinServiceConfig,
@@ -231,6 +247,7 @@ func main() {
 		apiTracker,     // Pass existing apiTracker
 		offchainClient, // Pass existing offchainClient
 		coinCache,      // Pass the initialized coinCache
+		imageProxyService, // Pass the image proxy service (can be nil)
 	)
 	slog.Info("Coin service initialized.")
 

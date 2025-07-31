@@ -263,6 +263,9 @@ func (s *Service) fetchNewCoin(ctx context.Context, address string) (*model.Coin
 		return nil, fmt.Errorf("token contains inappropriate content after enrichment: %s", coin.Name)
 	}
 
+	// Process logo through image proxy to upload to S3
+	s.processLogoURL(ctx, coin)
+
 	// Save to database
 	if createErr := s.store.Coins().Create(ctx, coin); createErr != nil {
 		slog.WarnContext(ctx, "Failed to create new coin in database", slog.String("address", coin.Address), slog.Any("error", createErr))
@@ -364,6 +367,8 @@ func (s *Service) updateCoin(ctx context.Context, coin *model.Coin) (*model.Coin
 	// Update logo if it's available and we don't have one
 	if data.LogoURI != "" && coin.LogoURI == "" {
 		coin.LogoURI = data.LogoURI
+		// Process the new logo through image proxy
+		s.processLogoURL(ctx, coin)
 	}
 
 

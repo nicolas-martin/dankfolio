@@ -11,6 +11,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/tracker"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/imageproxy"
 )
 
 const (
@@ -33,6 +34,7 @@ type Service struct {
 	cache          CoinCache
 	naughtyWordSet map[string]struct{}
 	xstocksConfig  *XStocksConfig
+	imageProxy     *imageproxy.Service
 
 	// Mutexes to prevent duplicate API calls
 	trendingMutex   sync.Mutex
@@ -50,6 +52,7 @@ func NewService(
 	apiTracker *tracker.APITracker,
 	offchainClient offchain.ClientAPI,
 	coinCache CoinCache,
+	imageProxy *imageproxy.Service,
 ) *Service {
 	service := &Service{
 		config:         config,
@@ -61,6 +64,7 @@ func NewService(
 		apiTracker:     apiTracker,
 		cache:          coinCache,
 		naughtyWordSet: make(map[string]struct{}),
+		imageProxy:     imageProxy,
 	}
 	service.fetcherCtx, service.fetcherCancel = context.WithCancel(context.Background())
 

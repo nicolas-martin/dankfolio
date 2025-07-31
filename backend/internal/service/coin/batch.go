@@ -354,6 +354,9 @@ func (s *Service) batchCreateCoinsInDB(ctx context.Context, coins []model.Coin) 
 	var coinsToCreate []model.Coin
 	var coinsToUpdate []model.Coin
 
+	// Process logo URLs through image proxy before saving
+	s.processLogoURLs(ctx, coins)
+
 	// Check which coins already exist
 	for _, coin := range coins {
 		existingCoin, getErr := s.store.Coins().GetByField(ctx, "address", coin.Address)
