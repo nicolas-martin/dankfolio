@@ -62,6 +62,9 @@ module.exports = ({ config }) => ({
 		googleServicesFile: "./GoogleService-Info.plist",
 		infoPlist: {
 			ITSAppUsesNonExemptEncryption: false
+		},
+		entitlements: {
+			"com.apple.developer.devicecheck.appattest-environment": "production"
 		}
 	},
 	android: {
