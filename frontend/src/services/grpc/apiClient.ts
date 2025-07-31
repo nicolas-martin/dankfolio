@@ -75,13 +75,25 @@ const authInterceptor: Interceptor = (next) => async (req) => {
 			logger.info(`🔐 Adding Firebase App Check token to request: ${req.url}`);
 			req.header.set('X-Firebase-AppCheck', appCheckToken.token);
 		} else {
-			logger.warn(`🔐 No Firebase App Check token available for request to: ${req.url}`);
+			logger.error(`🚫 No Firebase App Check token available for request to: ${req.url}`);
+			logger.error('🚫 Failing request immediately to prevent cascade errors');
+
+			// FAIL FAST - Don't let request continue without auth token
+			throw new Error('Authentication service temporarily unavailable. Please try again.');
 		}
 	} catch (error: unknown) {
 		if (error instanceof Error) {
 			logger.error('❌ Failed to get Firebase App Check token for request:', error.message);
+			logger.error('🚫 Failing request immediately to prevent cascade errors');
+
+			// FAIL FAST - Don't let request continue without auth
+			throw new Error('Authentication service temporarily unavailable. Please try again.');
 		} else {
 			logger.error("An unknown error occurred while getting Firebase App Check token:", error);
+			logger.error('🚫 Failing request immediately to prevent cascade errors');
+
+			// FAIL FAST - Don't let request continue without auth  
+			throw new Error('Authentication service temporarily unavailable. Please try again.');
 		}
 	}
 
