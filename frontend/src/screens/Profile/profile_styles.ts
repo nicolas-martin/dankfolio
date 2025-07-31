@@ -242,7 +242,7 @@ export const useStyles = () => {
 				paddingVertical: theme.spacing.md,
 			},
 			tabLabel: {
-				fontSize: theme.typography.fontSize.xs,
+				fontSize: 9,
 				fontWeight: '600',
 			},
 			tabLabelActive: {
