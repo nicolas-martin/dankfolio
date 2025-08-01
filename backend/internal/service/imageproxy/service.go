@@ -80,9 +80,8 @@ func (s *Service) ProcessAndUploadImage(ctx context.Context, imageURL string, mi
 
 // generateS3Key generates a consistent S3 key for a token image
 func (s *Service) generateS3Key(mintAddress string) string {
-	// Use a simple structure: tokens/{mint_address}/logo.webp
-	// In the future, we can add size variants like logo-small.webp, logo-medium.webp
-	return fmt.Sprintf("tokens/%s/logo.webp", mintAddress)
+	// Use a simple structure: tokens/{mint_address}.png
+	return fmt.Sprintf("tokens/%s.png", mintAddress)
 }
 
 // resolveImageURL resolves IPFS and other URLs to HTTP URLs

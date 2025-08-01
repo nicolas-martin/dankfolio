@@ -1,6 +1,7 @@
 package s3
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -12,7 +13,22 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/smithy-go/middleware"
+	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
+
+// withContentMD5 removes all flexible checksum procedures from an operation
+// This is needed for Linode S3 compatibility
+func withContentMD5(o *s3.Options) {
+	o.APIOptions = append(o.APIOptions, func(stack *middleware.Stack) error {
+		stack.Initialize.Remove("AWSChecksum:SetupInputContext")
+		stack.Build.Remove("AWSChecksum:RequestMetricsTracking")
+		stack.Finalize.Remove("AWSChecksum:ComputeInputPayloadChecksum")
+		stack.Finalize.Remove("addInputChecksumTrailer")
+		return smithyhttp.AddContentChecksumMiddleware(stack)
+	})
+}
 
 type Client struct {
 	s3Client       *s3.Client
@@ -31,23 +47,9 @@ type Config struct {
 
 // NewClient creates a new S3 client configured for Linode Object Storage
 func NewClient(cfg Config) (*Client, error) {
-	// Create custom resolver for Linode endpoint
-	customResolver := aws.EndpointResolverWithOptionsFunc(
-		func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-			if service == s3.ServiceID {
-				return aws.Endpoint{
-					URL:               cfg.Endpoint,
-					SigningRegion:     cfg.Region,
-					HostnameImmutable: true,
-				}, nil
-			}
-			return aws.Endpoint{}, fmt.Errorf("unknown endpoint requested")
-		})
-
-	// Load AWS config with custom endpoint
+	// Load AWS config with credentials
 	awsCfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(cfg.Region),
-		config.WithEndpointResolverWithOptions(customResolver),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
 			cfg.AccessKeyID,
 			cfg.SecretAccessKey,
@@ -58,9 +60,11 @@ func NewClient(cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}
 
-	// Create S3 client
+	// Create S3 client with custom endpoint
 	s3Client := s3.NewFromConfig(awsCfg, func(o *s3.Options) {
-		o.UsePathStyle = true // Required for Linode Object Storage
+		o.BaseEndpoint = aws.String(cfg.Endpoint)
+		o.UsePathStyle = true
+		o.Region = cfg.Region
 	})
 
 	return &Client{
@@ -72,14 +76,30 @@ func NewClient(cfg Config) (*Client, error) {
 
 // UploadImage uploads an image to S3 and returns the public URL
 func (c *Client) UploadImage(ctx context.Context, key string, data io.Reader, contentType string) (string, error) {
-	_, err := c.s3Client.PutObject(ctx, &s3.PutObjectInput{
+	// Buffer the entire content to ensure proper content length
+	buf := new(bytes.Buffer)
+	_, err := io.Copy(buf, data)
+	if err != nil {
+		return "", fmt.Errorf("failed to buffer image data: %w", err)
+	}
+	
+	input := &s3.PutObjectInput{
 		Bucket:       aws.String(c.bucketName),
 		Key:          aws.String(key),
-		Body:         data,
+		Body:         bytes.NewReader(buf.Bytes()),
 		ContentType:  aws.String(contentType),
-		ACL:          "public-read", // Make the object publicly readable
-		CacheControl: aws.String("public, max-age=31536000, immutable"), // Cache for 1 year with CDN optimization
-	})
+		ContentLength: aws.Int64(int64(buf.Len())),
+		ACL:          types.ObjectCannedACLPublicRead, // Make object publicly readable
+	}
+	
+	slog.Debug("Uploading to S3", 
+		"bucket", c.bucketName,
+		"key", key,
+		"contentType", contentType,
+		"size", buf.Len())
+	
+	// Use withContentMD5 to disable new checksum behavior for Linode compatibility
+	_, err = c.s3Client.PutObject(ctx, input, withContentMD5)
 	if err != nil {
 		return "", fmt.Errorf("failed to upload to S3: %w", err)
 	}
