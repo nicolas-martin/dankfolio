@@ -119,6 +119,9 @@ func (s *Service) searchCoinsViaBirdeye(ctx context.Context, query string, limit
 			LastUpdated:           time.Now().Format(time.RFC3339),
 		}
 
+		// Process logo through image proxy to upload to S3
+		s.processLogoURL(ctx, &coin)
+
 		// Check if coin exists in DB and update/insert as needed
 		existingCoin, err := s.store.Coins().GetByField(ctx, "address", token.Address)
 		if err == nil {

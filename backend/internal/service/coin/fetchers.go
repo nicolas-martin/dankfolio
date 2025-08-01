@@ -147,6 +147,9 @@ func (s *Service) FetchAndStoreTrendingTokens(ctx context.Context) error {
 				currentCoin := coin
 				// Add "trending" tag
 				currentCoin.Tags = append(currentCoin.Tags, "trending")
+				
+				// Process logo through image proxy to upload to S3
+				s.processLogoURL(ctx, &currentCoin)
 
 				existingCoin, getErr := txStore.Coins().GetByField(ctx, "address", currentCoin.Address)
 				if getErr == nil && existingCoin != nil {
@@ -248,6 +251,9 @@ func (s *Service) FetchAndStoreTopGainersTokens(ctx context.Context) error {
 				currentCoin := coin
 				// Add "top-gainer" tag
 				currentCoin.Tags = append(currentCoin.Tags, "top-gainer")
+				
+				// Process logo through image proxy to upload to S3
+				s.processLogoURL(ctx, &currentCoin)
 
 				existingCoin, getErr := txStore.Coins().GetByField(ctx, "address", currentCoin.Address)
 				if getErr == nil && existingCoin != nil {
@@ -391,6 +397,9 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 				if !isNewCoinTagPresent {
 					currentCoin.Tags = append(currentCoin.Tags, "new-coin")
 				}
+				
+				// Process logo through image proxy to upload to S3
+				s.processLogoURL(ctx, &currentCoin)
 
 				existingCoin, getErr := txStore.Coins().GetByField(ctx, "address", currentCoin.Address)
 				if getErr == nil && existingCoin != nil {

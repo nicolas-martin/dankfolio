@@ -72,6 +72,9 @@ func (s *Service) ensureNativeSolCoin(ctx context.Context) error {
 			needsUpdate = true
 		}
 		
+		// Process logo through image proxy to upload to S3
+		s.processLogoURL(ctx, existingNativeSol)
+		
 		if err := s.store.Coins().Update(ctx, existingNativeSol); err != nil {
 			return fmt.Errorf("failed to update native SOL: %w", err)
 		}
@@ -106,6 +109,9 @@ func (s *Service) ensureNativeSolCoin(ctx context.Context) error {
 		LastUpdated:            time.Now().Format(time.RFC3339),
 		Tags:                   []string{"native", "sol"},
 	}
+
+	// Process logo through image proxy to upload to S3
+	s.processLogoURL(ctx, nativeSol)
 
 	if err := s.store.Coins().Create(ctx, nativeSol); err != nil {
 		return fmt.Errorf("failed to create native SOL coin: %w", err)
@@ -181,6 +187,9 @@ func (s *Service) updateNativeSolPrice(ctx context.Context, nativeSol *model.Coi
 	if nativeSol.LogoURI == "" && wsolCoin.LogoURI != "" {
 		nativeSol.LogoURI = wsolCoin.LogoURI
 	}
+
+	// Process logo through image proxy to upload to S3
+	s.processLogoURL(ctx, nativeSol)
 
 	if err := s.store.Coins().Update(ctx, nativeSol); err != nil {
 		slog.Warn("Failed to update native SOL price", "error", err)

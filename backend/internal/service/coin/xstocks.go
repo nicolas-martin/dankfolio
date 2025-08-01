@@ -163,6 +163,9 @@ func (s *Service) initializeXStocks(ctx context.Context) error {
 				LastUpdated:            time.Now().Format(time.RFC3339),
 			}
 
+			// Process logo through image proxy to upload to S3
+			s.processLogoURL(ctx, coin)
+
 			if err := s.store.Coins().Create(ctx, coin); err != nil {
 				slog.ErrorContext(ctx, "Failed to create xStock coin",
 					"symbol", token.Symbol,
@@ -256,6 +259,9 @@ func (s *Service) EnrichXStocksData(ctx context.Context) error {
 			FDV:                    data.FDV,
 			LastUpdated:            time.Now().Format(time.RFC3339),
 		}
+
+		// Process logo through image proxy to upload to S3
+		s.processLogoURL(ctx, &updatedCoin)
 
 		if err := s.store.Coins().Update(ctx, &updatedCoin); err != nil {
 			slog.ErrorContext(ctx, "Failed to update xStock with Birdeye data",
