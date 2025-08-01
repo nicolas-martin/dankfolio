@@ -40,6 +40,9 @@ type Service struct {
 	trendingMutex   sync.Mutex
 	newCoinsMutex   sync.Mutex
 	topGainersMutex sync.Mutex
+	
+	// Rate limiter for background image uploads
+	imageUploadLimiter chan struct{}
 }
 
 // NewService creates a new CoinService instance
@@ -65,6 +68,7 @@ func NewService(
 		cache:          coinCache,
 		naughtyWordSet: make(map[string]struct{}),
 		imageProxy:     imageProxy,
+		imageUploadLimiter: make(chan struct{}, 3), // Limit to 3 concurrent uploads
 	}
 	service.fetcherCtx, service.fetcherCancel = context.WithCancel(context.Background())
 
