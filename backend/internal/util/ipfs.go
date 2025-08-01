@@ -7,14 +7,11 @@ import (
 
 var DefaultCIDv0Gateways = []string{
 	"https://gateway.pinata.cloud/ipfs/", // Pinata is generally more reliable
-	"https://dweb.link/ipfs/",            // Protocol Labs' newer gateway
-	"https://ipfs.io/ipfs/",              // Keep as fallback, but not first choice
-
 }
 
 // TryNextGatewayOnFailure determines if we should try the next gateway when one fails
 // Set this to false to disable automatic fallback
-var TryNextGatewayOnFailure = true
+var TryNextGatewayOnFailure = false
 
 func StandardizeIpfsUrl(iconUrlInput string) string {
 	if iconUrlInput == "" {

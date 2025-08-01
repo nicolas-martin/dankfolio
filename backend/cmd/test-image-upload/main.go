@@ -34,12 +34,12 @@ func main() {
 
 	// Default test values if not provided
 	if *imageURL == "" {
-		// Use a simple test image from a reliable source
-		*imageURL = "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
+		// Use an IPFS URL for testing
+		*imageURL = "ipfs://QmYw8bZiAqLG8CZvhE6UYLrJgV5hSgMvQFchX5qzRPPKJE"
 	}
 	if *mintAddress == "" {
-		// Example mint address (Wrapped SOL)
-		*mintAddress = "So11111111111111111111111111111111111111112"
+		// Example mint address
+		*mintAddress = "TestIPFS" + fmt.Sprintf("%d", time.Now().Unix())
 	}
 
 	fmt.Printf("🧪 Testing Image to S3 Upload\n")
@@ -63,7 +63,7 @@ func main() {
 
 	// Process and upload the image
 	fmt.Println("\n🚀 Processing and uploading image...")
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second) // Increased timeout for IPFS
 	defer cancel()
 
 	startTime := time.Now()
