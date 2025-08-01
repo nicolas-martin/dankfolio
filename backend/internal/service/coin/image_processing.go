@@ -35,9 +35,10 @@ func (s *Service) processLogoURL(ctx context.Context, coin *model.Coin) {
 	originalURL := coin.LogoURI
 	
 	// Immediately set the S3 URL (predictable based on mint address)
+	// This URL will work once the image is uploaded
 	coin.LogoURI = s.imageProxy.GetS3URL(coin.Address)
 	
-	// Process upload asynchronously
+	// Try to download and upload asynchronously
 	go func() {
 		// Acquire rate limit token
 		s.imageUploadLimiter <- struct{}{}
@@ -49,17 +50,18 @@ func (s *Service) processLogoURL(ctx context.Context, coin *model.Coin) {
 		// Use background context so it's not cancelled with the request
 		bgCtx := context.Background()
 		
-		// Try to upload with retries and fallback gateways
+		// Try to download from IPFS and upload to S3
 		err := s.uploadLogoWithFallback(bgCtx, originalURL, coin.Address, coin.Symbol)
 		if err != nil {
-			slog.Error("Failed to upload logo after all retries",
+			slog.Error("Failed to download and upload logo after all retries",
 				"coin", coin.Symbol,
 				"address", coin.Address,
 				"originalURL", originalURL,
 				"error", err)
 			
-			// Update to placeholder if all attempts failed
-			s.updateLogoToPlaceholder(bgCtx, coin.Address)
+			// If download failed, transform to Pinata gateway URL for IPFS URLs
+			// This allows the frontend to try fetching directly later
+			s.updateLogoToPinataGateway(bgCtx, coin.Address, originalURL)
 		}
 	}()
 }
@@ -77,7 +79,7 @@ func (s *Service) processLogoURLs(ctx context.Context, coins []model.Coin) {
 	}
 }
 
-// uploadLogoWithFallback tries to upload a logo with fallback IPFS gateways
+// uploadLogoWithFallback tries to download a logo from IPFS (with fallback gateways) and upload to S3
 func (s *Service) uploadLogoWithFallback(ctx context.Context, originalURL, mintAddress, symbol string) error {
 	// If it's already a Pinata URL, try it first
 	if !strings.Contains(originalURL, "gateway.pinata.cloud") && strings.Contains(originalURL, "ipfs") {
@@ -152,22 +154,34 @@ func (s *Service) getPlaceholderURL() string {
 	return s.imageProxy.GetS3URL("placeholder")
 }
 
-// updateLogoToPlaceholder updates a coin's logo to the placeholder
-func (s *Service) updateLogoToPlaceholder(ctx context.Context, mintAddress string) {
-	coin, err := s.store.Coins().GetByField(ctx, "address", mintAddress)
-	if err != nil {
-		slog.Warn("Failed to get coin for placeholder update",
-			"address", mintAddress,
-			"error", err)
-		return
+// updateLogoToPinataGateway updates a coin's logo to use Pinata gateway URL
+func (s *Service) updateLogoToPinataGateway(ctx context.Context, mintAddress, originalURL string) {
+	// If it's an IPFS URL, transform it to Pinata gateway
+	if strings.Contains(originalURL, "ipfs") || strings.Contains(originalURL, "IPFS") {
+		cid := extractIPFSCID(originalURL)
+		if cid != "" {
+			coin, err := s.store.Coins().GetByField(ctx, "address", mintAddress)
+			if err != nil {
+				slog.Warn("Failed to get coin for Pinata gateway update",
+					"address", mintAddress,
+					"error", err)
+				return
+			}
+			
+			// Update to Pinata gateway URL
+			coin.LogoURI = "https://gateway.pinata.cloud/ipfs/" + cid
+			if err := s.store.Coins().Update(ctx, coin); err != nil {
+				slog.Warn("Failed to update coin logo to Pinata gateway",
+					"address", mintAddress,
+					"error", err)
+			} else {
+				slog.Info("Updated coin logo to Pinata gateway URL",
+					"address", mintAddress,
+					"cid", cid)
+			}
+		}
 	}
-	
-	coin.LogoURI = s.getPlaceholderURL()
-	if err := s.store.Coins().Update(ctx, coin); err != nil {
-		slog.Warn("Failed to update coin logo to placeholder",
-			"address", mintAddress,
-			"error", err)
-	}
+	// If not an IPFS URL, leave it as-is (could be a regular HTTP URL)
 }
 
 // extractIPFSCID extracts the CID from various IPFS URL formats
