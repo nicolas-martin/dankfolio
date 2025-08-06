@@ -34,12 +34,12 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/telemetry/otel"
 
+	s3client "github.com/nicolas-martin/dankfolio/backend/internal/clients/s3"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/imageproxy"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
-	s3client "github.com/nicolas-martin/dankfolio/backend/internal/clients/s3"
 	"github.com/nicolas-martin/dankfolio/backend/internal/telemetry/trademetrics"
 )
 
@@ -242,11 +242,11 @@ func main() {
 		coinServiceConfig,
 		jupiterClient,
 		store,
-		solanaClient,   // This is the chainClient
-		birdeyeClient,  // This is the birdeyeClient
-		apiTracker,     // Pass existing apiTracker
-		offchainClient, // Pass existing offchainClient
-		coinCache,      // Pass the initialized coinCache
+		solanaClient,      // This is the chainClient
+		birdeyeClient,     // This is the birdeyeClient
+		apiTracker,        // Pass existing apiTracker
+		offchainClient,    // Pass existing offchainClient
+		coinCache,         // Pass the initialized coinCache
 		imageProxyService, // Pass the image proxy service (can be nil)
 	)
 	slog.Info("Coin service initialized.")
