@@ -13,7 +13,7 @@ interface EnvVariables {
 	devAppCheckToken?: string; // For development/simulator only
 	// firebaseAppCheckDebugTokenAndroid: string;// For development only
 	// firebaseAppCheckDebugTokenIos: string;// For development only
-	testPrivateKey?: string; // For development only
+	testPrivateKey?: string; // For development only - consider using secure storage in production
 	loadDebugWallet?: boolean; // For development only, to load a debug wallet
 	e2eMockingEnabled?: boolean; // For E2E testing, to enable mocking
 }

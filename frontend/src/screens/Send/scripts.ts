@@ -228,12 +228,12 @@ export const handleTokenTransfer = async (formData: TokenTransferFormData): Prom
 			keys.privateKey
 		);
 
-		// 🔍 LOG SIGNED TRANSACTION FOR TESTING
-		console.log('🔍 SIGNED TRANSACTION CAPTURED:');
-		console.log('📋 Signed Transaction Base64:', signedTransaction);
-		console.log('📋 Signed Transaction Length:', signedTransaction.length);
-		console.log('📋 Public Key Used:', keys.publicKey);
-		console.log('📋 Copy this for tests: const CAPTURED_SIGNED_TX = \'' + signedTransaction + '\';');
+		// Log transaction details for debugging (no sensitive data)
+		if (__DEV__) {
+			console.log('🔍 Transaction signed successfully');
+			console.log('📋 Transaction Length:', signedTransaction.length);
+			console.log('📋 Public Key:', keys.publicKey);
+		}
 
 		const submitResponse = await grpcApi.submitCoinTransfer({
 			signedTransaction,

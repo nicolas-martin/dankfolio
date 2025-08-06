@@ -32,10 +32,7 @@ export const getKeypairFromPrivateKey = (privateKey: Base58PrivateKey): Keypair 
 			throw new Error(`Invalid private key length: ${secretKey.length} bytes. Expected 64 bytes.`);
 		}
 		const keypair = Keypair.fromSecretKey(secretKey);
-		// console.log('🔐 Created keypair from Base58 private key:', { // Sensitive data removed
-		// 	publicKey: keypair.publicKey.toString(),
-		// 	secretKeyLength: keypair.secretKey.length
-		// });
+		// SECURITY: Never log private keys or derived keypair details
 		return keypair;
 	} catch (error: unknown) {
 		// console.error('❌ Error creating keypair:', error); // Sensitive data removed
@@ -223,17 +220,13 @@ export const signTransferTransaction = async (
 		log.log('📦 Transaction buffer length:', transactionBuf.length);
 
 		if (env.appEnv === "development") {
-			// 🔍 LOG TRANSACTION DETAILS FOR TESTING
+			// 🔍 LOG TRANSACTION DETAILS FOR TESTING (without sensitive data)
 			console.log('🔍 TRANSACTION SIGNING DETAILS:');
-			console.log('📋 Input Transaction:', unsignedTransaction);
+			console.log('📋 Input Transaction Length:', unsignedTransaction.length);
 			console.log('📋 Buffer Length:', transactionBuf.length);
 			console.log('📋 User Public Key:', userPublicKey);
-			console.log('📋 Keypair Public Key:', keypair.publicKey.toString());
-
-			// ⚠️ TESTING ONLY - LOG PRIVATE KEY (REMOVE IN PRODUCTION!)
-			console.log('🔐 PRIVATE KEY FOR TESTING (REMOVE IN PRODUCTION!):', privateKey);
-			console.log('🔐 Secret Key Length:', keypair.secretKey.length);
-			console.log('🔐 Copy for tests: const CAPTURED_PRIVATE_KEY = \'' + privateKey + '\' as Base58PrivateKey;');
+			console.log('📋 Keypair Public Key Match:', keypair.publicKey.toString() === userPublicKey);
+			// SECURITY: Never log private keys or secret keys
 		}
 
 		// Sign the transaction

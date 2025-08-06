@@ -101,7 +101,12 @@ func (s *walletServiceHandler) PrepareTransfer(
 			"from", req.Msg.FromAddress,
 			"to", req.Msg.ToAddress,
 			"error", err)
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to prepare transfer: %w", err))
+		// SECURITY: Don't expose internal error details
+		// Check for specific user-facing errors
+		if strings.Contains(err.Error(), "insufficient") {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, fmt.Errorf("insufficient funds for transfer"))
+		}
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to prepare transfer"))
 	}
 
 	slog.Debug("Transfer transaction prepared successfully")
@@ -129,7 +134,16 @@ func (s *walletServiceHandler) SubmitTransfer(
 	txHash, err := s.walletService.SubmitTransfer(ctx, transferRequest)
 	if err != nil {
 		slog.Error("Failed to submit transfer", "error", err)
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to submit transfer: %w", err))
+		// SECURITY: Don't expose internal error details
+		// Check for specific user-facing errors
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "invalid signature") {
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid transaction signature"))
+		}
+		if strings.Contains(errMsg, "expired") {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, fmt.Errorf("transaction expired, please retry"))
+		}
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to submit transfer"))
 	}
 
 	slog.Info("Transfer submitted successfully", "tx_hash", txHash)
@@ -153,7 +167,8 @@ func (s *walletServiceHandler) GetPortfolioPnL(
 	totalValue, totalCostBasis, totalUnrealizedPnL, totalPnLPercentage, totalHoldings, tokenPnLs, err := s.walletService.GetPortfolioPnL(ctx, req.Msg.WalletAddress)
 	if err != nil {
 		slog.Error("Failed to get portfolio PnL", "wallet_address", req.Msg.WalletAddress, "error", err)
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get portfolio PnL: %w", err))
+		// SECURITY: Don't expose internal error details
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get portfolio data"))
 	}
 
 	// Convert tokenPnLs to protobuf format

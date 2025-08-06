@@ -32,6 +32,7 @@ type Server struct {
 	devAppCheckToken string
 	tracer           trace.Tracer
 	meter            metric.Meter
+	rateLimiter      *middleware.RateLimiter
 }
 
 // NewServer creates a new Server instance
@@ -45,6 +46,10 @@ func NewServer(
 	env string,
 	devAppCheckToken string,
 ) *Server {
+	// Create default rate limiter
+	// 10 requests per second with burst of 20
+	rateLimiter := middleware.NewRateLimiter(10.0, 20)
+	
 	return &Server{
 		mux:              http.NewServeMux(),
 		coinService:      coinService,
@@ -55,7 +60,13 @@ func NewServer(
 		appCheckClient:   appCheckClient,
 		env:              env,
 		devAppCheckToken: devAppCheckToken,
+		rateLimiter:      rateLimiter,
 	}
+}
+
+// SetRateLimiter allows overriding the default rate limiter
+func (s *Server) SetRateLimiter(rl *middleware.RateLimiter) {
+	s.rateLimiter = rl
 }
 
 // SetOtel sets the OpenTelemetry tracer and meter for the server
@@ -134,7 +145,14 @@ func (s *Server) Start(port int) error {
 	log.Printf("Starting Connect RPC server on %s", addr)
 
 	// Wrap the mux with CORS middleware
-	handler = middleware.CORSMiddleware(s.mux)
+	handler := middleware.CORSMiddleware(s.mux)
+	
+	// Add rate limiting as the outermost middleware
+	// This ensures rate limiting is checked before any other processing
+	if s.rateLimiter != nil {
+		handler = s.rateLimiter.Middleware(handler)
+		log.Printf("Rate limiting enabled: 10 req/s per IP with burst of 20")
+	}
 
 	// Use h2c for HTTP/2 without TLS
 	return http.ListenAndServe(addr, h2c.NewHandler(handler, &http2.Server{}))

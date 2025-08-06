@@ -6,11 +6,39 @@ import { logger } from '@/utils/logger';
 import { storeCredentials } from './keychainService';
 import { base64ToBase58PrivateKey, Base58PrivateKey } from './cryptoUtils';
 
+/**
+ * Initializes a debug wallet for testing purposes.
+ * NOTE: This uses environment variables for simplicity in development.
+ * For production systems, consider using a secure key management service.
+ */
 export async function initializeDebugWallet(): Promise<Keypair | null> {
 	try {
 		logger.log('Attempting to load debug wallet via initializeDebugWallet...');
+		
+		// Check if we should load a debug wallet
+		if (!env.loadDebugWallet) {
+			logger.log('Debug wallet loading is disabled');
+			return null;
+		}
+		
 		if (!env.testPrivateKey) {
-			throw new Error('TEST_PRIVATE_KEY is not set in the environment variables.');
+			// For unit tests that don't need funded wallets, generate ephemeral
+			if (env.appEnv === 'test') {
+				logger.log('Generating ephemeral test wallet for unit tests');
+				const keypair = Keypair.generate();
+				
+				// Store with dummy mnemonic for consistency
+				const base58PrivateKey = bs58.encode(keypair.secretKey) as any; // Cast needed for branded type
+				await storeCredentials(base58PrivateKey, 'EPHEMERAL_TEST_WALLET');
+				
+				logger.info('Ephemeral test wallet initialized', { 
+					publicKey: keypair.publicKey.toBase58() 
+				});
+				return keypair;
+			}
+			
+			logger.warn('TEST_PRIVATE_KEY is not set in the environment variables.');
+			return null;
 		}
 
 		logger.log('Decoding TEST_PRIVATE_KEY as Base64 for debug wallet...');
