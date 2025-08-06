@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/wallet.proto.
  */
 export const file_dankfolio_v1_wallet: GenFile = /*@__PURE__*/
-  fileDesc("ChlkYW5rZm9saW8vdjEvd2FsbGV0LnByb3RvEgxkYW5rZm9saW8udjEiJQoHQmFsYW5jZRIKCgJpZBgBIAEoCRIOCgZhbW91bnQYAiABKAEiOAoNV2FsbGV0QmFsYW5jZRInCghiYWxhbmNlcxgBIAMoCzIVLmRhbmtmb2xpby52MS5CYWxhbmNlIisKGEdldFdhbGxldEJhbGFuY2VzUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIlAKGUdldFdhbGxldEJhbGFuY2VzUmVzcG9uc2USMwoOd2FsbGV0X2JhbGFuY2UYASABKAsyGy5kYW5rZm9saW8udjEuV2FsbGV0QmFsYW5jZSIVChNDcmVhdGVXYWxsZXRSZXF1ZXN0IlAKFENyZWF0ZVdhbGxldFJlc3BvbnNlEhIKCnB1YmxpY19rZXkYASABKAkSEgoKc2VjcmV0X2tleRgCIAEoCRIQCghtbmVtb25pYxgDIAEoCSJlChZQcmVwYXJlVHJhbnNmZXJSZXF1ZXN0EhQKDGZyb21fYWRkcmVzcxgBIAEoCRISCgp0b19hZGRyZXNzGAIgASgJEhEKCWNvaW5fbWludBgDIAEoCRIOCgZhbW91bnQYBCABKAEiNwoXUHJlcGFyZVRyYW5zZmVyUmVzcG9uc2USHAoUdW5zaWduZWRfdHJhbnNhY3Rpb24YASABKAkiUQoVU3VibWl0VHJhbnNmZXJSZXF1ZXN0EhoKEnNpZ25lZF90cmFuc2FjdGlvbhgBIAEoCRIcChR1bnNpZ25lZF90cmFuc2FjdGlvbhgCIAEoCSIyChZTdWJtaXRUcmFuc2ZlclJlc3BvbnNlEhgKEHRyYW5zYWN0aW9uX2hhc2gYASABKAkiMAoWR2V0UG9ydGZvbGlvUG5MUmVxdWVzdBIWCg53YWxsZXRfYWRkcmVzcxgBIAEoCSLbAQoIVG9rZW5QbkwSDwoHY29pbl9pZBgBIAEoCRIOCgZzeW1ib2wYAiABKAkSDAoEbmFtZRgDIAEoCRITCgthbW91bnRfaGVsZBgEIAEoARISCgpjb3N0X2Jhc2lzGAUgASgBEhUKDWN1cnJlbnRfcHJpY2UYBiABKAESFQoNY3VycmVudF92YWx1ZRgHIAEoARIWCg51bnJlYWxpemVkX3BubBgIIAEoARIWCg5wbmxfcGVyY2VudGFnZRgJIAEoARIZChFoYXNfcHVyY2hhc2VfZGF0YRgKIAEoCCLSAQoXR2V0UG9ydGZvbGlvUG5MUmVzcG9uc2USHQoVdG90YWxfcG9ydGZvbGlvX3ZhbHVlGAEgASgBEhgKEHRvdGFsX2Nvc3RfYmFzaXMYAiABKAESHAoUdG90YWxfdW5yZWFsaXplZF9wbmwYAyABKAESHAoUdG90YWxfcG5sX3BlcmNlbnRhZ2UYBCABKAESFgoOdG90YWxfaG9sZGluZ3MYBSABKAUSKgoKdG9rZW5fcG5scxgGIAMoCzIWLmRhbmtmb2xpby52MS5Ub2tlblBuTDLpAwoNV2FsbGV0U2VydmljZRJkChFHZXRXYWxsZXRCYWxhbmNlcxImLmRhbmtmb2xpby52MS5HZXRXYWxsZXRCYWxhbmNlc1JlcXVlc3QaJy5kYW5rZm9saW8udjEuR2V0V2FsbGV0QmFsYW5jZXNSZXNwb25zZRJVCgxDcmVhdGVXYWxsZXQSIS5kYW5rZm9saW8udjEuQ3JlYXRlV2FsbGV0UmVxdWVzdBoiLmRhbmtmb2xpby52MS5DcmVhdGVXYWxsZXRSZXNwb25zZRJeCg9QcmVwYXJlVHJhbnNmZXISJC5kYW5rZm9saW8udjEuUHJlcGFyZVRyYW5zZmVyUmVxdWVzdBolLmRhbmtmb2xpby52MS5QcmVwYXJlVHJhbnNmZXJSZXNwb25zZRJbCg5TdWJtaXRUcmFuc2ZlchIjLmRhbmtmb2xpby52MS5TdWJtaXRUcmFuc2ZlclJlcXVlc3QaJC5kYW5rZm9saW8udjEuU3VibWl0VHJhbnNmZXJSZXNwb25zZRJeCg9HZXRQb3J0Zm9saW9QbkwSJC5kYW5rZm9saW8udjEuR2V0UG9ydGZvbGlvUG5MUmVxdWVzdBolLmRhbmtmb2xpby52MS5HZXRQb3J0Zm9saW9QbkxSZXNwb25zZUK3AQoQY29tLmRhbmtmb2xpby52MUILV2FsbGV0UHJvdG9QAVpFZ2l0aHViLmNvbS9uaWNvbGFzLW1hcnRpbi9kYW5rZm9saW8vYmFja2VuZC9nZW4vcHJvdG8vZ28vZGFua2ZvbGlvL3YxogIDRFhYqgIMRGFua2ZvbGlvLlYxygIMRGFua2ZvbGlvXFYx4gIYRGFua2ZvbGlvXFYxXEdQQk1ldGFkYXRh6gINRGFua2ZvbGlvOjpWMWIGcHJvdG8z");
+  fileDesc("ChlkYW5rZm9saW8vdjEvd2FsbGV0LnByb3RvEgxkYW5rZm9saW8udjEiJQoHQmFsYW5jZRIKCgJpZBgBIAEoCRIOCgZhbW91bnQYAiABKAEiOAoNV2FsbGV0QmFsYW5jZRInCghiYWxhbmNlcxgBIAMoCzIVLmRhbmtmb2xpby52MS5CYWxhbmNlIisKGEdldFdhbGxldEJhbGFuY2VzUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIlAKGUdldFdhbGxldEJhbGFuY2VzUmVzcG9uc2USMwoOd2FsbGV0X2JhbGFuY2UYASABKAsyGy5kYW5rZm9saW8udjEuV2FsbGV0QmFsYW5jZSIrChVSZWdpc3RlcldhbGxldFJlcXVlc3QSEgoKcHVibGljX2tleRgBIAEoCSI6ChZSZWdpc3RlcldhbGxldFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCSJlChZQcmVwYXJlVHJhbnNmZXJSZXF1ZXN0EhQKDGZyb21fYWRkcmVzcxgBIAEoCRISCgp0b19hZGRyZXNzGAIgASgJEhEKCWNvaW5fbWludBgDIAEoCRIOCgZhbW91bnQYBCABKAEiNwoXUHJlcGFyZVRyYW5zZmVyUmVzcG9uc2USHAoUdW5zaWduZWRfdHJhbnNhY3Rpb24YASABKAkiUQoVU3VibWl0VHJhbnNmZXJSZXF1ZXN0EhoKEnNpZ25lZF90cmFuc2FjdGlvbhgBIAEoCRIcChR1bnNpZ25lZF90cmFuc2FjdGlvbhgCIAEoCSIyChZTdWJtaXRUcmFuc2ZlclJlc3BvbnNlEhgKEHRyYW5zYWN0aW9uX2hhc2gYASABKAkiMAoWR2V0UG9ydGZvbGlvUG5MUmVxdWVzdBIWCg53YWxsZXRfYWRkcmVzcxgBIAEoCSLbAQoIVG9rZW5QbkwSDwoHY29pbl9pZBgBIAEoCRIOCgZzeW1ib2wYAiABKAkSDAoEbmFtZRgDIAEoCRITCgthbW91bnRfaGVsZBgEIAEoARISCgpjb3N0X2Jhc2lzGAUgASgBEhUKDWN1cnJlbnRfcHJpY2UYBiABKAESFQoNY3VycmVudF92YWx1ZRgHIAEoARIWCg51bnJlYWxpemVkX3BubBgIIAEoARIWCg5wbmxfcGVyY2VudGFnZRgJIAEoARIZChFoYXNfcHVyY2hhc2VfZGF0YRgKIAEoCCLSAQoXR2V0UG9ydGZvbGlvUG5MUmVzcG9uc2USHQoVdG90YWxfcG9ydGZvbGlvX3ZhbHVlGAEgASgBEhgKEHRvdGFsX2Nvc3RfYmFzaXMYAiABKAESHAoUdG90YWxfdW5yZWFsaXplZF9wbmwYAyABKAESHAoUdG90YWxfcG5sX3BlcmNlbnRhZ2UYBCABKAESFgoOdG90YWxfaG9sZGluZ3MYBSABKAUSKgoKdG9rZW5fcG5scxgGIAMoCzIWLmRhbmtmb2xpby52MS5Ub2tlblBuTDLvAwoNV2FsbGV0U2VydmljZRJkChFHZXRXYWxsZXRCYWxhbmNlcxImLmRhbmtmb2xpby52MS5HZXRXYWxsZXRCYWxhbmNlc1JlcXVlc3QaJy5kYW5rZm9saW8udjEuR2V0V2FsbGV0QmFsYW5jZXNSZXNwb25zZRJbCg5SZWdpc3RlcldhbGxldBIjLmRhbmtmb2xpby52MS5SZWdpc3RlcldhbGxldFJlcXVlc3QaJC5kYW5rZm9saW8udjEuUmVnaXN0ZXJXYWxsZXRSZXNwb25zZRJeCg9QcmVwYXJlVHJhbnNmZXISJC5kYW5rZm9saW8udjEuUHJlcGFyZVRyYW5zZmVyUmVxdWVzdBolLmRhbmtmb2xpby52MS5QcmVwYXJlVHJhbnNmZXJSZXNwb25zZRJbCg5TdWJtaXRUcmFuc2ZlchIjLmRhbmtmb2xpby52MS5TdWJtaXRUcmFuc2ZlclJlcXVlc3QaJC5kYW5rZm9saW8udjEuU3VibWl0VHJhbnNmZXJSZXNwb25zZRJeCg9HZXRQb3J0Zm9saW9QbkwSJC5kYW5rZm9saW8udjEuR2V0UG9ydGZvbGlvUG5MUmVxdWVzdBolLmRhbmtmb2xpby52MS5HZXRQb3J0Zm9saW9QbkxSZXNwb25zZUK3AQoQY29tLmRhbmtmb2xpby52MUILV2FsbGV0UHJvdG9QAVpFZ2l0aHViLmNvbS9uaWNvbGFzLW1hcnRpbi9kYW5rZm9saW8vYmFja2VuZC9nZW4vcHJvdG8vZ28vZGFua2ZvbGlvL3YxogIDRFhYqgIMRGFua2ZvbGlvLlYxygIMRGFua2ZvbGlvXFYx4gIYRGFua2ZvbGlvXFYxXEdQQk1ldGFkYXRh6gINRGFua2ZvbGlvOjpWMWIGcHJvdG8z");
 
 /**
  * Balance represents information about a coin balance
@@ -102,55 +102,52 @@ export const GetWalletBalancesResponseSchema: GenMessage<GetWalletBalancesRespon
   messageDesc(file_dankfolio_v1_wallet, 3);
 
 /**
- * CreateWalletRequest is the request for CreateWallet
+ * RegisterWalletRequest is the request for RegisterWallet
  *
- * Empty for now as we don't need any parameters
- *
- * @generated from message dankfolio.v1.CreateWalletRequest
+ * @generated from message dankfolio.v1.RegisterWalletRequest
  */
-export type CreateWalletRequest = Message<"dankfolio.v1.CreateWalletRequest"> & {
-};
-
-/**
- * Describes the message dankfolio.v1.CreateWalletRequest.
- * Use `create(CreateWalletRequestSchema)` to create a new message.
- */
-export const CreateWalletRequestSchema: GenMessage<CreateWalletRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_wallet, 4);
-
-/**
- * CreateWalletResponse is the response for CreateWallet
- *
- * @generated from message dankfolio.v1.CreateWalletResponse
- */
-export type CreateWalletResponse = Message<"dankfolio.v1.CreateWalletResponse"> & {
+export type RegisterWalletRequest = Message<"dankfolio.v1.RegisterWalletRequest"> & {
   /**
-   * Wallet's public key
+   * Wallet's public key (generated client-side)
    *
    * @generated from field: string public_key = 1;
    */
   publicKey: string;
-
-  /**
-   * Wallet's private key (handle with care)
-   *
-   * @generated from field: string secret_key = 2;
-   */
-  secretKey: string;
-
-  /**
-   * Mnemonic phrase for wallet recovery
-   *
-   * @generated from field: string mnemonic = 3;
-   */
-  mnemonic: string;
 };
 
 /**
- * Describes the message dankfolio.v1.CreateWalletResponse.
- * Use `create(CreateWalletResponseSchema)` to create a new message.
+ * Describes the message dankfolio.v1.RegisterWalletRequest.
+ * Use `create(RegisterWalletRequestSchema)` to create a new message.
  */
-export const CreateWalletResponseSchema: GenMessage<CreateWalletResponse> = /*@__PURE__*/
+export const RegisterWalletRequestSchema: GenMessage<RegisterWalletRequest> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_wallet, 4);
+
+/**
+ * RegisterWalletResponse is the response for RegisterWallet
+ *
+ * @generated from message dankfolio.v1.RegisterWalletResponse
+ */
+export type RegisterWalletResponse = Message<"dankfolio.v1.RegisterWalletResponse"> & {
+  /**
+   * Whether registration was successful
+   *
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * Success or error message
+   *
+   * @generated from field: string message = 2;
+   */
+  message: string;
+};
+
+/**
+ * Describes the message dankfolio.v1.RegisterWalletResponse.
+ * Use `create(RegisterWalletResponseSchema)` to create a new message.
+ */
+export const RegisterWalletResponseSchema: GenMessage<RegisterWalletResponse> = /*@__PURE__*/
   messageDesc(file_dankfolio_v1_wallet, 5);
 
 /**
@@ -431,14 +428,14 @@ export const WalletService: GenService<{
     output: typeof GetWalletBalancesResponseSchema;
   },
   /**
-   * CreateWallet generates a new Solana wallet
+   * RegisterWallet registers a wallet by its public key (client-side generated)
    *
-   * @generated from rpc dankfolio.v1.WalletService.CreateWallet
+   * @generated from rpc dankfolio.v1.WalletService.RegisterWallet
    */
-  createWallet: {
+  registerWallet: {
     methodKind: "unary";
-    input: typeof CreateWalletRequestSchema;
-    output: typeof CreateWalletResponseSchema;
+    input: typeof RegisterWalletRequestSchema;
+    output: typeof RegisterWalletResponseSchema;
   },
   /**
    * PrepareTransfer prepares an unsigned transfer transaction

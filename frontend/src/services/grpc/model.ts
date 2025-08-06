@@ -62,10 +62,16 @@ export interface CoinTransferSubmitRequest {
 	unsignedTransaction: string;
 }
 
-export interface CreateWalletResponse {
-	public_key: string;
-	secret_key: string;
-	mnemonic: string;
+// CreateWalletResponse has been removed for security reasons
+// Wallets should be generated client-side
+
+export interface RegisterWalletRequest {
+	publicKey: string;
+}
+
+export interface RegisterWalletResponse {
+	success: boolean;
+	message: string;
 }
 
 export interface CoinTransferResponse {
@@ -208,7 +214,8 @@ export interface API {
 	getCoinPrices: (coinIds: string[]) => Promise<Record<string, number>>;
 	prepareCoinTransfer: (payload: CoinTransferPrepareRequest) => Promise<CoinTransferPrepareResponse>;
 	submitCoinTransfer: (payload: CoinTransferSubmitRequest) => Promise<CoinTransferResponse>;
-	createWallet: () => Promise<CreateWalletResponse>;
+	// createWallet removed for security - wallets should be generated client-side
+	registerWallet: (request: RegisterWalletRequest) => Promise<RegisterWalletResponse>;
 	getProxiedImage: (imageUrl: string) => Promise<GetProxiedImageResponse>;
 	prepareSwap: (params: PrepareSwapRequest) => Promise<{ unsignedTransaction: string; solFeeBreakdown?: SolFeeBreakdown; totalSolRequired: string; tradingFeeSol: string }>;
 	listTrades: (params: ListTradesRequest) => Promise<ListTradesResponse>;

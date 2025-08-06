@@ -209,27 +209,28 @@ func (x *GetWalletBalancesResponse) GetWalletBalance() *WalletBalance {
 	return nil
 }
 
-// CreateWalletRequest is the request for CreateWallet
-type CreateWalletRequest struct {
+// RegisterWalletRequest is the request for RegisterWallet
+type RegisterWalletRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	PublicKey     string                 `protobuf:"bytes,1,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"` // Wallet's public key (generated client-side)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateWalletRequest) Reset() {
-	*x = CreateWalletRequest{}
+func (x *RegisterWalletRequest) Reset() {
+	*x = RegisterWalletRequest{}
 	mi := &file_dankfolio_v1_wallet_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateWalletRequest) String() string {
+func (x *RegisterWalletRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateWalletRequest) ProtoMessage() {}
+func (*RegisterWalletRequest) ProtoMessage() {}
 
-func (x *CreateWalletRequest) ProtoReflect() protoreflect.Message {
+func (x *RegisterWalletRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_dankfolio_v1_wallet_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -241,68 +242,67 @@ func (x *CreateWalletRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateWalletRequest.ProtoReflect.Descriptor instead.
-func (*CreateWalletRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use RegisterWalletRequest.ProtoReflect.Descriptor instead.
+func (*RegisterWalletRequest) Descriptor() ([]byte, []int) {
 	return file_dankfolio_v1_wallet_proto_rawDescGZIP(), []int{4}
 }
 
-// CreateWalletResponse is the response for CreateWallet
-type CreateWalletResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PublicKey     string                 `protobuf:"bytes,1,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"` // Wallet's public key
-	SecretKey     string                 `protobuf:"bytes,2,opt,name=secret_key,json=secretKey,proto3" json:"secret_key,omitempty"` // Wallet's private key (handle with care)
-	Mnemonic      string                 `protobuf:"bytes,3,opt,name=mnemonic,proto3" json:"mnemonic,omitempty"`                    // Mnemonic phrase for wallet recovery
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateWalletResponse) Reset() {
-	*x = CreateWalletResponse{}
-	mi := &file_dankfolio_v1_wallet_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateWalletResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateWalletResponse) ProtoMessage() {}
-
-func (x *CreateWalletResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dankfolio_v1_wallet_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateWalletResponse.ProtoReflect.Descriptor instead.
-func (*CreateWalletResponse) Descriptor() ([]byte, []int) {
-	return file_dankfolio_v1_wallet_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *CreateWalletResponse) GetPublicKey() string {
+func (x *RegisterWalletRequest) GetPublicKey() string {
 	if x != nil {
 		return x.PublicKey
 	}
 	return ""
 }
 
-func (x *CreateWalletResponse) GetSecretKey() string {
-	if x != nil {
-		return x.SecretKey
-	}
-	return ""
+// RegisterWalletResponse is the response for RegisterWallet
+type RegisterWalletResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // Whether registration was successful
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`  // Success or error message
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateWalletResponse) GetMnemonic() string {
+func (x *RegisterWalletResponse) Reset() {
+	*x = RegisterWalletResponse{}
+	mi := &file_dankfolio_v1_wallet_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterWalletResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterWalletResponse) ProtoMessage() {}
+
+func (x *RegisterWalletResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_dankfolio_v1_wallet_proto_msgTypes[5]
 	if x != nil {
-		return x.Mnemonic
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterWalletResponse.ProtoReflect.Descriptor instead.
+func (*RegisterWalletResponse) Descriptor() ([]byte, []int) {
+	return file_dankfolio_v1_wallet_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *RegisterWalletResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *RegisterWalletResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
 	}
 	return ""
 }
@@ -779,14 +779,13 @@ const file_dankfolio_v1_wallet_proto_rawDesc = "" +
 	"\x18GetWalletBalancesRequest\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\"_\n" +
 	"\x19GetWalletBalancesResponse\x12B\n" +
-	"\x0ewallet_balance\x18\x01 \x01(\v2\x1b.dankfolio.v1.WalletBalanceR\rwalletBalance\"\x15\n" +
-	"\x13CreateWalletRequest\"p\n" +
-	"\x14CreateWalletResponse\x12\x1d\n" +
+	"\x0ewallet_balance\x18\x01 \x01(\v2\x1b.dankfolio.v1.WalletBalanceR\rwalletBalance\"6\n" +
+	"\x15RegisterWalletRequest\x12\x1d\n" +
 	"\n" +
-	"public_key\x18\x01 \x01(\tR\tpublicKey\x12\x1d\n" +
-	"\n" +
-	"secret_key\x18\x02 \x01(\tR\tsecretKey\x12\x1a\n" +
-	"\bmnemonic\x18\x03 \x01(\tR\bmnemonic\"\x8f\x01\n" +
+	"public_key\x18\x01 \x01(\tR\tpublicKey\"L\n" +
+	"\x16RegisterWalletResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"\x8f\x01\n" +
 	"\x16PrepareTransferRequest\x12!\n" +
 	"\ffrom_address\x18\x01 \x01(\tR\vfromAddress\x12\x1d\n" +
 	"\n" +
@@ -823,10 +822,10 @@ const file_dankfolio_v1_wallet_proto_rawDesc = "" +
 	"\x14total_pnl_percentage\x18\x04 \x01(\x01R\x12totalPnlPercentage\x12%\n" +
 	"\x0etotal_holdings\x18\x05 \x01(\x05R\rtotalHoldings\x125\n" +
 	"\n" +
-	"token_pnls\x18\x06 \x03(\v2\x16.dankfolio.v1.TokenPnLR\ttokenPnls2\xe9\x03\n" +
+	"token_pnls\x18\x06 \x03(\v2\x16.dankfolio.v1.TokenPnLR\ttokenPnls2\xef\x03\n" +
 	"\rWalletService\x12d\n" +
-	"\x11GetWalletBalances\x12&.dankfolio.v1.GetWalletBalancesRequest\x1a'.dankfolio.v1.GetWalletBalancesResponse\x12U\n" +
-	"\fCreateWallet\x12!.dankfolio.v1.CreateWalletRequest\x1a\".dankfolio.v1.CreateWalletResponse\x12^\n" +
+	"\x11GetWalletBalances\x12&.dankfolio.v1.GetWalletBalancesRequest\x1a'.dankfolio.v1.GetWalletBalancesResponse\x12[\n" +
+	"\x0eRegisterWallet\x12#.dankfolio.v1.RegisterWalletRequest\x1a$.dankfolio.v1.RegisterWalletResponse\x12^\n" +
 	"\x0fPrepareTransfer\x12$.dankfolio.v1.PrepareTransferRequest\x1a%.dankfolio.v1.PrepareTransferResponse\x12[\n" +
 	"\x0eSubmitTransfer\x12#.dankfolio.v1.SubmitTransferRequest\x1a$.dankfolio.v1.SubmitTransferResponse\x12^\n" +
 	"\x0fGetPortfolioPnL\x12$.dankfolio.v1.GetPortfolioPnLRequest\x1a%.dankfolio.v1.GetPortfolioPnLResponseB\xb7\x01\n" +
@@ -850,8 +849,8 @@ var file_dankfolio_v1_wallet_proto_goTypes = []any{
 	(*WalletBalance)(nil),             // 1: dankfolio.v1.WalletBalance
 	(*GetWalletBalancesRequest)(nil),  // 2: dankfolio.v1.GetWalletBalancesRequest
 	(*GetWalletBalancesResponse)(nil), // 3: dankfolio.v1.GetWalletBalancesResponse
-	(*CreateWalletRequest)(nil),       // 4: dankfolio.v1.CreateWalletRequest
-	(*CreateWalletResponse)(nil),      // 5: dankfolio.v1.CreateWalletResponse
+	(*RegisterWalletRequest)(nil),     // 4: dankfolio.v1.RegisterWalletRequest
+	(*RegisterWalletResponse)(nil),    // 5: dankfolio.v1.RegisterWalletResponse
 	(*PrepareTransferRequest)(nil),    // 6: dankfolio.v1.PrepareTransferRequest
 	(*PrepareTransferResponse)(nil),   // 7: dankfolio.v1.PrepareTransferResponse
 	(*SubmitTransferRequest)(nil),     // 8: dankfolio.v1.SubmitTransferRequest
@@ -865,12 +864,12 @@ var file_dankfolio_v1_wallet_proto_depIdxs = []int32{
 	1,  // 1: dankfolio.v1.GetWalletBalancesResponse.wallet_balance:type_name -> dankfolio.v1.WalletBalance
 	11, // 2: dankfolio.v1.GetPortfolioPnLResponse.token_pnls:type_name -> dankfolio.v1.TokenPnL
 	2,  // 3: dankfolio.v1.WalletService.GetWalletBalances:input_type -> dankfolio.v1.GetWalletBalancesRequest
-	4,  // 4: dankfolio.v1.WalletService.CreateWallet:input_type -> dankfolio.v1.CreateWalletRequest
+	4,  // 4: dankfolio.v1.WalletService.RegisterWallet:input_type -> dankfolio.v1.RegisterWalletRequest
 	6,  // 5: dankfolio.v1.WalletService.PrepareTransfer:input_type -> dankfolio.v1.PrepareTransferRequest
 	8,  // 6: dankfolio.v1.WalletService.SubmitTransfer:input_type -> dankfolio.v1.SubmitTransferRequest
 	10, // 7: dankfolio.v1.WalletService.GetPortfolioPnL:input_type -> dankfolio.v1.GetPortfolioPnLRequest
 	3,  // 8: dankfolio.v1.WalletService.GetWalletBalances:output_type -> dankfolio.v1.GetWalletBalancesResponse
-	5,  // 9: dankfolio.v1.WalletService.CreateWallet:output_type -> dankfolio.v1.CreateWalletResponse
+	5,  // 9: dankfolio.v1.WalletService.RegisterWallet:output_type -> dankfolio.v1.RegisterWalletResponse
 	7,  // 10: dankfolio.v1.WalletService.PrepareTransfer:output_type -> dankfolio.v1.PrepareTransferResponse
 	9,  // 11: dankfolio.v1.WalletService.SubmitTransfer:output_type -> dankfolio.v1.SubmitTransferResponse
 	12, // 12: dankfolio.v1.WalletService.GetPortfolioPnL:output_type -> dankfolio.v1.GetPortfolioPnLResponse

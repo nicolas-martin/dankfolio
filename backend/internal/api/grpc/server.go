@@ -49,7 +49,7 @@ func NewServer(
 	// Create default rate limiter
 	// 10 requests per second with burst of 20
 	rateLimiter := middleware.NewRateLimiter(10.0, 20)
-	
+
 	return &Server{
 		mux:              http.NewServeMux(),
 		coinService:      coinService,
@@ -86,7 +86,7 @@ func (s *Server) Start(port int) error {
 	var interceptors []connect.Interceptor
 	// Panic recovery should be first to catch panics from all other interceptors
 	interceptors = append(interceptors, panicRecoveryInterceptor, debugModeInterceptor, logInterceptor)
-	
+
 	if s.tracer != nil && s.meter != nil {
 		otelInterceptor, err := middleware.NewOtelConnectInterceptor(s.tracer, s.meter)
 		if err != nil {
@@ -145,17 +145,17 @@ func (s *Server) Start(port int) error {
 	log.Printf("Starting Connect RPC server on %s", addr)
 
 	// Wrap the mux with CORS middleware
-	handler := middleware.CORSMiddleware(s.mux)
-	
+	finalHandler := middleware.CORSMiddleware(s.mux)
+
 	// Add rate limiting as the outermost middleware
 	// This ensures rate limiting is checked before any other processing
 	if s.rateLimiter != nil {
-		handler = s.rateLimiter.Middleware(handler)
+		finalHandler = s.rateLimiter.Middleware(finalHandler)
 		log.Printf("Rate limiting enabled: 10 req/s per IP with burst of 20")
 	}
 
 	// Use h2c for HTTP/2 without TLS
-	return http.ListenAndServe(addr, h2c.NewHandler(handler, &http2.Server{}))
+	return http.ListenAndServe(addr, h2c.NewHandler(finalHandler, &http2.Server{}))
 }
 
 // Stop gracefully stops the server

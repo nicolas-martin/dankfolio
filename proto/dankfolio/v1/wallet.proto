@@ -9,8 +9,8 @@ service WalletService {
   // GetWalletBalances returns the balances for all coins in a wallet
   rpc GetWalletBalances(GetWalletBalancesRequest) returns (GetWalletBalancesResponse);
 
-  // CreateWallet generates a new Solana wallet
-  rpc CreateWallet(CreateWalletRequest) returns (CreateWalletResponse);
+  // RegisterWallet registers a wallet by its public key (client-side generated)
+  rpc RegisterWallet(RegisterWalletRequest) returns (RegisterWalletResponse);
 
   // PrepareTransfer prepares an unsigned transfer transaction
   rpc PrepareTransfer(PrepareTransferRequest) returns (PrepareTransferResponse);
@@ -43,16 +43,15 @@ message GetWalletBalancesResponse {
   WalletBalance wallet_balance = 1;
 }
 
-// CreateWalletRequest is the request for CreateWallet
-message CreateWalletRequest {
-  // Empty for now as we don't need any parameters
+// RegisterWalletRequest is the request for RegisterWallet
+message RegisterWalletRequest {
+  string public_key = 1;   // Wallet's public key (generated client-side)
 }
 
-// CreateWalletResponse is the response for CreateWallet
-message CreateWalletResponse {
-  string public_key = 1;   // Wallet's public key
-  string secret_key = 2;   // Wallet's private key (handle with care)
-  string mnemonic = 3;      // Mnemonic phrase for wallet recovery
+// RegisterWalletResponse is the response for RegisterWallet
+message RegisterWalletResponse {
+  bool success = 1;        // Whether registration was successful
+  string message = 2;      // Success or error message
 }
 
 // PrepareTransferRequest is the request for preparing a transfer

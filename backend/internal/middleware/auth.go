@@ -2,12 +2,8 @@ package middleware
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"log/slog"
 	"net/http"
-
-	// "os" // No longer needed here directly
 	"strings"
 
 	"connectrpc.com/authn"
@@ -26,13 +22,13 @@ func AppCheckMiddleware(appCheckClient *appcheck.Client, env string, devAppCheck
 		// SECURITY: Strict environment validation for dev bypass
 		// Only allow specific, well-defined development environments
 		isDevEnvironment := env == "development" || env == "local" || env == "production-simulator"
-		
+
 		// Additional safety check: ensure we're not accidentally in production
 		if isDevEnvironment && strings.Contains(strings.ToLower(env), "prod") && !strings.Contains(env, "simulator") {
 			slog.Error("Suspicious environment configuration detected", "env", env)
 			isDevEnvironment = false
 		}
-		
+
 		if isDevEnvironment {
 			if devAppCheckToken == "" {
 				slog.Error("DEV_APP_CHECK_TOKEN is not set for development environment", "env", env)

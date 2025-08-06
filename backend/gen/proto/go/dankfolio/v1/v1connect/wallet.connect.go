@@ -36,9 +36,9 @@ const (
 	// WalletServiceGetWalletBalancesProcedure is the fully-qualified name of the WalletService's
 	// GetWalletBalances RPC.
 	WalletServiceGetWalletBalancesProcedure = "/dankfolio.v1.WalletService/GetWalletBalances"
-	// WalletServiceCreateWalletProcedure is the fully-qualified name of the WalletService's
-	// CreateWallet RPC.
-	WalletServiceCreateWalletProcedure = "/dankfolio.v1.WalletService/CreateWallet"
+	// WalletServiceRegisterWalletProcedure is the fully-qualified name of the WalletService's
+	// RegisterWallet RPC.
+	WalletServiceRegisterWalletProcedure = "/dankfolio.v1.WalletService/RegisterWallet"
 	// WalletServicePrepareTransferProcedure is the fully-qualified name of the WalletService's
 	// PrepareTransfer RPC.
 	WalletServicePrepareTransferProcedure = "/dankfolio.v1.WalletService/PrepareTransfer"
@@ -54,8 +54,8 @@ const (
 type WalletServiceClient interface {
 	// GetWalletBalances returns the balances for all coins in a wallet
 	GetWalletBalances(context.Context, *connect.Request[v1.GetWalletBalancesRequest]) (*connect.Response[v1.GetWalletBalancesResponse], error)
-	// CreateWallet generates a new Solana wallet
-	CreateWallet(context.Context, *connect.Request[v1.CreateWalletRequest]) (*connect.Response[v1.CreateWalletResponse], error)
+	// RegisterWallet registers a wallet by its public key (client-side generated)
+	RegisterWallet(context.Context, *connect.Request[v1.RegisterWalletRequest]) (*connect.Response[v1.RegisterWalletResponse], error)
 	// PrepareTransfer prepares an unsigned transfer transaction
 	PrepareTransfer(context.Context, *connect.Request[v1.PrepareTransferRequest]) (*connect.Response[v1.PrepareTransferResponse], error)
 	// SubmitTransfer submits a signed transfer transaction
@@ -81,10 +81,10 @@ func NewWalletServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(walletServiceMethods.ByName("GetWalletBalances")),
 			connect.WithClientOptions(opts...),
 		),
-		createWallet: connect.NewClient[v1.CreateWalletRequest, v1.CreateWalletResponse](
+		registerWallet: connect.NewClient[v1.RegisterWalletRequest, v1.RegisterWalletResponse](
 			httpClient,
-			baseURL+WalletServiceCreateWalletProcedure,
-			connect.WithSchema(walletServiceMethods.ByName("CreateWallet")),
+			baseURL+WalletServiceRegisterWalletProcedure,
+			connect.WithSchema(walletServiceMethods.ByName("RegisterWallet")),
 			connect.WithClientOptions(opts...),
 		),
 		prepareTransfer: connect.NewClient[v1.PrepareTransferRequest, v1.PrepareTransferResponse](
@@ -111,7 +111,7 @@ func NewWalletServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 // walletServiceClient implements WalletServiceClient.
 type walletServiceClient struct {
 	getWalletBalances *connect.Client[v1.GetWalletBalancesRequest, v1.GetWalletBalancesResponse]
-	createWallet      *connect.Client[v1.CreateWalletRequest, v1.CreateWalletResponse]
+	registerWallet    *connect.Client[v1.RegisterWalletRequest, v1.RegisterWalletResponse]
 	prepareTransfer   *connect.Client[v1.PrepareTransferRequest, v1.PrepareTransferResponse]
 	submitTransfer    *connect.Client[v1.SubmitTransferRequest, v1.SubmitTransferResponse]
 	getPortfolioPnL   *connect.Client[v1.GetPortfolioPnLRequest, v1.GetPortfolioPnLResponse]
@@ -122,9 +122,9 @@ func (c *walletServiceClient) GetWalletBalances(ctx context.Context, req *connec
 	return c.getWalletBalances.CallUnary(ctx, req)
 }
 
-// CreateWallet calls dankfolio.v1.WalletService.CreateWallet.
-func (c *walletServiceClient) CreateWallet(ctx context.Context, req *connect.Request[v1.CreateWalletRequest]) (*connect.Response[v1.CreateWalletResponse], error) {
-	return c.createWallet.CallUnary(ctx, req)
+// RegisterWallet calls dankfolio.v1.WalletService.RegisterWallet.
+func (c *walletServiceClient) RegisterWallet(ctx context.Context, req *connect.Request[v1.RegisterWalletRequest]) (*connect.Response[v1.RegisterWalletResponse], error) {
+	return c.registerWallet.CallUnary(ctx, req)
 }
 
 // PrepareTransfer calls dankfolio.v1.WalletService.PrepareTransfer.
@@ -146,8 +146,8 @@ func (c *walletServiceClient) GetPortfolioPnL(ctx context.Context, req *connect.
 type WalletServiceHandler interface {
 	// GetWalletBalances returns the balances for all coins in a wallet
 	GetWalletBalances(context.Context, *connect.Request[v1.GetWalletBalancesRequest]) (*connect.Response[v1.GetWalletBalancesResponse], error)
-	// CreateWallet generates a new Solana wallet
-	CreateWallet(context.Context, *connect.Request[v1.CreateWalletRequest]) (*connect.Response[v1.CreateWalletResponse], error)
+	// RegisterWallet registers a wallet by its public key (client-side generated)
+	RegisterWallet(context.Context, *connect.Request[v1.RegisterWalletRequest]) (*connect.Response[v1.RegisterWalletResponse], error)
 	// PrepareTransfer prepares an unsigned transfer transaction
 	PrepareTransfer(context.Context, *connect.Request[v1.PrepareTransferRequest]) (*connect.Response[v1.PrepareTransferResponse], error)
 	// SubmitTransfer submits a signed transfer transaction
@@ -169,10 +169,10 @@ func NewWalletServiceHandler(svc WalletServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(walletServiceMethods.ByName("GetWalletBalances")),
 		connect.WithHandlerOptions(opts...),
 	)
-	walletServiceCreateWalletHandler := connect.NewUnaryHandler(
-		WalletServiceCreateWalletProcedure,
-		svc.CreateWallet,
-		connect.WithSchema(walletServiceMethods.ByName("CreateWallet")),
+	walletServiceRegisterWalletHandler := connect.NewUnaryHandler(
+		WalletServiceRegisterWalletProcedure,
+		svc.RegisterWallet,
+		connect.WithSchema(walletServiceMethods.ByName("RegisterWallet")),
 		connect.WithHandlerOptions(opts...),
 	)
 	walletServicePrepareTransferHandler := connect.NewUnaryHandler(
@@ -197,8 +197,8 @@ func NewWalletServiceHandler(svc WalletServiceHandler, opts ...connect.HandlerOp
 		switch r.URL.Path {
 		case WalletServiceGetWalletBalancesProcedure:
 			walletServiceGetWalletBalancesHandler.ServeHTTP(w, r)
-		case WalletServiceCreateWalletProcedure:
-			walletServiceCreateWalletHandler.ServeHTTP(w, r)
+		case WalletServiceRegisterWalletProcedure:
+			walletServiceRegisterWalletHandler.ServeHTTP(w, r)
 		case WalletServicePrepareTransferProcedure:
 			walletServicePrepareTransferHandler.ServeHTTP(w, r)
 		case WalletServiceSubmitTransferProcedure:
@@ -218,8 +218,8 @@ func (UnimplementedWalletServiceHandler) GetWalletBalances(context.Context, *con
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.WalletService.GetWalletBalances is not implemented"))
 }
 
-func (UnimplementedWalletServiceHandler) CreateWallet(context.Context, *connect.Request[v1.CreateWalletRequest]) (*connect.Response[v1.CreateWalletResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.WalletService.CreateWallet is not implemented"))
+func (UnimplementedWalletServiceHandler) RegisterWallet(context.Context, *connect.Request[v1.RegisterWalletRequest]) (*connect.Response[v1.RegisterWalletResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.WalletService.RegisterWallet is not implemented"))
 }
 
 func (UnimplementedWalletServiceHandler) PrepareTransfer(context.Context, *connect.Request[v1.PrepareTransferRequest]) (*connect.Response[v1.PrepareTransferResponse], error) {

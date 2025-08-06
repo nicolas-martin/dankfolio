@@ -10,7 +10,7 @@ import {
 	GetWalletBalancesResponseSchema,
 	BalanceSchema,
 	WalletBalanceSchema,
-	CreateWalletResponseSchema,
+	RegisterWalletResponseSchema,
 	GetPortfolioPnLResponseSchema,
 	TokenPnLSchema,
 } from '@/gen/dankfolio/v1/wallet_pb';
@@ -500,16 +500,15 @@ async function handleSubmitTransfer(_options?: FetchInit) {
 	return { transactionHash: CAPTURED_TRANSACTION_DATA.MOCK_TX_HASH }; // This endpoint returns a plain object
 }
 
-async function handleCreateWallet(_options?: FetchInit) {
+async function handleRegisterWallet(_options?: FetchInit) {
 	// Generate mock wallet data for testing
 	const mockPublicKey = 'E2eMockWallet' + Math.random().toString(36).substring(2, 15);
 	const mockSecretKey = 'MockSecret' + Math.random().toString(36).substring(2, 50);
 	const mockMnemonic = 'mock test wallet seed phrase example words for testing purposes only twelve words total';
 
-	return create(CreateWalletResponseSchema, {
-		publicKey: mockPublicKey,
-		secretKey: mockSecretKey,
-		mnemonic: mockMnemonic,
+	return create(RegisterWalletResponseSchema, {
+		success: true,
+		message: 'Wallet registered successfully',
 	});
 }
 
@@ -867,7 +866,7 @@ const endpointHandlers: { [key: string]: (options?: FetchInit) => Promise<any> }
 
 	// Wallet endpoints
 	'/dankfolio.v1.walletservice/getwalletbalances': handleGetWalletBalances,
-	'/dankfolio.v1.walletservice/createwallet': handleCreateWallet,
+	'/dankfolio.v1.walletservice/registerwallet': handleRegisterWallet,
 	'/dankfolio.v1.walletservice/preparetransfer': handlePrepareTransfer,
 	'/dankfolio.v1.walletservice/submittransfer': handleSubmitTransfer,
 	'/dankfolio.v1.walletservice/getportfoliopnl': handleGetPortfolioPnL,

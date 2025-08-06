@@ -57,23 +57,36 @@ func (s *walletServiceHandler) GetWalletBalances(
 	}), nil
 }
 
-// CreateWallet generates a new Solana wallet
-func (s *walletServiceHandler) CreateWallet(
+
+// RegisterWallet registers a wallet that was generated client-side
+// This is the secure way to handle wallet creation - the server only knows the public key
+func (s *walletServiceHandler) RegisterWallet(
 	ctx context.Context,
-	req *connect.Request[pb.CreateWalletRequest],
-) (*connect.Response[pb.CreateWalletResponse], error) {
-	slog.Debug("Creating new wallet")
-	wallet, err := s.walletService.CreateWallet(ctx)
-	if err != nil {
-		slog.Error("Failed to create wallet", "error", err)
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to create wallet: %w", err))
+	req *connect.Request[pb.RegisterWalletRequest],
+) (*connect.Response[pb.RegisterWalletResponse], error) {
+	if req.Msg.PublicKey == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("public key is required"))
 	}
 
-	slog.Info("New wallet created successfully", "public_key", wallet.PublicKey)
-	return connect.NewResponse(&pb.CreateWalletResponse{
-		PublicKey: wallet.PublicKey,
-		SecretKey: wallet.SecretKey,
-		Mnemonic:  wallet.Mnemonic,
+	slog.Info("Registering client-generated wallet", "public_key", req.Msg.PublicKey)
+	
+	// Validate the public key format
+	if err := s.walletService.ValidatePublicKey(ctx, req.Msg.PublicKey); err != nil {
+		slog.Error("Invalid public key provided", "public_key", req.Msg.PublicKey, "error", err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid public key format"))
+	}
+	
+	// Store the wallet public key (e.g., in database for tracking)
+	// This could associate the wallet with a user account, etc.
+	if err := s.walletService.RegisterWallet(ctx, req.Msg.PublicKey); err != nil {
+		slog.Error("Failed to register wallet", "public_key", req.Msg.PublicKey, "error", err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to register wallet"))
+	}
+	
+	slog.Info("Wallet registered successfully", "public_key", req.Msg.PublicKey)
+	return connect.NewResponse(&pb.RegisterWalletResponse{
+		Success: true,
+		Message: "Wallet registered successfully",
 	}), nil
 }
 

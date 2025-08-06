@@ -2,9 +2,7 @@ package wallet
 
 import (
 	"context"
-	"crypto/ed25519"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -18,7 +16,6 @@ import (
 	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/google/uuid"
-	"github.com/tyler-smith/go-bip39"
 
 	bclient "github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
@@ -41,6 +38,54 @@ func New(chainClient bclient.GenericClientAPI, store db.Store, coinService coin.
 		store:       store,
 		coinService: coinService, // Store injected CoinService
 	}
+}
+
+// ValidatePublicKey validates that a string is a valid Solana public key
+func (s *Service) ValidatePublicKey(ctx context.Context, publicKey string) error {
+	_, err := solana.PublicKeyFromBase58(publicKey)
+	if err != nil {
+		return fmt.Errorf("invalid Solana public key: %w", err)
+	}
+	return nil
+}
+
+// RegisterWallet registers a client-generated wallet (stores only public key)
+// This is the secure way to handle wallets - the server never knows the private key
+func (s *Service) RegisterWallet(ctx context.Context, publicKey string) error {
+	// Validate the public key
+	if err := s.ValidatePublicKey(ctx, publicKey); err != nil {
+		return err
+	}
+
+	// Check if wallet already exists
+	existingWallet, err := s.store.Wallet().GetByField(ctx, "public_key", publicKey)
+	if err != nil && err != db.ErrNotFound {
+		return fmt.Errorf("failed to check existing wallet: %w", err)
+	}
+
+	if existingWallet != nil {
+		// Wallet already registered, that's okay
+		slog.Info("Wallet already registered", "public_key", publicKey)
+		return nil
+	}
+
+	// Create new wallet record
+	wallet := &model.Wallet{
+		ID:        uuid.New().String(),
+		PublicKey: publicKey,
+		CreatedAt: time.Now(),
+	}
+
+	// Store in database
+	if err := s.store.Wallet().Create(ctx, wallet); err != nil {
+		return fmt.Errorf("failed to register wallet: %w", err)
+	}
+
+	slog.Info("Wallet registered successfully (client-side generation)",
+		"wallet_id", wallet.ID,
+		"public_key", publicKey)
+
+	return nil
 }
 
 // parseAddress safely parses a Solana address and logs the result
@@ -102,12 +147,12 @@ func (s *Service) validateTokenAccount(ctx context.Context, ata, expectedOwner, 
 	if err != nil {
 		return fmt.Errorf("failed to get account info: %w", err)
 	}
-	
+
 	// Check if account data exists
-	if accInfo.Data == nil || len(accInfo.Data) == 0 {
+	if len(accInfo.Data) == 0 {
 		return fmt.Errorf("account has no data")
 	}
-	
+
 	// Token accounts should be exactly 165 bytes for standard SPL tokens
 	// Note: Token-2022 accounts might be larger
 	if len(accInfo.Data) != 165 {
@@ -118,36 +163,36 @@ func (s *Service) validateTokenAccount(ctx context.Context, ata, expectedOwner, 
 			"owner", accInfo.Owner)
 		return fmt.Errorf("invalid token account data size: %d bytes (expected 165)", len(accInfo.Data))
 	}
-	
+
 	// Verify it's owned by the token program
 	tokenProgramID := bmodel.Address(token.ProgramID.String())
 	if accInfo.Owner != tokenProgramID {
 		return fmt.Errorf("account not owned by token program: owned by %s", accInfo.Owner)
 	}
-	
+
 	// Parse and validate token account data
 	var tokenAccount token.Account
 	decoder := bin.NewBinDecoder(accInfo.Data)
 	if err := tokenAccount.UnmarshalWithDecoder(decoder); err != nil {
 		return fmt.Errorf("failed to decode token account data: %w", err)
 	}
-	
+
 	// Validate mint matches
 	if tokenAccount.Mint != expectedMint {
 		return fmt.Errorf("mint mismatch: expected %s, got %s", expectedMint, tokenAccount.Mint)
 	}
-	
+
 	// Validate owner matches
 	if tokenAccount.Owner != expectedOwner {
 		return fmt.Errorf("owner mismatch: expected %s, got %s", expectedOwner, tokenAccount.Owner)
 	}
-	
+
 	slog.Debug("Token account validated successfully",
 		"ata", ata.String(),
 		"owner", tokenAccount.Owner.String(),
 		"mint", tokenAccount.Mint.String(),
 		"amount", tokenAccount.Amount)
-	
+
 	return nil
 }
 
@@ -261,67 +306,9 @@ func (s *Service) buildTransaction(ctx context.Context, payer solana.PublicKey, 
 }
 
 // CreateWallet generates a new Solana wallet
-func (s *Service) CreateWallet(ctx context.Context) (*WalletInfo, error) {
-	slog.Info("Generating new Solana wallet...")
-
-	// 1. Generate a new mnemonic phrase (12 words - 128 bits)
-	entropy, err := bip39.NewEntropy(128)
-	if err != nil {
-		slog.Error("Failed to generate entropy", "error", err)
-		return nil, fmt.Errorf("failed to generate entropy: %w", err)
-	}
-	mnemonic, err := bip39.NewMnemonic(entropy)
-	if err != nil {
-		slog.Error("Failed to generate mnemonic", "error", err)
-		return nil, fmt.Errorf("failed to generate mnemonic: %w", err)
-	}
-	slog.Debug("Generated mnemonic (SAVE THIS SECURELY!)", "mnemonic", mnemonic)
-
-	// 2. Generate the seed from the mnemonic
-	seed := bip39.NewSeed(mnemonic, "") // Standard empty passphrase
-
-	// 3. Create the standard library ed25519 private key (64 bytes) from the first 32 bytes of the seed.
-	if len(seed) < 32 {
-		slog.Error("Generated seed is too short", "length", len(seed), "expected", 32)
-		return nil, fmt.Errorf("generated seed is too short: %d bytes, expected at least 32", len(seed))
-	}
-	// This function returns the 64-byte key: 32-byte private scalar (derived from seed) + 32-byte public key
-	stdLibPrivateKey := ed25519.NewKeyFromSeed(seed[:32])
-	slog.Debug("Derived Ed25519 key material from seed")
-
-	// 4. Cast the standard library key (which is []byte) to solana.PrivateKey type.
-	// The solana-go library uses this 64-byte format internally.
-	solanaPrivateKey := solana.PrivateKey(stdLibPrivateKey)
-
-	// 5. Get the corresponding Solana public key using the method from solana.PrivateKey
-	publicKey := solanaPrivateKey.PublicKey()
-	slog.Debug("Derived public key", "public_key", publicKey.String())
-
-	// 6. Save the Solana Private Key (as JSON byte array - full 64 bytes)
-	// This format is directly usable by `solana-keygen verify` and other tools expecting the keypair file.
-	privateKeyBytes := []byte(solanaPrivateKey) // This is the 64-byte keypair
-	jsonData, err := json.Marshal(privateKeyBytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal private key: %w", err)
-	}
-
-	walletInfo := &WalletInfo{
-		PublicKey: publicKey.String(),
-		SecretKey: string(jsonData),
-		Mnemonic:  mnemonic,
-	}
-
-	err = s.store.Wallet().Create(ctx, &model.Wallet{
-		ID:        uuid.New().String(),
-		PublicKey: walletInfo.PublicKey,
-		CreatedAt: time.Now(),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("error storing wallet in db: %w", err)
-	}
-
-	return walletInfo, nil
-}
+// CreateWallet has been removed for security reasons
+// Wallets should be generated client-side to ensure private keys never leave the user's device
+// Use RegisterWallet instead to register client-generated wallets
 
 // PrepareTransfer prepares an unsigned transfer transaction
 func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, coinMintAddress string, amount float64) (string, error) {
@@ -363,7 +350,7 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 	if serviceErr != nil || len(coins) == 0 {
 		return "", fmt.Errorf("failed to get coin details for %s: %w", coinAddressToFetch, serviceErr)
 	}
-	
+
 	coinModel := &coins[0]
 	fromCoinPKID = coinModel.ID
 	toCoinPKID = coinModel.ID
@@ -400,7 +387,7 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 		TotalFeeAmount:         calculatedFeeSOL,
 		TotalFeeMint:           model.SolMint,
 		PlatformFeeAmount:      0.0, // Explicitly 0 for transfers
-		PlatformFeeBps:         0, // Explicitly 0 for transfers
+		PlatformFeeBps:         0,   // Explicitly 0 for transfers
 		PlatformFeeMint:        "",
 		PlatformFeeDestination: "",
 		RouteFeeAmount:         0.0,
@@ -460,7 +447,7 @@ func (s *Service) createTokenTransfer(ctx context.Context, from, to solana.Publi
 	if err != nil {
 		return nil, fmt.Errorf("failed to get source token account: %w", err)
 	}
-	
+
 	// If source ATA needs to be created, we can't transfer from it in the same transaction
 	if len(fromATAInstructions) > 0 {
 		return nil, fmt.Errorf("source token account does not exist or is not initialized - user must have tokens before sending")
@@ -491,7 +478,7 @@ func (s *Service) createTokenTransfer(ctx context.Context, from, to solana.Publi
 		"toATA", toATA.String(),
 		"mint", mint.String(),
 		"from", from.String())
-	
+
 	// Build transfer instruction with explicit signer
 	transferIx := token.NewTransferCheckedInstruction(
 		rawAmount,
@@ -692,16 +679,16 @@ func (s *Service) getTokenBalances(ctx context.Context, address string) ([]Balan
 
 // TokenPnLData represents PnL data for a single token
 type TokenPnLData struct {
-	CoinID           string
-	Symbol           string
-	Name             string
-	AmountHeld       float64
-	CostBasis        float64
-	CurrentPrice     float64
-	CurrentValue     float64
-	UnrealizedPnL    float64
-	PnLPercentage    float64
-	HasPurchaseData  bool
+	CoinID          string
+	Symbol          string
+	Name            string
+	AmountHeld      float64
+	CostBasis       float64
+	CurrentPrice    float64
+	CurrentValue    float64
+	UnrealizedPnL   float64
+	PnLPercentage   float64
+	HasPurchaseData bool
 }
 
 // GetPortfolioPnL calculates profit and loss for a wallet
@@ -716,7 +703,7 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 		// Continue with trade-based calculation only
 		walletBalances = &WalletBalance{Balances: []Balance{}}
 	}
-	
+
 	// Get all completed trades for this wallet
 	sortBy := "created_at"
 	sortDesc := false
@@ -750,12 +737,12 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 			if tokenID == "" {
 				tokenID = trade.FromCoinMintAddress // Fallback for buy trades
 			}
-			
+
 			data := costBasisMap[tokenID]
-			
+
 			// Use stored USD cost from the trade
 			costInUSD := trade.TotalUSDCost
-			
+
 			// Debug logging for swap trades
 			if tokenID == "11111111111111111111111111111111" && trade.Type == "swap" {
 				slog.Info("SOL Swap Trade Debug",
@@ -766,21 +753,21 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 					"total_usd_cost", trade.TotalUSDCost,
 				)
 			}
-			
+
 			// Skip trades without USD cost data
 			if costInUSD <= 0 {
-				slog.Warn("Trade has no USD cost data, skipping", 
+				slog.Warn("Trade has no USD cost data, skipping",
 					"trade_id", trade.ID,
 					"type", trade.Type,
-					"from_coin", trade.FromCoinMintAddress, 
+					"from_coin", trade.FromCoinMintAddress,
 					"to_coin", tokenID)
 				continue
 			}
-			
+
 			data.totalCost += costInUSD
 			data.totalAmount += trade.Amount
 			costBasisMap[tokenID] = data
-			
+
 			// Track holdings based on trades
 			holdings[tokenID] += trade.Amount
 			slog.Debug("Added to holdings from trade",
@@ -788,7 +775,7 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 				"amount", trade.Amount,
 				"new_total", holdings[tokenID])
 		}
-		
+
 		// For swaps, also track what we spent
 		if trade.Type == "swap" && trade.FromCoinMintAddress != "" && trade.FromUSDPrice > 0 && trade.TotalUSDCost > 0 {
 			// Calculate input amount from USD values
@@ -809,13 +796,13 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 	for _, balance := range walletBalances.Balances {
 		walletBalanceMap[balance.ID] = balance.Amount
 	}
-	
+
 	// Get current prices for all held tokens
 	var tokenPnLList []TokenPnLData
 	totalPortfolioValue := 0.0
 	totalPortfolioCostBasis := 0.0
-	
-	slog.Info("Portfolio holdings from trades", 
+
+	slog.Info("Portfolio holdings from trades",
 		"wallet", walletAddress,
 		"holdings_count", len(holdings),
 		"trades_processed", len(trades))
@@ -890,7 +877,7 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 			costBasis = data.totalCost / data.totalAmount
 			hasPurchaseData = true
 		}
-		
+
 		// Skip tokens without purchase data
 		if !hasPurchaseData {
 			continue
@@ -899,18 +886,18 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 		// Use the actual wallet balance for calculations, not the trade-calculated amount
 		// This ensures PnL reflects what the user actually holds
 		displayAmount := actualBalance
-		
+
 		// Calculate values based on actual wallet holdings
 		currentValue := displayAmount * currentPrice
 		totalCost := displayAmount * costBasis
 		unrealizedPnL := currentValue - totalCost
-		
+
 		// Round to avoid floating point precision issues
 		unrealizedPnL = math.Round(unrealizedPnL*1e8) / 1e8 // Round to 8 decimal places
-		
+
 		pnlPercentage := 0.0
 		if totalCost > 0 && math.Abs(unrealizedPnL) > 0.00000001 { // Ignore tiny differences
-			pnlPercentage = unrealizedPnL / totalCost // Keep as decimal (0.2534 for 25.34%)
+			pnlPercentage = unrealizedPnL / totalCost               // Keep as decimal (0.2534 for 25.34%)
 			pnlPercentage = math.Round(pnlPercentage*10000) / 10000 // Round to 4 decimal places
 		}
 
@@ -943,7 +930,7 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 	// Now calculate the ACTUAL total portfolio value from ALL wallet balances
 	// This includes tokens we may not have trade history for
 	actualTotalPortfolioValue := 0.0
-	
+
 	// Collect all wallet balance coin IDs that need price data
 	var walletCoinIDs []string
 	for _, balance := range walletBalances.Balances {
@@ -951,7 +938,7 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 			walletCoinIDs = append(walletCoinIDs, balance.ID)
 		}
 	}
-	
+
 	// Batch fetch prices for all wallet balances
 	var walletCoinDataMap map[string]*model.Coin
 	if len(walletCoinIDs) > 0 {
@@ -968,40 +955,40 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 	} else {
 		walletCoinDataMap = make(map[string]*model.Coin)
 	}
-	
+
 	// Calculate total value using fetched prices
 	for _, balance := range walletBalances.Balances {
 		if balance.Amount <= 0 {
 			continue
 		}
-		
+
 		// Get coin from batch fetch results
 		coin, exists := walletCoinDataMap[balance.ID]
 		if !exists || coin == nil {
 			slog.Warn("Wallet coin data not found in batch results", "coin_id", balance.ID)
 			continue
 		}
-		
+
 		if coin.Price > 0 {
 			currentValue := balance.Amount * coin.Price
 			actualTotalPortfolioValue += currentValue
 		}
 	}
-	
+
 	// Calculate overall portfolio metrics
 	// IMPORTANT: PnL calculations are based ONLY on tokens with trade history
 	// totalPortfolioValue from traded tokens was already calculated in the loop above
 	totalTradedPortfolioValue := totalPortfolioValue // Save the traded portfolio value for PnL calculation
-	
+
 	totalUnrealizedPnL = totalTradedPortfolioValue - totalPortfolioCostBasis
 	totalUnrealizedPnL = math.Round(totalUnrealizedPnL*1e8) / 1e8 // Round to 8 decimal places
-	
+
 	totalPnLPercentage = 0.0
 	if totalPortfolioCostBasis > 0 && math.Abs(totalUnrealizedPnL) > 0.00000001 {
 		totalPnLPercentage = totalUnrealizedPnL / totalPortfolioCostBasis // Keep as decimal
 		totalPnLPercentage = math.Round(totalPnLPercentage*10000) / 10000 // Round to 4 decimal places
 	}
-	
+
 	// Now use the actual portfolio value from ALL wallet balances for the total
 	totalPortfolioValue = actualTotalPortfolioValue
 

@@ -11,12 +11,9 @@ type WalletBalance struct {
 	Balances []Balance `json:"balances"`
 }
 
-// WalletInfo represents a wallet's public and private keys
-type WalletInfo struct {
-	PublicKey string `json:"public_key"`
-	SecretKey string `json:"secret_key"`
-	Mnemonic  string `json:"mnemonic"`
-}
+// WalletInfo has been removed for security reasons
+// The server should never handle private keys or mnemonics
+// Only public keys should be sent to and stored by the server
 
 // Parse the JSON data into our struct
 var parsedAccount struct {

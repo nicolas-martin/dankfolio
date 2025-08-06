@@ -519,30 +519,33 @@ export const grpcApi: grpcModel.API = {
 		}
 	},
 
-	async createWallet(): Promise<grpcModel.CreateWalletResponse> {
+	// createWallet removed for security - wallets should be generated client-side
+	
+	async registerWallet(request: grpcModel.RegisterWalletRequest): Promise<grpcModel.RegisterWalletResponse> {
 		const serviceName = 'WalletService';
-		const methodName = 'createWallet';
+		const methodName = 'registerWallet';
 
 		try {
-			grpcUtils.logRequest(serviceName, methodName, {});
+			grpcUtils.logRequest(serviceName, methodName, request);
 
-			const response = await walletClient.createWallet(
-				{}, { headers: grpcUtils.getRequestHeaders() });
+			const response = await walletClient.registerWallet(
+				{ publicKey: request.publicKey }, 
+				{ headers: grpcUtils.getRequestHeaders() }
+			);
 
 			grpcUtils.logResponse(serviceName, methodName, response);
 
 			return {
-				public_key: response.publicKey,
-				secret_key: response.secretKey,
-				mnemonic: response.mnemonic
-			}
+				success: response.success,
+				message: response.message
+			};
 
 		} catch (error: unknown) {
 			if (error instanceof Error) {
 				return grpcUtils.handleGrpcError(error, serviceName, methodName);
 			} else {
 				console.error("An unknown error occurred:", error);
-				throw new Error("An unknown error occurred in createWallet");
+				throw new Error("An unknown error occurred in registerWallet");
 			}
 		}
 	},

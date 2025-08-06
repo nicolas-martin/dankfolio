@@ -23,49 +23,55 @@ import { logger } from '@/utils/logger';
 export const handleGenerateWallet = async (): Promise<{ keypair: Keypair; walletData: { publicKey: string; privateKey: Base58PrivateKey; mnemonic: string } }> => {
 	logger.breadcrumb({ category: 'wallet_setup', message: 'Wallet generation started' });
 	try {
-		logger.info("Generating new wallet...");
-		const newWalletData = await grpcApi.createWallet();
-		if (!newWalletData || !newWalletData.secret_key || !newWalletData.mnemonic) {
-			throw new Error('Failed to generate wallet from API.');
+		logger.info("Generating new wallet locally (secure client-side generation)...");
+		
+		// SECURITY: Generate wallet entirely on client side
+		// The server will never see the private key or mnemonic
+		
+		// 1. Generate mnemonic phrase (12 words)
+		const mnemonic = bip39.generateMnemonic(128); // 128 bits = 12 words
+		if (!mnemonic) {
+			throw new Error('Failed to generate mnemonic phrase');
 		}
-
-		let base64Key = newWalletData.secret_key;
-		if (base64Key.startsWith('"') && base64Key.endsWith('"')) {
-			base64Key = base64Key.substring(1, base64Key.length - 1);
-		}
-
-		const keypairBytes = Buffer.from(base64Key, 'base64');
-		if (keypairBytes.length !== 64) {
-			throw new Error(`Decoded keypair has incorrect length: ${keypairBytes.length}, expected 64`);
-		}
-
-		// Create keypair and convert to Base58
-		const keypair = Keypair.fromSecretKey(keypairBytes);
-		const base58PrivateKeyOutput = toBase58PrivateKey(keypairBytes);
-
-		// Store securely in Base58 format
-		await storeCredentials(base58PrivateKeyOutput, newWalletData.mnemonic);
-
-		// Small delay to ensure keychain write has propagated before portfolio store reads
+		
+		// 2. Generate seed from mnemonic
+		const seed = await bip39.mnemonicToSeed(mnemonic);
+		const derivedSeed = seed.subarray(0, 32);
+		
+		// 3. Create keypair from seed
+		const keypair = Keypair.fromSeed(derivedSeed);
+		
+		// 4. Convert to Base58 format for storage
+		const base58PrivateKeyOutput = toBase58PrivateKey(keypair.secretKey);
+		
+		// 5. Store securely in device keychain (never sent to server)
+		await storeCredentials(base58PrivateKeyOutput, mnemonic);
+		
+		// Small delay to ensure keychain write has propagated
 		await new Promise(resolve => setTimeout(resolve, 150));
-
-		// Verify public key matches
-		if (keypair.publicKey.toBase58() !== newWalletData.public_key) {
-			logger.warn('Public key mismatch detected during wallet generation.', { generatedPubKey: keypair.publicKey.toBase58(), expectedPubKey: newWalletData.public_key });
+		
+		// 6. Store public key in portfolio store
+		const publicKey = keypair.publicKey.toBase58();
+		await usePortfolioStore.getState().setWallet(publicKey);
+		
+		// 7. Register ONLY the public key with the backend (secure approach)
+		try {
+			await grpcApi.registerWallet({ publicKey });
+			logger.info('Wallet registered with backend (public key only)');
+		} catch (regError) {
+			// Registration failure is not critical - wallet is still usable
+			logger.warn('Failed to register wallet with backend, continuing anyway', { error: regError });
 		}
-
-		// Store in portfolio store
-		await usePortfolioStore.getState().setWallet(keypair.publicKey.toBase58());
-
-		logger.info('New wallet generated and stored');
-		logger.breadcrumb({ category: 'wallet_setup', message: 'Wallet generated successfully', data: { publicKey: keypair.publicKey.toBase58() } });
-
+		
+		logger.info('New wallet generated locally and stored securely');
+		logger.breadcrumb({ category: 'wallet_setup', message: 'Wallet generated successfully', data: { publicKey } });
+		
 		return {
 			keypair,
 			walletData: {
-				publicKey: newWalletData.public_key,
-				privateKey: base58PrivateKeyOutput, // Ensure this is the Base58 string
-				mnemonic: newWalletData.mnemonic
+				publicKey,
+				privateKey: base58PrivateKeyOutput,
+				mnemonic
 			}
 		};
 	} catch (error) {
@@ -89,14 +95,24 @@ export const handleImportWallet = async (mnemonic: string): Promise<Keypair> => 
 		// Convert to Base58 format
 		const base58PrivateKeyOutput = toBase58PrivateKey(keypair.secretKey);
 
-		// Store securely
+		// Store securely (never sent to server)
 		await storeCredentials(base58PrivateKeyOutput, mnemonic);
 
 		// Small delay to ensure keychain write has propagated before portfolio store reads
 		await new Promise(resolve => setTimeout(resolve, 150));
 
 		// Store in portfolio store
-		await usePortfolioStore.getState().setWallet(keypair.publicKey.toBase58());
+		const publicKey = keypair.publicKey.toBase58();
+		await usePortfolioStore.getState().setWallet(publicKey);
+		
+		// Register ONLY the public key with the backend (secure approach)
+		try {
+			await grpcApi.registerWallet({ publicKey });
+			logger.info('Imported wallet registered with backend (public key only)');
+		} catch (regError) {
+			// Registration failure is not critical - wallet is still usable
+			logger.warn('Failed to register imported wallet with backend, continuing anyway', { error: regError });
+		}
 
 		logger.info('Wallet imported and stored');
 		logger.breadcrumb({ category: 'wallet_setup', message: 'Wallet imported successfully', data: { publicKey: keypair.publicKey.toBase58() } });
