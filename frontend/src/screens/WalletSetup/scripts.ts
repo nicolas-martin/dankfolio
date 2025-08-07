@@ -1,7 +1,10 @@
+// Polyfills must be imported first
+import 'react-native-get-random-values';
+import { Buffer } from 'buffer';
+
 import * as Keychain from 'react-native-keychain';
 import { Keypair } from '@solana/web3.js';
 import * as bip39 from 'bip39';
-import { Buffer } from 'buffer'; // Keep Buffer if still used by other functions in this file
 import { grpcApi } from '@/services/grpcApi';
 import { usePortfolioStore } from '@store/portfolio';
 // bs58 might still be used by other functions, if not, it can be removed.

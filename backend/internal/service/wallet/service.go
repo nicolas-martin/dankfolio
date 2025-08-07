@@ -59,7 +59,7 @@ func (s *Service) RegisterWallet(ctx context.Context, publicKey string) error {
 
 	// Check if wallet already exists
 	existingWallet, err := s.store.Wallet().GetByField(ctx, "public_key", publicKey)
-	if err != nil && err != db.ErrNotFound {
+	if err != nil && !errors.Is(err, db.ErrNotFound) {
 		return fmt.Errorf("failed to check existing wallet: %w", err)
 	}
 

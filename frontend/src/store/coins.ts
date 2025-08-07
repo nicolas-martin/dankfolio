@@ -40,6 +40,7 @@ interface CoinState {
 	fetchTopGainersCoins: (limit?: number, offset?: number) => Promise<void>;
 	getCoinsByIDs: (addresses: string[], forceRefresh?: boolean) => Promise<Coin[]>;
 	setCoin: (coin: Coin) => void;
+	clearAllCoins: () => void;
 }
 
 export const useCoinStore = create<CoinState>((set, get) => {
@@ -181,6 +182,22 @@ export const useCoinStore = create<CoinState>((set, get) => {
 				// Return what we have (cached coins)
 				return cachedCoins;
 			}
+		},
+		
+		clearAllCoins: () => {
+			set({
+				availableCoins: [],
+				newCoins: [],
+				trendingCoins: [],
+				topGainersCoins: [],
+				coinMap: {},
+				newCoinsLoading: false,
+				trendingCoinsLoading: false,
+				topGainersCoinsLoading: false,
+				newCoinsError: undefined,
+				trendingCoinsError: undefined,
+				topGainersCoinsError: undefined,
+			});
 		},
 	};
 });

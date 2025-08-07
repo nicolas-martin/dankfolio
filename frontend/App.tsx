@@ -1,3 +1,8 @@
+// Polyfills - must be imported before anything else
+import 'react-native-get-random-values';
+import { Buffer } from 'buffer';
+global.Buffer = Buffer;
+
 import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
 import { env } from './src/utils/env'; // Import our new environment utility

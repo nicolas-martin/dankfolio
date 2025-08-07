@@ -8,6 +8,51 @@ import { Base58PrivateKey } from './cryptoUtils'; // Import the branded type
 
 export const KEYCHAIN_SERVICE = 'com.kaiju.wallet';
 
+// Helper to completely clear all keychain data
+export const clearAllKeychainData = async (): Promise<boolean> => {
+	logger.info('Clearing all keychain data');
+	let success = true;
+
+	try {
+		// 1. Clear generic password with our service
+		const resetServiceResult = await Keychain.resetGenericPassword({
+			service: KEYCHAIN_SERVICE
+		});
+		logger.info('Reset service-specific keychain:', { resetServiceResult });
+
+		// 2. Clear generic password without service (default)
+		const resetDefaultResult = await Keychain.resetGenericPassword();
+		logger.info('Reset default keychain:', { resetDefaultResult });
+
+		// 3. Try to clear internet credentials (in case they were used)
+		try {
+			await Keychain.resetInternetCredentials(KEYCHAIN_SERVICE);
+			logger.info('Reset internet credentials');
+		} catch (e) {
+			// Internet credentials might not exist, that's ok
+			logger.debug('No internet credentials to clear');
+		}
+
+		// 4. Verify that credentials are actually gone
+		const verifyCredentials = await Keychain.getGenericPassword({
+			service: KEYCHAIN_SERVICE
+		});
+
+		if (verifyCredentials && verifyCredentials.password) {
+			logger.error('Keychain credentials still exist after clearing!');
+			success = false;
+		} else {
+			logger.info('Keychain successfully cleared and verified');
+		}
+
+	} catch (error) {
+		logger.error('Error clearing keychain data:', { error: error.message });
+		success = false;
+	}
+
+	return success;
+};
+
 // Helper to store credentials safely
 export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: string): Promise<void> => {
 	logger.breadcrumb({ category: 'wallet_setup', message: 'Storing wallet credentials' });

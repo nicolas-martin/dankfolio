@@ -5,9 +5,13 @@ import { usePortfolioStore } from '@/store/portfolio';
 import { logger } from '@/utils/logger';
 import type { Base58PrivateKey } from '@/utils/cryptoUtils';
 import { grpcApi } from '@/services/grpcApi';
-import * as SecureStore from 'expo-secure-store';
-import * as Keychain from 'react-native-keychain';
-import { KEYCHAIN_SERVICE } from '@/utils/keychainService';
+import { clearAllKeychainData } from '@/utils/keychainService';
+import { useCoinStore } from '@/store/coins';
+import { useTransactionsStore } from '@/store/transactions';
+import { useThemeStore } from '@/store/theme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Sentry from '@sentry/react-native';
+import { DevSettings } from 'react-native';
 
 export interface PrivateKeyState {
 	isVisible: boolean;
@@ -26,7 +30,7 @@ export const usePrivateKeyVisibility = () => {
 
 	const togglePrivateKeyVisibility = useCallback(async () => {
 		logger.breadcrumb({ category: 'settings', message: 'User toggled private key visibility' });
-		
+
 		if (privateKeyState.isVisible) {
 			// Hide the private key
 			setPrivateKeyState(prev => ({
@@ -47,7 +51,7 @@ export const usePrivateKeyVisibility = () => {
 
 		try {
 			const walletKeys = await getActiveWalletKeys();
-			
+
 			if (!walletKeys || !walletKeys.privateKey) {
 				throw new Error('Unable to retrieve private key from secure storage');
 			}
@@ -77,15 +81,15 @@ export const usePrivateKeyVisibility = () => {
 		if (privateKeyState.isLoading) {
 			return 'Loading...';
 		}
-		
+
 		if (privateKeyState.error) {
 			return privateKeyState.error;
 		}
-		
+
 		if (privateKeyState.isVisible && privateKeyState.privateKey) {
 			return privateKeyState.privateKey;
 		}
-		
+
 		return '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
 	}, [privateKeyState]);
 
@@ -107,48 +111,80 @@ export const usePrivateKeyVisibility = () => {
 export const useDeleteAccount = () => {
 	const [isDeleting, setIsDeleting] = useState(false);
 	const { wallet, clearWallet } = usePortfolioStore();
-	
+
 	const performDeleteAccount = useCallback(async () => {
 		if (!wallet?.address) {
 			Alert.alert('Error', 'No wallet found to delete');
 			return;
 		}
-		
+
 		setIsDeleting(true);
 		logger.info('Starting account deletion process', { wallet: wallet.address });
-		
+
 		try {
 			// Call the backend to delete account data
 			const response = await grpcApi.deleteAccount({
 				walletPublicKey: wallet.address,
 				confirmation: 'DELETE'
 			});
-			
+
 			if (!response.success) {
 				throw new Error(response.message || 'Failed to delete account');
 			}
-			
-			logger.info('Account deletion successful, clearing local data');
-			
-			// Clear keychain storage
-			await Keychain.resetGenericPassword({
-				service: KEYCHAIN_SERVICE
-			});
-			
-			// Clear secure storage (legacy)
-			await SecureStore.deleteItemAsync('wallet_private_key');
-			await SecureStore.deleteItemAsync('wallet_public_key');
-			
-			// Clear the portfolio store
-			clearWallet();
-			
-			// Show success message
+
+			logger.info('Account deletion successful, clearing all local data');
+
+			// 1. Clear keychain storage (wallet credentials) - use comprehensive clearing
+			const keychainCleared = await clearAllKeychainData();
+			if (!keychainCleared) {
+				logger.warn('Keychain may not have been completely cleared, but continuing with deletion');
+			}
+
+			// 3. Clear AsyncStorage (app preferences, cache, etc.)
+			try {
+				const allKeys = await AsyncStorage.getAllKeys();
+				if (allKeys.length > 0) {
+					await AsyncStorage.multiRemove(allKeys);
+					logger.info(`Cleared ${allKeys.length} AsyncStorage keys`);
+				}
+			} catch (error) {
+				logger.warn('Failed to clear AsyncStorage', { error: error.message });
+			}
+
+			// 4. Clear all Zustand stores
+			clearWallet(); // Portfolio store
+			useCoinStore.getState().clearAllCoins(); // Coin store
+			useTransactionsStore.getState().clearTransactions(); // Transaction store
+			useThemeStore.getState().resetTheme(); // Theme store (reset to default)
+			logger.info('Cleared all Zustand stores');
+
+			// 5. Clear Sentry user context
+			Sentry.withScope(scope => scope.setUser(null));
+			logger.info('Cleared Sentry user context');
+
+			// 6. Show success message and reload the app
 			Alert.alert(
 				'Account Deleted',
-				'Your account has been successfully deleted.',
-				[{ text: 'OK', style: 'default' }]
+				'Your account has been successfully deleted. The app will now restart.',
+				[{
+					text: 'OK',
+					style: 'default',
+					onPress: () => {
+						logger.info('Reloading app after account deletion');
+						// Reload the app to start fresh
+						if (__DEV__ && DevSettings) {
+							// In development mode, use DevSettings to reload
+							DevSettings.reload();
+						} else {
+							// In production, the user will need to manually restart
+							// This is a limitation without expo-updates
+							logger.info('Please restart the app to complete the process');
+						}
+					}
+				}],
+				{ cancelable: false }
 			);
-			
+
 			logger.info('Account deletion completed successfully');
 		} catch (error) {
 			logger.error('Failed to delete account', { error: error.message });
@@ -161,7 +197,7 @@ export const useDeleteAccount = () => {
 			setIsDeleting(false);
 		}
 	}, [wallet, clearWallet]);
-	
+
 	const showFinalConfirmation = useCallback(() => {
 		Alert.alert(
 			'Final Confirmation',
@@ -180,7 +216,7 @@ export const useDeleteAccount = () => {
 			{ cancelable: false }
 		);
 	}, [performDeleteAccount]);
-	
+
 	const showDeleteConfirmation = useCallback(() => {
 		Alert.alert(
 			'Delete Account',
@@ -199,7 +235,7 @@ export const useDeleteAccount = () => {
 			{ cancelable: true }
 		);
 	}, [showFinalConfirmation]);
-	
+
 	return {
 		isDeleting,
 		showDeleteConfirmation

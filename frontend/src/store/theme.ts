@@ -12,6 +12,7 @@ interface ThemeStore {
 
 	// Actions
 	toggleTheme: () => Promise<void>;
+	resetTheme: () => void;
 }
 
 export const useThemeStore = create<ThemeStore>((set, get) => ({
@@ -41,6 +42,15 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
 		} finally {
 			set({ isLoading: false });
 		}
+	},
+
+	resetTheme: () => {
+		logger.info('ThemeStore: Resetting theme to default');
+		set({ themeType: 'neon', isLoading: false });
+		// Also remove from storage
+		AsyncStorage.removeItem(THEME_STORAGE_KEY).catch(error => {
+			logger.warn('ThemeStore: Failed to remove theme preference from storage', { error });
+		});
 	},
 
 }));
