@@ -10,6 +10,10 @@ service UtilityService {
   // This helps centralize fetching logic, caching, and handle network security policies.
   rpc GetProxiedImage(GetProxiedImageRequest) returns (GetProxiedImageResponse);
 
+  // DeleteAccount deletes all user data associated with the authenticated user.
+  // This is required for App Store compliance (Guideline 5.1.1(v)).
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
+
   // Future utility RPCs can be added here...
 }
 
@@ -23,4 +27,22 @@ message GetProxiedImageResponse {
   bytes image_data = 1;
   // The MIME type of the image (e.g., "image/png", "image/jpeg").
   string content_type = 2;
+}
+
+message DeleteAccountRequest {
+  // The wallet public key of the account to delete.
+  // This should match the authenticated user's wallet.
+  string wallet_public_key = 1;
+  
+  // Confirmation string that must be "DELETE" to proceed.
+  // This helps prevent accidental deletions.
+  string confirmation = 2;
+}
+
+message DeleteAccountResponse {
+  // Whether the account was successfully deleted.
+  bool success = 1;
+  
+  // Optional message with additional details.
+  string message = 2;
 } 

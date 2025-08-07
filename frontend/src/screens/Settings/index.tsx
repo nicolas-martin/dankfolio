@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
 import { View, ScrollView, SafeAreaView } from 'react-native';
-import { Text, List, Switch, Divider, IconButton, ActivityIndicator } from 'react-native-paper';
+import { Text, List, Switch, Divider, IconButton, ActivityIndicator, Button } from 'react-native-paper';
 import Constants from 'expo-constants';
 // import { useNavigation } from '@react-navigation/native';
 import { useThemeStore } from '@/store/theme';
 import { usePortfolioStore } from '@/store/portfolio';
 import { useStyles } from './settings_styles';
 import CopyToClipboard from '@/components/Common/CopyToClipboard';
-import { usePrivateKeyVisibility } from './settings_scripts';
+import { usePrivateKeyVisibility, useDeleteAccount } from './settings_scripts';
 
 const Settings: React.FC = () => {
 	const styles = useStyles();
@@ -18,6 +18,7 @@ const Settings: React.FC = () => {
 
 	const { wallet } = usePortfolioStore();
 	const { privateKeyState, togglePrivateKeyVisibility, getPrivateKeyDisplay, getEyeIconName } = usePrivateKeyVisibility();
+	const { isDeleting, showDeleteConfirmation } = useDeleteAccount();
 
 	const appVersion = Constants.expoConfig?.version || 'N/A';
 
@@ -110,6 +111,28 @@ const Settings: React.FC = () => {
 								/>
 							)}
 						/>
+					</List.Section>
+
+					<List.Section 
+						title="Account Management" 
+						titleStyle={styles.sectionTitle}
+						style={styles.deleteAccountSection}
+					>
+						<Button
+							mode="contained"
+							onPress={showDeleteConfirmation}
+							loading={isDeleting}
+							disabled={isDeleting}
+							style={styles.deleteAccountButton}
+							labelStyle={styles.deleteAccountButtonLabel}
+							icon="delete-forever"
+						>
+							{/* eslint-disable-next-line react-native/no-raw-text */}
+							{'Delete Account'}
+						</Button>
+						<Text style={styles.warningText}>
+							This will permanently delete all your data including wallet and trading history.
+						</Text>
 					</List.Section>
 
 				</View>

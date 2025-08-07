@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/utility.proto.
  */
 export const file_dankfolio_v1_utility: GenFile = /*@__PURE__*/
-  fileDesc("ChpkYW5rZm9saW8vdjEvdXRpbGl0eS5wcm90bxIMZGFua2ZvbGlvLnYxIisKFkdldFByb3hpZWRJbWFnZVJlcXVlc3QSEQoJaW1hZ2VfdXJsGAEgASgJIkMKF0dldFByb3hpZWRJbWFnZVJlc3BvbnNlEhIKCmltYWdlX2RhdGEYASABKAwSFAoMY29udGVudF90eXBlGAIgASgJMnAKDlV0aWxpdHlTZXJ2aWNlEl4KD0dldFByb3hpZWRJbWFnZRIkLmRhbmtmb2xpby52MS5HZXRQcm94aWVkSW1hZ2VSZXF1ZXN0GiUuZGFua2ZvbGlvLnYxLkdldFByb3hpZWRJbWFnZVJlc3BvbnNlQrgBChBjb20uZGFua2ZvbGlvLnYxQgxVdGlsaXR5UHJvdG9QAVpFZ2l0aHViLmNvbS9uaWNvbGFzLW1hcnRpbi9kYW5rZm9saW8vYmFja2VuZC9nZW4vcHJvdG8vZ28vZGFua2ZvbGlvL3YxogIDRFhYqgIMRGFua2ZvbGlvLlYxygIMRGFua2ZvbGlvXFYx4gIYRGFua2ZvbGlvXFYxXEdQQk1ldGFkYXRh6gINRGFua2ZvbGlvOjpWMWIGcHJvdG8z");
+  fileDesc("ChpkYW5rZm9saW8vdjEvdXRpbGl0eS5wcm90bxIMZGFua2ZvbGlvLnYxIisKFkdldFByb3hpZWRJbWFnZVJlcXVlc3QSEQoJaW1hZ2VfdXJsGAEgASgJIkMKF0dldFByb3hpZWRJbWFnZVJlc3BvbnNlEhIKCmltYWdlX2RhdGEYASABKAwSFAoMY29udGVudF90eXBlGAIgASgJIkcKFERlbGV0ZUFjY291bnRSZXF1ZXN0EhkKEXdhbGxldF9wdWJsaWNfa2V5GAEgASgJEhQKDGNvbmZpcm1hdGlvbhgCIAEoCSI5ChVEZWxldGVBY2NvdW50UmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJMsoBCg5VdGlsaXR5U2VydmljZRJeCg9HZXRQcm94aWVkSW1hZ2USJC5kYW5rZm9saW8udjEuR2V0UHJveGllZEltYWdlUmVxdWVzdBolLmRhbmtmb2xpby52MS5HZXRQcm94aWVkSW1hZ2VSZXNwb25zZRJYCg1EZWxldGVBY2NvdW50EiIuZGFua2ZvbGlvLnYxLkRlbGV0ZUFjY291bnRSZXF1ZXN0GiMuZGFua2ZvbGlvLnYxLkRlbGV0ZUFjY291bnRSZXNwb25zZUK4AQoQY29tLmRhbmtmb2xpby52MUIMVXRpbGl0eVByb3RvUAFaRWdpdGh1Yi5jb20vbmljb2xhcy1tYXJ0aW4vZGFua2ZvbGlvL2JhY2tlbmQvZ2VuL3Byb3RvL2dvL2Rhbmtmb2xpby92MaICA0RYWKoCDERhbmtmb2xpby5WMcoCDERhbmtmb2xpb1xWMeICGERhbmtmb2xpb1xWMVxHUEJNZXRhZGF0YeoCDURhbmtmb2xpbzo6VjFiBnByb3RvMw");
 
 /**
  * @generated from message dankfolio.v1.GetProxiedImageRequest
@@ -58,6 +58,60 @@ export const GetProxiedImageResponseSchema: GenMessage<GetProxiedImageResponse> 
   messageDesc(file_dankfolio_v1_utility, 1);
 
 /**
+ * @generated from message dankfolio.v1.DeleteAccountRequest
+ */
+export type DeleteAccountRequest = Message<"dankfolio.v1.DeleteAccountRequest"> & {
+  /**
+   * The wallet public key of the account to delete.
+   * This should match the authenticated user's wallet.
+   *
+   * @generated from field: string wallet_public_key = 1;
+   */
+  walletPublicKey: string;
+
+  /**
+   * Confirmation string that must be "DELETE" to proceed.
+   * This helps prevent accidental deletions.
+   *
+   * @generated from field: string confirmation = 2;
+   */
+  confirmation: string;
+};
+
+/**
+ * Describes the message dankfolio.v1.DeleteAccountRequest.
+ * Use `create(DeleteAccountRequestSchema)` to create a new message.
+ */
+export const DeleteAccountRequestSchema: GenMessage<DeleteAccountRequest> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_utility, 2);
+
+/**
+ * @generated from message dankfolio.v1.DeleteAccountResponse
+ */
+export type DeleteAccountResponse = Message<"dankfolio.v1.DeleteAccountResponse"> & {
+  /**
+   * Whether the account was successfully deleted.
+   *
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * Optional message with additional details.
+   *
+   * @generated from field: string message = 2;
+   */
+  message: string;
+};
+
+/**
+ * Describes the message dankfolio.v1.DeleteAccountResponse.
+ * Use `create(DeleteAccountResponseSchema)` to create a new message.
+ */
+export const DeleteAccountResponseSchema: GenMessage<DeleteAccountResponse> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_utility, 3);
+
+/**
  * UtilityService provides common helper and proxy functionalities.
  *
  * @generated from service dankfolio.v1.UtilityService
@@ -73,6 +127,17 @@ export const UtilityService: GenService<{
     methodKind: "unary";
     input: typeof GetProxiedImageRequestSchema;
     output: typeof GetProxiedImageResponseSchema;
+  },
+  /**
+   * DeleteAccount deletes all user data associated with the authenticated user.
+   * This is required for App Store compliance (Guideline 5.1.1(v)).
+   *
+   * @generated from rpc dankfolio.v1.UtilityService.DeleteAccount
+   */
+  deleteAccount: {
+    methodKind: "unary";
+    input: typeof DeleteAccountRequestSchema;
+    output: typeof DeleteAccountResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_dankfolio_v1_utility, 0);

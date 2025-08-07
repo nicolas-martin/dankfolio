@@ -12,6 +12,18 @@ export const useStyles = () => {
 				flex: 1,
 				paddingHorizontal: theme.spacing.lg,
 			},
+			deleteAccountButton: {
+				backgroundColor: theme.colors.error,
+				marginBottom: theme.spacing.md,
+				marginHorizontal: theme.spacing.lg,
+				marginTop: theme.spacing.xl,
+			},
+			deleteAccountButtonLabel: {
+				color: theme.colors.onError,
+			},
+			deleteAccountSection: {
+				marginTop: theme.spacing.xl,
+			},
 			divider: {
 				backgroundColor: theme.colors.surfaceVariant,
 				marginVertical: theme.spacing.xs,

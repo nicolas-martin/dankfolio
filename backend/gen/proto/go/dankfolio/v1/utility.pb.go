@@ -120,6 +120,116 @@ func (x *GetProxiedImageResponse) GetContentType() string {
 	return ""
 }
 
+type DeleteAccountRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The wallet public key of the account to delete.
+	// This should match the authenticated user's wallet.
+	WalletPublicKey string `protobuf:"bytes,1,opt,name=wallet_public_key,json=walletPublicKey,proto3" json:"wallet_public_key,omitempty"`
+	// Confirmation string that must be "DELETE" to proceed.
+	// This helps prevent accidental deletions.
+	Confirmation  string `protobuf:"bytes,2,opt,name=confirmation,proto3" json:"confirmation,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteAccountRequest) Reset() {
+	*x = DeleteAccountRequest{}
+	mi := &file_dankfolio_v1_utility_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAccountRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAccountRequest) ProtoMessage() {}
+
+func (x *DeleteAccountRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dankfolio_v1_utility_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteAccountRequest.ProtoReflect.Descriptor instead.
+func (*DeleteAccountRequest) Descriptor() ([]byte, []int) {
+	return file_dankfolio_v1_utility_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *DeleteAccountRequest) GetWalletPublicKey() string {
+	if x != nil {
+		return x.WalletPublicKey
+	}
+	return ""
+}
+
+func (x *DeleteAccountRequest) GetConfirmation() string {
+	if x != nil {
+		return x.Confirmation
+	}
+	return ""
+}
+
+type DeleteAccountResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether the account was successfully deleted.
+	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	// Optional message with additional details.
+	Message       string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteAccountResponse) Reset() {
+	*x = DeleteAccountResponse{}
+	mi := &file_dankfolio_v1_utility_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAccountResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAccountResponse) ProtoMessage() {}
+
+func (x *DeleteAccountResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_dankfolio_v1_utility_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteAccountResponse.ProtoReflect.Descriptor instead.
+func (*DeleteAccountResponse) Descriptor() ([]byte, []int) {
+	return file_dankfolio_v1_utility_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *DeleteAccountResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *DeleteAccountResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_dankfolio_v1_utility_proto protoreflect.FileDescriptor
 
 const file_dankfolio_v1_utility_proto_rawDesc = "" +
@@ -130,9 +240,16 @@ const file_dankfolio_v1_utility_proto_rawDesc = "" +
 	"\x17GetProxiedImageResponse\x12\x1d\n" +
 	"\n" +
 	"image_data\x18\x01 \x01(\fR\timageData\x12!\n" +
-	"\fcontent_type\x18\x02 \x01(\tR\vcontentType2p\n" +
+	"\fcontent_type\x18\x02 \x01(\tR\vcontentType\"f\n" +
+	"\x14DeleteAccountRequest\x12*\n" +
+	"\x11wallet_public_key\x18\x01 \x01(\tR\x0fwalletPublicKey\x12\"\n" +
+	"\fconfirmation\x18\x02 \x01(\tR\fconfirmation\"K\n" +
+	"\x15DeleteAccountResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2\xca\x01\n" +
 	"\x0eUtilityService\x12^\n" +
-	"\x0fGetProxiedImage\x12$.dankfolio.v1.GetProxiedImageRequest\x1a%.dankfolio.v1.GetProxiedImageResponseB\xb8\x01\n" +
+	"\x0fGetProxiedImage\x12$.dankfolio.v1.GetProxiedImageRequest\x1a%.dankfolio.v1.GetProxiedImageResponse\x12X\n" +
+	"\rDeleteAccount\x12\".dankfolio.v1.DeleteAccountRequest\x1a#.dankfolio.v1.DeleteAccountResponseB\xb8\x01\n" +
 	"\x10com.dankfolio.v1B\fUtilityProtoP\x01ZEgithub.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1\xa2\x02\x03DXX\xaa\x02\fDankfolio.V1\xca\x02\fDankfolio\\V1\xe2\x02\x18Dankfolio\\V1\\GPBMetadata\xea\x02\rDankfolio::V1b\x06proto3"
 
 var (
@@ -147,16 +264,20 @@ func file_dankfolio_v1_utility_proto_rawDescGZIP() []byte {
 	return file_dankfolio_v1_utility_proto_rawDescData
 }
 
-var file_dankfolio_v1_utility_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_dankfolio_v1_utility_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_dankfolio_v1_utility_proto_goTypes = []any{
 	(*GetProxiedImageRequest)(nil),  // 0: dankfolio.v1.GetProxiedImageRequest
 	(*GetProxiedImageResponse)(nil), // 1: dankfolio.v1.GetProxiedImageResponse
+	(*DeleteAccountRequest)(nil),    // 2: dankfolio.v1.DeleteAccountRequest
+	(*DeleteAccountResponse)(nil),   // 3: dankfolio.v1.DeleteAccountResponse
 }
 var file_dankfolio_v1_utility_proto_depIdxs = []int32{
 	0, // 0: dankfolio.v1.UtilityService.GetProxiedImage:input_type -> dankfolio.v1.GetProxiedImageRequest
-	1, // 1: dankfolio.v1.UtilityService.GetProxiedImage:output_type -> dankfolio.v1.GetProxiedImageResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	2, // 1: dankfolio.v1.UtilityService.DeleteAccount:input_type -> dankfolio.v1.DeleteAccountRequest
+	1, // 2: dankfolio.v1.UtilityService.GetProxiedImage:output_type -> dankfolio.v1.GetProxiedImageResponse
+	3, // 3: dankfolio.v1.UtilityService.DeleteAccount:output_type -> dankfolio.v1.DeleteAccountResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -173,7 +294,7 @@ func file_dankfolio_v1_utility_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dankfolio_v1_utility_proto_rawDesc), len(file_dankfolio_v1_utility_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

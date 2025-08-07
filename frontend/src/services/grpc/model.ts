@@ -225,10 +225,21 @@ export interface API {
 	getTopGainersCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
 	getXStocksCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
 	getPortfolioPnL: (walletAddress: string) => Promise<GetPortfolioPnLResponse>;
+	deleteAccount: (request: DeleteAccountRequest) => Promise<DeleteAccountResponse>;
 }
 
 export interface GetProxiedImageResponse {
 	imageData: string;
+}
+
+export interface DeleteAccountRequest {
+	walletPublicKey: string;
+	confirmation: string;
+}
+
+export interface DeleteAccountResponse {
+	success: boolean;
+	message: string;
 }
 
 export interface SwapQuoteResponse {

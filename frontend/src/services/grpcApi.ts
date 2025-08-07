@@ -899,4 +899,31 @@ export const grpcApi: grpcModel.API = {
 			}
 		}
 	},
+
+	deleteAccount: async (request: grpcModel.DeleteAccountRequest): Promise<grpcModel.DeleteAccountResponse> => {
+		const serviceName = 'UtilityService';
+		const methodName = 'deleteAccount';
+		try {
+			grpcUtils.logRequest(serviceName, methodName, request);
+
+			const response = await utilityClient.deleteAccount(
+				request,
+				{ headers: grpcUtils.getRequestHeaders() }
+			);
+
+			grpcUtils.logResponse(serviceName, methodName, response);
+
+			return {
+				success: response.success,
+				message: response.message
+			};
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in deleteAccount");
+			}
+		}
+	},
 };

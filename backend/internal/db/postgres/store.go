@@ -337,3 +337,31 @@ func (s *Store) ListTopGainersCoins(ctx context.Context, opts db.ListOptions) ([
 
 	return coins, int32(len(coins)), nil
 }
+
+// DeleteAccount deletes all data associated with a wallet/account.
+// This includes the wallet record and all associated trades.
+// This operation is performed in a transaction for atomicity.
+func (s *Store) DeleteAccount(ctx context.Context, walletPublicKey string) error {
+	slog.InfoContext(ctx, "PostgresStore: DeleteAccount called", "wallet", walletPublicKey)
+	
+	// Use a transaction to ensure atomicity
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Delete all trades associated with this wallet
+		if err := tx.Where("user_id = ?", walletPublicKey).Delete(&schema.Trade{}).Error; err != nil {
+			slog.ErrorContext(ctx, "Failed to delete trades", "wallet", walletPublicKey, "error", err)
+			return fmt.Errorf("failed to delete trades for wallet %s: %w", walletPublicKey, err)
+		}
+		
+		// Delete the wallet record
+		if err := tx.Where("public_key = ?", walletPublicKey).Delete(&schema.Wallet{}).Error; err != nil {
+			slog.ErrorContext(ctx, "Failed to delete wallet", "wallet", walletPublicKey, "error", err)
+			return fmt.Errorf("failed to delete wallet %s: %w", walletPublicKey, err)
+		}
+		
+		// Note: We don't delete coins as they're shared across all users
+		// We also don't have user-specific portfolio data in the database (it's computed on-the-fly)
+		
+		slog.InfoContext(ctx, "Successfully deleted account", "wallet", walletPublicKey)
+		return nil
+	})
+}

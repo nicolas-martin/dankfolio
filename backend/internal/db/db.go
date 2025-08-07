@@ -31,6 +31,9 @@ type Store interface {
 	ListNewestCoins(ctx context.Context, opts ListOptions) ([]model.Coin, int32, error)
 	ListTopGainersCoins(ctx context.Context, opts ListOptions) ([]model.Coin, int32, error)
 
+	// Account management
+	DeleteAccount(ctx context.Context, walletPublicKey string) error
+
 	// Transaction management
 	WithTransaction(ctx context.Context, fn func(s Store) error) error
 }

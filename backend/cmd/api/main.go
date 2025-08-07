@@ -420,7 +420,7 @@ func main() {
 	walletService := wallet.New(solanaClient, store, coinService)
 
 	imageFetcher := imageservice.NewOffchainFetcher(offchainClient)
-	utilitySvc := grpcapi.NewService(imageFetcher)
+	utilitySvc := grpcapi.NewService(imageFetcher, store)
 
 	grpcServer := grpcapi.NewServer(
 		coinService,

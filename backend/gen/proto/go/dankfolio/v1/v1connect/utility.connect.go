@@ -36,6 +36,9 @@ const (
 	// UtilityServiceGetProxiedImageProcedure is the fully-qualified name of the UtilityService's
 	// GetProxiedImage RPC.
 	UtilityServiceGetProxiedImageProcedure = "/dankfolio.v1.UtilityService/GetProxiedImage"
+	// UtilityServiceDeleteAccountProcedure is the fully-qualified name of the UtilityService's
+	// DeleteAccount RPC.
+	UtilityServiceDeleteAccountProcedure = "/dankfolio.v1.UtilityService/DeleteAccount"
 )
 
 // UtilityServiceClient is a client for the dankfolio.v1.UtilityService service.
@@ -43,6 +46,9 @@ type UtilityServiceClient interface {
 	// GetProxiedImage fetches an image from an external URL via the backend proxy.
 	// This helps centralize fetching logic, caching, and handle network security policies.
 	GetProxiedImage(context.Context, *connect.Request[v1.GetProxiedImageRequest]) (*connect.Response[v1.GetProxiedImageResponse], error)
+	// DeleteAccount deletes all user data associated with the authenticated user.
+	// This is required for App Store compliance (Guideline 5.1.1(v)).
+	DeleteAccount(context.Context, *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error)
 }
 
 // NewUtilityServiceClient constructs a client for the dankfolio.v1.UtilityService service. By
@@ -62,12 +68,19 @@ func NewUtilityServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(utilityServiceMethods.ByName("GetProxiedImage")),
 			connect.WithClientOptions(opts...),
 		),
+		deleteAccount: connect.NewClient[v1.DeleteAccountRequest, v1.DeleteAccountResponse](
+			httpClient,
+			baseURL+UtilityServiceDeleteAccountProcedure,
+			connect.WithSchema(utilityServiceMethods.ByName("DeleteAccount")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // utilityServiceClient implements UtilityServiceClient.
 type utilityServiceClient struct {
 	getProxiedImage *connect.Client[v1.GetProxiedImageRequest, v1.GetProxiedImageResponse]
+	deleteAccount   *connect.Client[v1.DeleteAccountRequest, v1.DeleteAccountResponse]
 }
 
 // GetProxiedImage calls dankfolio.v1.UtilityService.GetProxiedImage.
@@ -75,11 +88,19 @@ func (c *utilityServiceClient) GetProxiedImage(ctx context.Context, req *connect
 	return c.getProxiedImage.CallUnary(ctx, req)
 }
 
+// DeleteAccount calls dankfolio.v1.UtilityService.DeleteAccount.
+func (c *utilityServiceClient) DeleteAccount(ctx context.Context, req *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error) {
+	return c.deleteAccount.CallUnary(ctx, req)
+}
+
 // UtilityServiceHandler is an implementation of the dankfolio.v1.UtilityService service.
 type UtilityServiceHandler interface {
 	// GetProxiedImage fetches an image from an external URL via the backend proxy.
 	// This helps centralize fetching logic, caching, and handle network security policies.
 	GetProxiedImage(context.Context, *connect.Request[v1.GetProxiedImageRequest]) (*connect.Response[v1.GetProxiedImageResponse], error)
+	// DeleteAccount deletes all user data associated with the authenticated user.
+	// This is required for App Store compliance (Guideline 5.1.1(v)).
+	DeleteAccount(context.Context, *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error)
 }
 
 // NewUtilityServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -95,10 +116,18 @@ func NewUtilityServiceHandler(svc UtilityServiceHandler, opts ...connect.Handler
 		connect.WithSchema(utilityServiceMethods.ByName("GetProxiedImage")),
 		connect.WithHandlerOptions(opts...),
 	)
+	utilityServiceDeleteAccountHandler := connect.NewUnaryHandler(
+		UtilityServiceDeleteAccountProcedure,
+		svc.DeleteAccount,
+		connect.WithSchema(utilityServiceMethods.ByName("DeleteAccount")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/dankfolio.v1.UtilityService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case UtilityServiceGetProxiedImageProcedure:
 			utilityServiceGetProxiedImageHandler.ServeHTTP(w, r)
+		case UtilityServiceDeleteAccountProcedure:
+			utilityServiceDeleteAccountHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -110,4 +139,8 @@ type UnimplementedUtilityServiceHandler struct{}
 
 func (UnimplementedUtilityServiceHandler) GetProxiedImage(context.Context, *connect.Request[v1.GetProxiedImageRequest]) (*connect.Response[v1.GetProxiedImageResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.UtilityService.GetProxiedImage is not implemented"))
+}
+
+func (UnimplementedUtilityServiceHandler) DeleteAccount(context.Context, *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.UtilityService.DeleteAccount is not implemented"))
 }
