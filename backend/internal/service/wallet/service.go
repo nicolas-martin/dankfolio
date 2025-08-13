@@ -743,17 +743,6 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 			// Use stored USD cost from the trade
 			costInUSD := trade.TotalUSDCost
 
-			// Debug logging for swap trades
-			if tokenID == "11111111111111111111111111111111" && trade.Type == "swap" {
-				slog.Info("SOL Swap Trade Debug",
-					"trade_amount", trade.Amount,
-					"from_coin", trade.FromCoinMintAddress,
-					"from_usd_price", trade.FromUSDPrice,
-					"to_usd_price", trade.ToUSDPrice,
-					"total_usd_cost", trade.TotalUSDCost,
-				)
-			}
-
 			// Skip trades without USD cost data
 			if costInUSD <= 0 {
 				slog.Warn("Trade has no USD cost data, skipping",
@@ -870,11 +859,14 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 			currentPrice = coin.Price
 		}
 
-		// Calculate cost basis
+		// Calculate cost basis and historical cost
 		costBasis := 0.0
+		proportionalCost := 0.0
 		hasPurchaseData := false
 		if data, exists := costBasisMap[coinID]; exists && data.totalAmount > 0 {
-			costBasis = data.totalCost / data.totalAmount
+			costBasis = data.totalCost / data.totalAmount // Cost per token for display
+			// Calculate proportional historical cost based on current holdings
+			proportionalCost = (actualBalance / data.totalAmount) * data.totalCost
 			hasPurchaseData = true
 		}
 
@@ -883,28 +875,26 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 			continue
 		}
 
-		// Use the actual wallet balance for calculations, not the trade-calculated amount
-		// This ensures PnL reflects what the user actually holds
+		// Use the actual wallet balance for calculations
 		displayAmount := actualBalance
 
-		// Calculate values based on actual wallet holdings
+		// Calculate PnL using proportional historical cost vs current value
 		currentValue := displayAmount * currentPrice
-		totalCost := displayAmount * costBasis
-		unrealizedPnL := currentValue - totalCost
+		unrealizedPnL := currentValue - proportionalCost
 
 		// Round to avoid floating point precision issues
 		unrealizedPnL = math.Round(unrealizedPnL*1e8) / 1e8 // Round to 8 decimal places
 
 		pnlPercentage := 0.0
-		if totalCost > 0 && math.Abs(unrealizedPnL) > 0.00000001 { // Ignore tiny differences
-			pnlPercentage = unrealizedPnL / totalCost               // Keep as decimal (0.2534 for 25.34%)
+		if proportionalCost > 0 && math.Abs(unrealizedPnL) > 0.00000001 { // Ignore tiny differences
+			pnlPercentage = unrealizedPnL / proportionalCost        // Keep as decimal (0.2534 for 25.34%)
 			pnlPercentage = math.Round(pnlPercentage*10000) / 10000 // Round to 4 decimal places
 		}
 
 		// Add to totals
 		totalPortfolioValue += currentValue
 		if hasPurchaseData {
-			totalPortfolioCostBasis += totalCost
+			totalPortfolioCostBasis += proportionalCost // Use proportional cost, not recalculated cost
 		} else {
 			// For tokens without purchase data, use current value as cost basis
 			totalPortfolioCostBasis += currentValue

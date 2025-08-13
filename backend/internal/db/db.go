@@ -47,6 +47,7 @@ type Repository[T Entity] interface {
 	Upsert(ctx context.Context, item *T) (int64, error)
 	BulkUpsert(ctx context.Context, items *[]T) (int64, error)
 	Delete(ctx context.Context, id string) error
+	HardDelete(ctx context.Context, id string) error // Permanently delete without soft delete
 	GetByField(ctx context.Context, field string, value any) (*T, error)
 	GetByAddresses(ctx context.Context, addresses []string) ([]T, error)    // Get multiple entities by address field
 	ListWithOpts(ctx context.Context, opts ListOptions) ([]T, int32, error) // Returns entities and total count

@@ -584,14 +584,14 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 			strings.Contains(strings.ToLower(errStr), "0x1") // Solana error code for insufficient funds
 
 		if insufficientFundsError && !s.showDetailedBreakdown {
-			// Delete the trade record for insufficient funds errors when detailed breakdown is disabled
-			if deleteErr := s.store.Trades().Delete(ctx, fmt.Sprintf("%d", trade.ID)); deleteErr != nil {
-				slog.Warn("Failed to delete trade record after insufficient funds error",
+			// Hard delete the trade record for insufficient funds errors since the transaction was never executed
+			if deleteErr := s.store.Trades().HardDelete(ctx, fmt.Sprintf("%d", trade.ID)); deleteErr != nil {
+				slog.Warn("Failed to hard delete trade record after insufficient funds error",
 					"error", deleteErr,
 					"trade_id", trade.ID,
 					"original_error", errStr)
 			} else {
-				slog.Info("Deleted trade record due to insufficient funds error",
+				slog.Info("Hard deleted trade record due to insufficient funds error (transaction never executed)",
 					"trade_id", trade.ID,
 					"error", errStr)
 			}

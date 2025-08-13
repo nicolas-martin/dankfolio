@@ -188,6 +188,20 @@ func (r *Repository[S, M]) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// HardDelete permanently removes an entity by its ID (bypasses GORM soft delete).
+func (r *Repository[S, M]) HardDelete(ctx context.Context, id string) error {
+	var schemaItem S
+	// Use Unscoped() to permanently delete instead of soft delete
+	dbResult := r.db.WithContext(ctx).Unscoped().Where("id = ?", id).Delete(&schemaItem)
+	if dbResult.Error != nil {
+		return fmt.Errorf("failed to hard delete item with id %s: %w", id, dbResult.Error)
+	}
+	if dbResult.RowsAffected == 0 {
+		return fmt.Errorf("%w: item with id %s not found for hard deletion", db.ErrNotFound, id)
+	}
+	return nil
+}
+
 // BulkUpsert inserts or updates multiple entities in batches.
 func (r *Repository[S, M]) BulkUpsert(ctx context.Context, items *[]M) (int64, error) {
 	if items == nil || len(*items) == 0 {
