@@ -4,12 +4,14 @@ import (
 	"time"
 
 	"github.com/lib/pq"
+	"gorm.io/gorm"
 )
 
 type Wallet struct {
-	ID        string    `gorm:"primaryKey;column:id"`
-	PublicKey string    `gorm:"column:public_key;not null;unique"`
-	CreatedAt time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP"`
+	ID        string         `gorm:"primaryKey;column:id"`
+	PublicKey string         `gorm:"column:public_key;not null;unique"`
+	CreatedAt time.Time      `gorm:"column:created_at;default:CURRENT_TIMESTAMP"`
+	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at;index"`
 }
 
 func (w Wallet) GetID() string {
@@ -110,11 +112,12 @@ type Trade struct {
 	Status              string    `gorm:"column:status;not null;index:idx_trades_status"` // e.g., "pending", "completed", "failed"
 	TransactionHash     string    `gorm:"column:transaction_hash"`
 	UnsignedTransaction string    `gorm:"column:unsigned_transaction;index:idx_trades_unsigned_tx"` // For Solana, this could be base64 encoded transaction
-	CreatedAt           time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP;index:idx_trades_created_at"`
-	CompletedAt         time.Time `gorm:"column:completed_at"`
-	Confirmations       int32     `gorm:"column:confirmations;default:0"`
-	Finalized           bool      `gorm:"column:finalized;default:false"`
-	Error               string    `gorm:"column:error"`
+	CreatedAt           time.Time      `gorm:"column:created_at;default:CURRENT_TIMESTAMP;index:idx_trades_created_at"`
+	CompletedAt         time.Time      `gorm:"column:completed_at"`
+	Confirmations       int32          `gorm:"column:confirmations;default:0"`
+	Finalized           bool           `gorm:"column:finalized;default:false"`
+	Error               string         `gorm:"column:error"`
+	DeletedAt           gorm.DeletedAt `gorm:"column:deleted_at;index"`
 }
 
 // GetID returns the primary key column name for Trade
