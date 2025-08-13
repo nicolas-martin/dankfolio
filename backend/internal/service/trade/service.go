@@ -201,7 +201,8 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	var feeAccount string
 	var actualFeeMint string // Track the actual mint used for fee collection
 
-	if s.platformFeeAccountAddress != "" {
+	// Check if this swap involves Token2022 tokens which don't support platform fees
+	if s.platformFeeAccountAddress != "" && !shouldDisablePlatformFees(params.FromCoinMintAddress, params.ToCoinMintAddress) {
 		// Parse Jupiter quote to extract swap mode and other info
 		var jupiterQuote *jupiter.QuoteResponse
 		swapMode := "ExactIn" // Default
@@ -259,6 +260,12 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 				"output_mint", params.ToCoinMintAddress,
 				"swap_mode", swapMode)
 		}
+	} else if s.platformFeeAccountAddress != "" {
+		// Platform fees disabled for Token2022 tokens
+		slog.Info("Platform fee collection disabled for Token2022 swap",
+			"reason", "Token2022 tokens don't support platform fees (error 0x177e)",
+			"input_mint", params.FromCoinMintAddress,
+			"output_mint", params.ToCoinMintAddress)
 	}
 
 	swapResponse, err := s.jupiterClient.CreateSwapTransaction(ctx, tradeQuote.Raw, fromPubKey, feeAccount)
@@ -323,9 +330,9 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 		"output_amount", outputAmount,
 		"from_market_price", fromCoinModel.Price,
 		"to_market_price", toCoinModel.Price,
-		"input_value_usd", inputAmountDecimal * fromCoinModel.Price,
+		"input_value_usd", inputAmountDecimal*fromCoinModel.Price,
 		"output_value_usd", totalUSDCost,
-		"slippage_cost_usd", (inputAmountDecimal * fromCoinModel.Price) - totalUSDCost)
+		"slippage_cost_usd", (inputAmountDecimal*fromCoinModel.Price)-totalUSDCost)
 
 	// Create trade record with essential information
 	trade := &model.Trade{
@@ -706,13 +713,26 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 			"to", toCoin.Symbol)
 	}
 
+	// TODO: We can use another way to collect fees from Token2022
+	// but for now let's just disable them entirely.
+
 	// Get quote from Jupiter with enhanced parameters
+	// Determine if platform fees should be disabled for Token2022 tokens
+	platformFeeBps := s.platformFeeBps
+	if shouldDisablePlatformFees(fromCoinMintAddress, toCoinMintAddress) {
+		platformFeeBps = 0
+		slog.Info("Disabling platform fees for Token2022 swap in quote",
+			"reason", "Token2022 tokens don't support platform fees",
+			"from_mint", fromCoinMintAddress,
+			"to_mint", toCoinMintAddress)
+	}
+
 	quote, err := s.jupiterClient.GetQuote(ctx, jupiter.QuoteParams{
 		InputMint:        jupiterInputMint,  // Use normalized mint address
 		OutputMint:       jupiterOutputMint, // Use normalized mint address
 		Amount:           inputAmount,       // Amount is already in raw units (lamports for SOL)
 		SlippageBps:      slippageBpsInt,
-		PlatformFeeBps:   s.platformFeeBps, // Re-enabled: use proper ATA as fee account
+		PlatformFeeBps:   platformFeeBps, // Conditionally disabled for Token2022
 		SwapMode:         "ExactIn",
 		OnlyDirectRoutes: !allowMultiHop, // Use multi-hop based on user preference
 		// AsLegacyTransaction removed - was preventing trades with newer DEXes like Meteora DLMM
@@ -958,6 +978,7 @@ func isInsufficientFundsError(err error) bool {
 		"insufficient funds",
 		"Attempt to debit an account but found no record of a prior credit",
 		"custom program error: 0x1", // This is the custom error code for insufficient funds
+		// Note: 0x177e (6014) is NOT insufficient funds - it's Token2022 platform fee error
 	}
 
 	for _, pattern := range insufficientPatterns {

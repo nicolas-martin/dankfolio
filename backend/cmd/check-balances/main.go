@@ -45,6 +45,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to get SOL balance: %v", err)
 	}
+	// Get regular SPL token accounts
 	accounts, err := solRPC.GetTokenAccountsByOwner(
 		context.Background(),
 		k,
@@ -57,7 +58,24 @@ func main() {
 		},
 	)
 	if err != nil {
-		log.Fatalf("failed to get recent blockhash: %v", err)
+		log.Fatalf("failed to get SPL token accounts: %v", err)
+	}
+	
+	// Get Token2022 accounts
+	token2022ProgramID := solana.MustPublicKeyFromBase58("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb")
+	accounts2022, err := solRPC.GetTokenAccountsByOwner(
+		context.Background(),
+		k,
+		&rpc.GetTokenAccountsConfig{
+			ProgramId: &token2022ProgramID,
+		},
+		&rpc.GetTokenAccountsOpts{
+			Encoding:   solana.EncodingJSONParsed,
+			Commitment: rpc.CommitmentConfirmed,
+		},
+	)
+	if err != nil {
+		log.Printf("Note: No Token2022 accounts found (this is normal): %v", err)
 	}
 	var parsedAccount struct {
 		Parsed struct {
@@ -71,12 +89,13 @@ func main() {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.Header([]string{"Token ID", "Amount"}) // Changed SetHeader to Header
+	table.Header([]string{"Token ID", "Amount", "Program"}) // Added Program column
 	
 	// Add SOL balance first
 	solBalance := float64(solData.Value) / float64(solana.LAMPORTS_PER_SOL)
-	table.Append([]string{"SOL (Native)", fmt.Sprintf("%.9f", solBalance)})
+	table.Append([]string{"SOL (Native)", fmt.Sprintf("%.9f", solBalance), "System"})
 	
+	// Process regular SPL tokens
 	for _, account := range accounts.Value {
 		parsedData := account.Account.Data.GetRawJSON()
 		if len(parsedData) == 0 {
@@ -84,8 +103,25 @@ func main() {
 		}
 		if err := json.Unmarshal(parsedData, &parsedAccount); err != nil {
 			log.Printf("failed to parse account data: %v", err)
+			continue
 		}
-		table.Append([]string{parsedAccount.Parsed.Info.Mint, fmt.Sprintf("%.9f", parsedAccount.Parsed.Info.TokenAmount.UiAmount)})
+		table.Append([]string{parsedAccount.Parsed.Info.Mint, fmt.Sprintf("%.9f", parsedAccount.Parsed.Info.TokenAmount.UiAmount), "SPL Token"})
+	}
+	
+	// Process Token2022 accounts
+	if accounts2022 != nil {
+		for _, account := range accounts2022.Value {
+			parsedData := account.Account.Data.GetRawJSON()
+			if len(parsedData) == 0 {
+				continue
+			}
+			if err := json.Unmarshal(parsedData, &parsedAccount); err != nil {
+				log.Printf("failed to parse Token2022 account data: %v", err)
+				continue
+			}
+			// Add Token2022 label to distinguish from regular SPL tokens
+			table.Append([]string{parsedAccount.Parsed.Info.Mint, fmt.Sprintf("%.9f", parsedAccount.Parsed.Info.TokenAmount.UiAmount), "Token2022"})
+		}
 	}
 
 	table.Render()
