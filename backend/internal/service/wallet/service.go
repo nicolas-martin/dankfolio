@@ -587,8 +587,9 @@ func (s *Service) GetWalletBalances(ctx context.Context, address string) (*Walle
 		return nil, fmt.Errorf("INVALID_ADDRESS: address is not on curve")
 	}
 
-	// Get SOL balance first
-	solBalanceResult, err := s.chainClient.GetBalance(ctx, bmodel.Address(pubKey.String()), "confirmed")
+	// Get combined SOL balance (native SOL + any wSOL tokens)
+	solNormalizer := NewSOLNormalizer(s.chainClient)
+	combinedSOLBalance, err := solNormalizer.GetCombinedSOLBalance(ctx, pubKey.String())
 	if err != nil {
 		// Check if it's a network/RPC error vs address not found
 		if strings.Contains(err.Error(), "account not found") || strings.Contains(err.Error(), "nil value") {
@@ -599,7 +600,7 @@ func (s *Service) GetWalletBalances(ctx context.Context, address string) (*Walle
 		}
 		return nil, fmt.Errorf("NETWORK_ERROR: failed to get SOL balance: %w", err)
 	}
-	solValue := solBalanceResult.UIAmount // UIAmount from bmodel.Balance
+	solValue := combinedSOLBalance.Amount // Combined SOL amount
 
 	// Get other token balances
 	tokenBalances, err := s.getTokenBalances(ctx, address) // address is string
@@ -609,7 +610,7 @@ func (s *Service) GetWalletBalances(ctx context.Context, address string) (*Walle
 		if solValue > 0 {
 			return &WalletBalance{
 				Balances: []Balance{{
-					ID:     model.SolMint,
+					ID:     model.NativeSolMint, // Use native SOL representation for user display
 					Amount: solValue,
 				}},
 			}, nil
