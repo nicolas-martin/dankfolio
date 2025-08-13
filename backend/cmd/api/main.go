@@ -44,7 +44,7 @@ import (
 )
 
 func main() {
-	logLevel := slog.LevelInfo
+	logLevel := slog.LevelDebug
 	var handler slog.Handler
 
 	config := loadConfig()

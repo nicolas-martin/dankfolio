@@ -106,8 +106,7 @@ func (s *coinServiceHandler) GetCoinsByIDs(ctx context.Context, req *connect.Req
 	}
 
 	// Call the batch service method with forceRefresh flag
-	// Note: req.Msg.ForceRefresh would be available after protobuf regeneration
-	forceRefresh := false // TODO: Use req.Msg.ForceRefresh when protobuf is regenerated
+	forceRefresh := req.Msg.ForceRefresh
 	coins, err := s.coinService.GetCoinsByAddresses(ctx, req.Msg.Addresses, forceRefresh)
 	if err != nil {
 		slog.ErrorContext(ctx, "GetCoinsByIDs service call failed", "error", err, "addresses_count", len(req.Msg.Addresses))

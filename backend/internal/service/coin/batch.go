@@ -55,21 +55,21 @@ func (s *Service) GetCoinsByAddresses(ctx context.Context, addresses []string, f
 		coinCopy := coin
 		existingAddresses[coin.Address] = &coinCopy
 
-		// Check cache first even when forceRefresh is true (to prevent spam)
+		// Check cache first (always respect 2-minute cache to prevent spam)
 		cacheKey := fmt.Sprintf("coin:%s", coin.Address)
 		if cachedCoins, found := s.cache.Get(cacheKey); found && len(cachedCoins) > 0 {
 			// Cache hit - data is < 2 min old, use it even if forceRefresh
 			freshCoins = append(freshCoins, cachedCoins[0])
-			slog.DebugContext(ctx, "Using cached data (< 2 min old) despite forceRefresh", "address", coin.Address)
+			slog.DebugContext(ctx, "Using cached data (< 2 min old)", "address", coin.Address)
 		} else if !forceRefresh && s.isCoinMarketDataFresh(&coinCopy) {
-			// No cache but database data is fresh (< 24 hours)
+			// No cache but database data is fresh (< 24 hours) and no force refresh
 			freshCoins = append(freshCoins, coinCopy)
 			slog.DebugContext(ctx, "Coin has fresh market data", "address", coin.Address, "lastUpdated", coin.LastUpdated)
 		} else {
-			// Need to update: either forceRefresh with no cache, or stale data
+			// Need to update: either forceRefresh (beyond 2min cache), or stale data
 			addressesToUpdate = append(addressesToUpdate, coin.Address)
 			if forceRefresh {
-				slog.DebugContext(ctx, "Force refresh requested for coin (no cache hit)", "address", coin.Address)
+				slog.DebugContext(ctx, "Force refresh requested for coin (beyond 2min cache)", "address", coin.Address)
 			} else {
 				slog.DebugContext(ctx, "Coin market data is stale, needs update", "address", coin.Address, "lastUpdated", coin.LastUpdated)
 			}
