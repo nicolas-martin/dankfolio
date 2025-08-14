@@ -287,7 +287,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	// New props for USD toggle
 	enableUsdToggle = true, // Default to true as per new requirement
 	// onUsdAmountChange removed from props
-	initialInputUnit = 'CRYPTO',
+	initialInputUnit = 'USD',
 	// Props for TextInput
 	textInputProps = {},
 }) => {
