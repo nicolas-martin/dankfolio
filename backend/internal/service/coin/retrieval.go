@@ -102,7 +102,7 @@ func (s *Service) GetCoinByAddress(ctx context.Context, address string) (*model.
 				slog.String("lastUpdated", coin.LastUpdated),
 				slog.Float64("price", coin.Price))
 			// Cache the fresh coin for quick access
-			s.cache.Set(cacheKey, []model.Coin{*coin}, 2*time.Minute)
+			s.cache.Set(cacheKey, []model.Coin{*coin}, CoinCacheExpiry)
 			return coin, nil
 		}
 
@@ -113,7 +113,7 @@ func (s *Service) GetCoinByAddress(ctx context.Context, address string) (*model.
 		updatedCoin, err := s.updateCoinMarketData(ctx, coin)
 		if err == nil && updatedCoin != nil {
 			// Cache the updated coin
-			s.cache.Set(cacheKey, []model.Coin{*updatedCoin}, 2*time.Minute)
+			s.cache.Set(cacheKey, []model.Coin{*updatedCoin}, CoinCacheExpiry)
 		}
 		return updatedCoin, err
 	}
@@ -130,7 +130,7 @@ func (s *Service) GetCoinByAddress(ctx context.Context, address string) (*model.
 	newCoin, err := s.fetchNewCoin(ctx, address)
 	if err == nil && newCoin != nil {
 		// Cache the newly fetched coin
-		s.cache.Set(cacheKey, []model.Coin{*newCoin}, 2*time.Minute)
+		s.cache.Set(cacheKey, []model.Coin{*newCoin}, CoinCacheExpiry)
 	}
 	return newCoin, err
 }

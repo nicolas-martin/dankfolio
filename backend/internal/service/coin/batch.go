@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
-	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
@@ -129,7 +128,7 @@ func (s *Service) GetCoinsByAddresses(ctx context.Context, addresses []string, f
 	// Populate cache with all fresh coins for quick individual lookups
 	for _, coin := range existingCoins {
 		cacheKey := fmt.Sprintf("coin:%s", coin.Address)
-		s.cache.Set(cacheKey, []model.Coin{coin}, 2*time.Minute)
+		s.cache.Set(cacheKey, []model.Coin{coin}, CoinCacheExpiry)
 	}
 	
 	slog.InfoContext(ctx, "Completed batch coin retrieval", "final_count", len(existingCoins), "cached_count", len(existingCoins))

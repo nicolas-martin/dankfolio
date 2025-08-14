@@ -21,22 +21,27 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
-	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin" // Added for CoinServiceAPI
+	coinservice "github.com/nicolas-martin/dankfolio/backend/internal/service/coin" // Added for CoinServiceAPI
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/price" // Added for PriceServiceAPI
 )
 
 // Service handles wallet-related operations
 type Service struct {
-	chainClient bclient.GenericClientAPI // Use generic blockchain client interface
-	store       db.Store
-	coinService coin.CoinServiceAPI // Added CoinService
+	chainClient  bclient.GenericClientAPI // Use generic blockchain client interface
+	store        db.Store
+	coinService  coinservice.CoinServiceAPI // Added CoinService
+	priceService price.PriceServiceAPI // Added PriceService for efficient price fetching
+	coinCache    coinservice.CoinCache // Added coin cache for price optimization
 }
 
 // New creates a new wallet service
-func New(chainClient bclient.GenericClientAPI, store db.Store, coinService coin.CoinServiceAPI) *Service { // Accept generic client
+func New(chainClient bclient.GenericClientAPI, store db.Store, coinService coinservice.CoinServiceAPI, priceService price.PriceServiceAPI, coinCache coinservice.CoinCache) *Service { // Accept generic client
 	return &Service{
-		chainClient: chainClient,
-		store:       store,
-		coinService: coinService, // Store injected CoinService
+		chainClient:  chainClient,
+		store:        store,
+		coinService:  coinService, // Store injected CoinService
+		priceService: priceService, // Store injected PriceService for efficient price fetching
+		coinCache:    coinCache, // Store injected coin cache for price optimization
 	}
 }
 
@@ -846,19 +851,10 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 		coinIDsToFetch = append(coinIDsToFetch, coinID)
 	}
 
-	// Batch fetch all coin data for holdings
+	// Optimized coin data fetching for PnL - check cache first, then use price service if needed
 	var coinDataMap map[string]*model.Coin
 	if len(coinIDsToFetch) > 0 {
-		coins, err := s.coinService.GetCoinsByAddresses(ctx, coinIDsToFetch, false)
-		if err != nil {
-			slog.Warn("Failed to batch fetch coin data", "error", err)
-			coinDataMap = make(map[string]*model.Coin)
-		} else {
-			coinDataMap = make(map[string]*model.Coin)
-			for i := range coins {
-				coinDataMap[coins[i].Address] = &coins[i]
-			}
-		}
+		coinDataMap = s.getOptimizedCoinDataForPnL(ctx, coinIDsToFetch)
 	} else {
 		coinDataMap = make(map[string]*model.Coin)
 	}
@@ -960,19 +956,10 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 		}
 	}
 
-	// Batch fetch prices for all wallet balances
+	// Optimized batch fetch prices for all wallet balances using same strategy
 	var walletCoinDataMap map[string]*model.Coin
 	if len(walletCoinIDs) > 0 {
-		coins, err := s.coinService.GetCoinsByAddresses(ctx, walletCoinIDs, false)
-		if err != nil {
-			slog.Warn("Failed to batch fetch wallet coin data", "error", err)
-			walletCoinDataMap = make(map[string]*model.Coin)
-		} else {
-			walletCoinDataMap = make(map[string]*model.Coin)
-			for i := range coins {
-				walletCoinDataMap[coins[i].Address] = &coins[i]
-			}
-		}
+		walletCoinDataMap = s.getOptimizedCoinDataForPnL(ctx, walletCoinIDs)
 	} else {
 		walletCoinDataMap = make(map[string]*model.Coin)
 	}
@@ -1014,4 +1001,126 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 	totalPortfolioValue = actualTotalPortfolioValue
 
 	return totalPortfolioValue, totalPortfolioCostBasis, totalUnrealizedPnL, totalPnLPercentage, int32(len(tokenPnLList)), tokenPnLList, nil
+}
+
+// getOptimizedCoinDataForPnL efficiently fetches coin data for PnL calculations
+// It prioritizes cached data and only fetches fresh prices when needed
+func (s *Service) getOptimizedCoinDataForPnL(ctx context.Context, coinIDs []string) map[string]*model.Coin {
+	coinDataMap := make(map[string]*model.Coin)
+	var coinsNeedingPriceUpdate []string
+	var addressesToUpdate []string
+	
+	// Step 1: Check cache for fresh data (< 2 minutes)
+	for _, coinID := range coinIDs {
+		cacheKey := fmt.Sprintf("coin:%s", coinID)
+		if cachedCoins, found := s.coinCache.Get(cacheKey); found && len(cachedCoins) > 0 {
+			// Cache hit - use fresh cached data
+			coinCopy := cachedCoins[0]
+			coinDataMap[coinID] = &coinCopy
+			slog.DebugContext(ctx, "Using cached coin data for PnL", "address", coinID, "price", coinCopy.Price)
+			continue
+		}
+		
+		// Cache miss - need to check database and potentially update
+		coinsNeedingPriceUpdate = append(coinsNeedingPriceUpdate, coinID)
+	}
+	
+	if len(coinsNeedingPriceUpdate) == 0 {
+		// All coins were found in cache
+		slog.InfoContext(ctx, "All coin data found in cache for PnL calculation", "cached_count", len(coinDataMap))
+		return coinDataMap
+	}
+	
+	// Step 2: Get existing coins from database 
+	existingCoins, err := s.store.Coins().GetByAddresses(ctx, coinsNeedingPriceUpdate)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to get existing coins from database for PnL", "error", err)
+		return coinDataMap
+	}
+	
+	existingCoinsMap := make(map[string]*model.Coin)
+	for i := range existingCoins {
+		existingCoinsMap[existingCoins[i].Address] = &existingCoins[i]
+	}
+	
+	// Step 3: Categorize coins by freshness 
+	for _, coinID := range coinsNeedingPriceUpdate {
+		if coin, exists := existingCoinsMap[coinID]; exists {
+			// Check if price data is fresh (< 2 minutes based on LastUpdated)
+			if s.isCoinPriceFresh(coin) {
+				// Use existing fresh data
+				coinDataMap[coinID] = coin
+				// Also update cache for future use
+				cacheKey := fmt.Sprintf("coin:%s", coinID)
+				s.coinCache.Set(cacheKey, []model.Coin{*coin}, coinservice.CoinCacheExpiry)
+				slog.DebugContext(ctx, "Using fresh database coin data for PnL", "address", coinID, "price", coin.Price)
+			} else {
+				// Price data is stale, needs update
+				addressesToUpdate = append(addressesToUpdate, coinID)
+				// Still add the stale coin to map as fallback
+				coinDataMap[coinID] = coin
+			}
+		} else {
+			// Coin doesn't exist in database - this shouldn't happen in PnL context
+			// but we'll handle it gracefully
+			slog.WarnContext(ctx, "Coin not found in database for PnL calculation", "address", coinID)
+		}
+	}
+	
+	// Step 4: Update stale prices using price service (lightweight operation)
+	if len(addressesToUpdate) > 0 {
+		slog.InfoContext(ctx, "Updating stale prices for PnL calculation", "addresses_to_update", len(addressesToUpdate))
+		
+		// Get fresh prices from price service
+		freshPrices, err := s.priceService.GetCoinPrices(ctx, addressesToUpdate)
+		if err != nil {
+			slog.WarnContext(ctx, "Failed to get fresh prices for PnL, using stale data", "error", err)
+		} else {
+			// Update coins with fresh prices and save to database
+			for _, address := range addressesToUpdate {
+				if coin, exists := coinDataMap[address]; exists {
+					if newPrice, priceExists := freshPrices[address]; priceExists && newPrice > 0 {
+						// Update coin with fresh price
+						coin.Price = newPrice
+						coin.LastUpdated = time.Now().Format(time.RFC3339)
+						
+						// Update in database 
+						if updateErr := s.store.Coins().Update(ctx, coin); updateErr != nil {
+							slog.WarnContext(ctx, "Failed to update coin price in database", "address", address, "error", updateErr)
+						}
+						
+						// Update cache with fresh data
+						cacheKey := fmt.Sprintf("coin:%s", address)
+						s.coinCache.Set(cacheKey, []model.Coin{*coin}, coinservice.CoinCacheExpiry)
+						
+						slog.DebugContext(ctx, "Updated coin price for PnL", "address", address, "new_price", newPrice)
+					}
+				}
+			}
+		}
+	}
+	
+	slog.InfoContext(ctx, "Completed optimized coin data fetch for PnL", 
+		"total_requested", len(coinIDs),
+		"cached_hits", len(coinIDs)-len(coinsNeedingPriceUpdate),
+		"database_queries", len(coinsNeedingPriceUpdate),
+		"price_updates", len(addressesToUpdate))
+	
+	return coinDataMap
+}
+
+// isCoinPriceFresh checks if a coin's price data is fresh (< 2 minutes)
+func (s *Service) isCoinPriceFresh(coin *model.Coin) bool {
+	if coin.LastUpdated == "" {
+		return false
+	}
+	
+	lastUpdated, err := time.Parse(time.RFC3339, coin.LastUpdated)
+	if err != nil {
+		slog.Warn("Failed to parse coin LastUpdated time", "address", coin.Address, "lastUpdated", coin.LastUpdated, "error", err)
+		return false
+	}
+	
+	// Consider fresh if updated within last 2 minutes (same as cache TTL)
+	return time.Since(lastUpdated) < coinservice.CoinCacheExpiry
 }

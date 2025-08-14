@@ -417,7 +417,7 @@ func main() {
 		false, // showDetailedBreakdown - disabled by default
 	)
 
-	walletService := wallet.New(solanaClient, store, coinService)
+	walletService := wallet.New(solanaClient, store, coinService, priceService, coinCache)
 
 	imageFetcher := imageservice.NewOffchainFetcher(offchainClient)
 	utilitySvc := grpcapi.NewService(imageFetcher, store)
