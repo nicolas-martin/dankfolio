@@ -124,17 +124,26 @@ func (s *Service) GetCoinPrices(ctx context.Context, tokenAddresses []string) (m
 			semaphore <- struct{}{}
 			defer func() { <-semaphore }()
 
+			// Handle native SOL specially - use wrapped SOL address for price data
+			apiAddress := addr
+			if addr == model.NativeSolMint { // Native SOL
+				apiAddress = model.SolMint // Wrapped SOL
+				slog.DebugContext(ctx, "Converting native SOL to wrapped SOL for price lookup", "original", addr, "wrapped", apiAddress)
+			}
+
 			// Get token overview which includes price
-			overview, err := s.birdeyeClient.GetTokenOverview(ctx, addr)
+			overview, err := s.birdeyeClient.GetTokenOverview(ctx, apiAddress)
 			if err != nil {
-				slog.Warn("Failed to get price for token", "address", addr, "error", err)
+				slog.Warn("Failed to get price for token", "address", addr, "api_address", apiAddress, "error", err)
 				return
 			}
 
-			// Store the price
+			// Store the price using the original address
 			mu.Lock()
 			prices[addr] = overview.Data.Price
 			mu.Unlock()
+			
+			slog.DebugContext(ctx, "Successfully fetched price", "address", addr, "api_address", apiAddress, "price", overview.Data.Price)
 		}(address)
 	}
 
