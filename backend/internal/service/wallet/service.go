@@ -335,7 +335,7 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 
 	// Determine which coin address to fetch
 	var coinAddressToFetch string
-	if coinMintAddress == "" || coinMintAddress == model.SolMint { // Native SOL transfer
+	if coinMintAddress == "" || coinMintAddress == model.NativeSolMint || coinMintAddress == model.SolMint { // Native SOL transfer
 		finalFromCoinMint = model.SolMint
 		finalToCoinMint = model.SolMint
 		coinAddressToFetch = model.SolMint
@@ -418,9 +418,19 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 
 // createTokenTransfer creates a token transfer transaction
 func (s *Service) createTokenTransfer(ctx context.Context, from, to solana.PublicKey, tokenMint string, amount float64) (*solana.Transaction, error) {
+	// Log input parameters for debugging
+	slog.Debug("createTokenTransfer called",
+		"from", from.String(),
+		"to", to.String(),
+		"tokenMint", tokenMint,
+		"amount", amount)
+
 	// Handle native SOL transfer (including Wrapped SOL)
+	// Native SOL mint: 11111111111111111111111111111111
 	// Wrapped SOL mint: So11111111111111111111111111111111111111112
-	if tokenMint == "" || tokenMint == "So11111111111111111111111111111111111111112" {
+	if tokenMint == "" ||
+		tokenMint == model.NativeSolMint ||
+		tokenMint == model.SolMint {
 		slog.Debug("Creating SOL transfer transaction (native or wrapped)", "tokenMint", tokenMint)
 		lamports := uint64(amount * float64(solana.LAMPORTS_PER_SOL))
 		slog.Debug("Amount in lamports", "lamports", lamports)
@@ -437,7 +447,14 @@ func (s *Service) createTokenTransfer(ctx context.Context, from, to solana.Publi
 	// Handle SPL token transfer
 	mint, err := s.parseAddress(tokenMint, "token mint")
 	if err != nil {
-		return nil, err
+		slog.Error("Failed to parse token mint address", "tokenMint", tokenMint, "error", err)
+		return nil, fmt.Errorf("invalid token mint address '%s': %w", tokenMint, err)
+	}
+
+	// Validate mint is not zero
+	if mint.IsZero() {
+		slog.Error("Token mint is zero after parsing", "tokenMint", tokenMint)
+		return nil, fmt.Errorf("token mint address parsed to zero value")
 	}
 
 	// Get source and destination ATAs
