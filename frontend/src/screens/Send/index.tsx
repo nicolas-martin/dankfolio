@@ -333,6 +333,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		return (
 			<View style={styles.tokenCard}>
 				<TokenSelector
+					key={`send-${selectedToken.coin?.address || 'none'}`} // Force re-render on coin change
 					selectedToken={selectedToken.coin}
 					onSelectToken={onTokenSelect}
 					label=""

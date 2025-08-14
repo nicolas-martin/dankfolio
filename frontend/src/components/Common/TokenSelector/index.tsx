@@ -318,10 +318,20 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	}, [selectedToken, enableUsdToggle, onAmountChange]);
 
 	// Get live coin data (including price) from the store
-	const currentTokenDataFromStore = useCoinStore(state =>
-		enableUsdToggle && selectedToken ? state.coinMap[selectedToken.address] : undefined
-	);
-	const liveExchangeRate = currentTokenDataFromStore?.price; // This is a number or undefined
+	// Use a selector that specifically watches for price changes
+	const currentTokenDataFromStore = useCoinStore(state => {
+		if (!enableUsdToggle || !selectedToken) return undefined;
+		return state.coinMap[selectedToken.address];
+	});
+	
+	// Watch specifically for price changes to force re-renders
+	const currentPrice = useCoinStore(state => {
+		if (!enableUsdToggle || !selectedToken) return undefined;
+		return state.coinMap[selectedToken.address]?.price;
+	});
+	// Use the separate price selector to ensure we get the latest price
+	const liveExchangeRate = currentPrice || currentTokenDataFromStore?.price; // This is a number or undefined
+	
 
 	// Effect to update internal USD amount if crypto amountValue (from props) or liveExchangeRate changes
 	// BUT only when we're NOT in USD input mode (to avoid overwriting user's USD input)
