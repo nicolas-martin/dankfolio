@@ -6,16 +6,16 @@ export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	const colors = theme.colors;
 
-	const createContainerStyle = (style?: object) => [
+	const createContainerStyle = () => [
 		{
-			flexDirection: 'row' as const,
-			justifyContent: 'space-between' as const,
+			flexDirection: 'row',
+			justifyContent: 'space-between',
 			marginTop: theme.spacing.sm,
 			paddingHorizontal: theme.spacing.sm,
 			paddingVertical: theme.spacing.lg,
 		},
-		style
 	];
+
 	const styles = StyleSheet.create({
 		activeButton: {
 			backgroundColor: theme.colors.primary,
@@ -53,7 +53,7 @@ export const useStyles = () => {
 		},
 		percentageButtonText: {
 			color: theme.colors.onSurfaceVariant,
-			fontSize: theme.typography.fontSize.sm,
+			fontSize: theme.typography.fontSize.xs,
 			fontWeight: '600',
 		},
 	});

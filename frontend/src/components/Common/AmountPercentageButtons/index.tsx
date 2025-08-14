@@ -44,7 +44,7 @@ const AmountPercentageButtons: React.FC<AmountPercentageButtonsProps> = ({
 	};
 
 	return (
-		<View style={styles.createContainerStyle(style)}>
+		<View style={styles.createContainerStyle()}>
 			{percentages.map((percent) => {
 				const isActive = activePercent === percent;
 
