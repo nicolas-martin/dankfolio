@@ -14,14 +14,14 @@ dash:
 	@scp ./deploy/dashboards/* linode:/var/lib/grafana/dashboards/
 	@ssh linode 'systemctl restart grafana-server.service'
 
-prod-mobile-submit:
+prod-mobile:
 	cd ${MOBILE_DIR} && npx eas build \
  	  --platform ios \
  	  --profile production \
  	  --auto-submit
 
 # prod-build: backend-test
-prod-back-build:
+prod-build:
 	@cd ${BACKEND_DIR} && GOOS=linux GOARCH=amd64 go build -o bin/dankfolio ./cmd/api
 	@ssh linode 'sudo systemctl stop dankfolio'
 	@scp ./backend/bin/dankfolio linode:/opt/dankfolio
