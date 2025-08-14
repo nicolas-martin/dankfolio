@@ -51,6 +51,20 @@ export const useStyles = () => {
 			marginBottom: theme.spacing.xl,
 			textAlign: 'center',
 		},
+		devButton: {
+			alignItems: 'center',
+			backgroundColor: theme.colors.tertiary,
+			borderRadius: theme.borderRadius.md,
+			justifyContent: 'center',
+			marginTop: theme.spacing.sm,
+			paddingHorizontal: theme.spacing.md,
+			paddingVertical: theme.spacing.sm,
+		},
+		devButtonText: {
+			...theme.fonts.labelMedium,
+			color: theme.colors.onTertiary,
+			fontWeight: '500',
+		},
 		dismissButton: {
 			marginTop: theme.spacing.xs,
 		},
@@ -77,8 +91,12 @@ export const useStyles = () => {
 			justifyContent: 'center',
 		},
 		retryButton: {
+			alignItems: 'center',
 			backgroundColor: theme.colors.primary,
-			borderRadius: theme.borderRadius.md,
+			borderRadius: theme.borderRadius.lg,
+			justifyContent: 'center',
+			paddingHorizontal: theme.spacing.lg,
+			paddingVertical: theme.spacing.md,
 		},
 		title: {
 			...theme.fonts.headlineSmall,

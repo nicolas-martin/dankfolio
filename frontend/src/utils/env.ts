@@ -16,6 +16,7 @@ interface EnvVariables {
 	testPrivateKey?: string; // For development only - consider using secure storage in production
 	loadDebugWallet?: boolean; // For development only, to load a debug wallet
 	e2eMockingEnabled?: boolean; // For E2E testing, to enable mocking
+	hasNetwork?: boolean; // For testing network error handling
 }
 
 /**
@@ -37,6 +38,7 @@ export const getEnvVariables = (): EnvVariables => {
 		sentryAuthToken: extra.SENTRY_AUTH_TOKEN as string,
 		loadDebugWallet: extra.LOAD_DEBUG_WALLET === 'true' || extra.E2E_MOCKING_ENABLED === 'true',
 		e2eMockingEnabled: extra.E2E_MOCKING_ENABLED === 'true',
+		hasNetwork: extra.HAS_NETWORK === 'true' ? true : extra.HAS_NETWORK === 'false' ? false : undefined,
 	};
 
 	// Override apiUrl for E2E mocking

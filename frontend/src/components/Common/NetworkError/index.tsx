@@ -19,7 +19,7 @@ const NetworkError: React.FC<NetworkErrorProps> = ({
 	allowDismiss = false
 }) => {
 	const styles = useStyles();
-	const { statusMessage, refreshNetworkState } = useNetwork();
+	const { statusMessage, refreshNetworkState, simulateOnline, isTestMode } = useNetwork();
 
 	const handleRetry = async () => {
 		logger.breadcrumb({ category: 'network', message: 'User manually retried network connection' });
@@ -73,10 +73,23 @@ const NetworkError: React.FC<NetworkErrorProps> = ({
 							</View>
 						)}
 
-						{/* Debug info in development */}
+						{/* Debug info and controls in development */}
 						{__DEV__ && (
 							<View style={styles.debugContainer}>
 								<Text style={styles.debugText}>Network debugging is enabled in development mode.</Text>
+								{isTestMode && (
+									<View style={styles.buttonContainer}>
+										<TouchableOpacity
+											onPress={() => {
+												logger.breadcrumb({ category: 'network', message: 'Dev: Simulating online network state' });
+												simulateOnline();
+											}}
+											style={styles.devButton}
+										>
+											<Text style={styles.devButtonText}>🛠️ Simulate Online (Dev)</Text>
+										</TouchableOpacity>
+									</View>
+								)}
 							</View>
 						)}
 					</View>
