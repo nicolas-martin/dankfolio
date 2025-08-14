@@ -139,8 +139,15 @@ func (s *Store) NaughtyWords() db.Repository[model.NaughtyWord] { // <<< ADD THI
 
 // --- Custom Operations ---
 
+func loggableInt(p *int) any {
+	if p == nil {
+		return nil
+	}
+	return *p
+}
+
 func (s *Store) ListTrendingCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
-	slog.DebugContext(ctx, "PostgresStore: ListTrendingCoins called", "limit", opts.Limit, "offset", opts.Offset)
+	slog.DebugContext(ctx, "PostgresStore: ListTrendingCoins called", "limit", loggableInt(opts.Limit), "offset", loggableInt(opts.Offset))
 
 	// Use SearchCoins to filter by the "trending" tag
 	limit := int32(10) // default limit
@@ -281,7 +288,7 @@ func mapSchemaCoinsToModel(schemaCoins []schema.Coin) []model.Coin {
 
 // ListNewestCoins fetches the most recently created coins.
 func (s *Store) ListNewestCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
-	slog.DebugContext(ctx, "PostgresStore: ListNewestCoins called", "limit", opts.Limit, "offset", opts.Offset)
+	slog.DebugContext(ctx, "PostgresStore: ListNewestCoins called", "limit", loggableInt(opts.Limit), "offset", loggableInt(opts.Offset))
 
 	// Use SearchCoins to filter by the "new-coin" tag
 	limit := int32(10) // default limit
@@ -316,7 +323,7 @@ func (s *Store) ListNewestCoins(ctx context.Context, opts db.ListOptions) ([]mod
 
 // ListTopGainersCoins fetches coins with the highest positive price change in 24h.
 func (s *Store) ListTopGainersCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
-	slog.DebugContext(ctx, "PostgresStore: ListTopGainersCoins called", "limit", opts.Limit, "offset", opts.Offset)
+	slog.DebugContext(ctx, "PostgresStore: ListTopGainersCoins called", "limit", loggableInt(opts.Limit), "offset", loggableInt(opts.Offset))
 
 	// Use SearchCoins to filter by the "top-gainer" tag
 	limit := int32(10) // default limit
