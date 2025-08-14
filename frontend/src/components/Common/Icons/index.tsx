@@ -1,10 +1,8 @@
 import React from 'react';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import Feather from 'react-native-vector-icons/Feather';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import type { IconProps as RNVIconProps } from 'react-native-vector-icons/Icon';
 
 type IconBaseProps = Omit<RNVIconProps, 'name'>;
@@ -43,7 +41,7 @@ export const LinkIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase nam
 
 // Social icons
 export const TwitterIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="twitter" {...props} />;
-export const TelegramIcon: React.FC<IconBaseProps> = (props) => <FontAwesome name="telegram" size={props.size ?? 24} color={props.color ?? '#000'} style={props.style} />;
+export const TelegramIcon: React.FC<IconBaseProps> = (props) => <FontAwesome6IconBase name="telegram" size={props.size ?? 24} color={props.color ?? '#000'} style={props.style} />;
 export const DiscordIcon: React.FC<IconBaseProps> = (props) => <MaterialIconBase name="discord" {...props} />;
 
 // Status icons
@@ -54,7 +52,7 @@ export const ChevronDownIcon: React.FC<IconBaseProps> = (props) => <FeatherIconB
 // Chart icons
 export const ChartLineIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="activity" {...props} />;
 
-export const ChangeIcon: React.FC<IconBaseProps> = (props) => <MaterialIcons name="currency-exchange" {...props} />;
+export const ChangeIcon: React.FC<IconBaseProps> = (props) => <MaterialIconBase name="change-circle" {...props} />;
 
 // Trend icons
 export const TrendUpIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="trending-up" {...props} />;
@@ -68,7 +66,7 @@ const FeatherIconBase: React.FC<IconProps> = (props) => {
 
 const MaterialIconBase: React.FC<IconProps> = (props) => {
 	const { name, size = 24, color = '#000', style } = props;
-	return <MaterialCommunityIcons name={name} size={size} color={color} style={style} />;
+	return <MaterialIcons name={name} size={size} color={color} style={style} />;
 };
 
 const FontAwesome6IconBase: React.FC<IconProps> = (props) => {

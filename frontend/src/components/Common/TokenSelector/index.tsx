@@ -295,6 +295,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	const styles = useStyles();
 	const [modalVisible, setModalVisible] = useState(false);
 	const { tokens: portfolioTokens } = usePortfolioStore();
+	const isUpdatingFromUsd = useRef(false);
 
 	// Internal state for USD toggle functionality
 	const [currentInputUnit, setCurrentInputUnit] = useState<InputUnit>(initialInputUnit);
@@ -323,7 +324,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		if (!enableUsdToggle || !selectedToken) return undefined;
 		return state.coinMap[selectedToken.address];
 	});
-	
+
 	// Watch specifically for price changes to force re-renders
 	const currentPrice = useCoinStore(state => {
 		if (!enableUsdToggle || !selectedToken) return undefined;
@@ -331,12 +332,16 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	});
 	// Use the separate price selector to ensure we get the latest price
 	const liveExchangeRate = currentPrice || currentTokenDataFromStore?.price; // This is a number or undefined
-	
+
 
 	// Effect to update internal USD amount if crypto amountValue (from props) or liveExchangeRate changes
-	// BUT only when we're NOT in USD input mode (to avoid overwriting user's USD input)
 	useEffect(() => {
-		if (enableUsdToggle && amountValue && currentInputUnit === 'CRYPTO') {
+		if (isUpdatingFromUsd.current) {
+			isUpdatingFromUsd.current = false;
+			return;
+		}
+
+		if (enableUsdToggle && amountValue) {
 			const rate = liveExchangeRate;
 			if (rate && rate > 0) {
 				const crypto = parseFloat(amountValue);
@@ -354,7 +359,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		} else if (enableUsdToggle && !amountValue) {
 			setInternalUsdAmount('');
 		}
-	}, [amountValue, liveExchangeRate, enableUsdToggle, currentInputUnit]);
+	}, [amountValue, liveExchangeRate, enableUsdToggle]);
 
 	const handleUnitToggle = useCallback(() => {
 		setCurrentInputUnit(prevUnit => {
@@ -420,6 +425,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 					const rate = liveExchangeRate;
 					if (rate && rate > 0) {
 						const cryptoValue = usdValue / rate;
+						isUpdatingFromUsd.current = true;
 						onAmountChange(cryptoValue.toString());
 					} else {
 						onAmountChange('');
@@ -507,7 +513,6 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 								{selectedToken?.logoURI ? (
 									<>
 										<RenderIcon iconUrl={selectedToken.logoURI} styles={styles} />
-										<Text style={styles.tokenSymbol} testID={`${testID}-symbol`}>{selectedToken.symbol}</Text>
 									</>
 								) : (
 									<Text style={styles.tokenSymbol} testID={`${testID}-label`}>{label || 'Select Token'}</Text>
@@ -536,7 +541,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 										/>
 										{selectedToken && (
 											<Text style={styles.currencyLabel}>
-												{enableUsdToggle && currentInputUnit === 'USD' ? 'CAD' : selectedToken.symbol}
+												{enableUsdToggle && currentInputUnit === 'USD' ? '$' : selectedToken.symbol}
 											</Text>
 										)}
 										{enableUsdToggle && selectedToken && (
