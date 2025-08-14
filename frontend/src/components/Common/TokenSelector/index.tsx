@@ -61,7 +61,7 @@ const TokenItem = React.memo<{
 				</Text>
 			</View>
 			{portfolioToken && (
-				<Text style={styles.tokenBalance}>{formatTokenBalance(portfolioToken.amount, 4)}</Text>
+				<Text style={styles.tokenBalance}>{formatTokenBalance(portfolioToken.amount, 6)}</Text>
 			)}
 		</TouchableOpacity>
 	);
@@ -572,7 +572,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 						{selectedToken && _portfolioToken && (
 							<View style={styles.balanceContainer}>
 								<Text style={styles.tokenBalance} testID={`${testID}-balance`}>
-									{formatTokenBalance(_portfolioToken.amount, 4)}
+									{formatTokenBalance(_portfolioToken.amount, 6)}
 								</Text>
 							</View>
 						)}
