@@ -78,6 +78,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import Navigation from '@components/Common/Navigation';
 import { themes, extendedThemeProperties, AppTheme } from '@utils/theme';
 import { ToastProvider } from '@components/Common/Toast';
+import NetworkWrapper from '@components/Common/NetworkWrapper';
 import { usePortfolioStore } from '@store/portfolio';
 import WalletSetupScreen from '@screens/WalletSetup';
 import { Keypair } from '@solana/web3.js';
@@ -272,24 +273,26 @@ const App: React.FC = () => {
 			<StatusBar style={statusBarStyle} />
 			<SafeAreaProvider>
 				<GestureHandlerRootView style={styles.gestureHandlerRoot}>
-					<ToastProvider>
-						<BottomSheetModalProvider>
-							<View style={styles.container}>
-								<StatusBar style="auto" />
-								{needsWalletSetup ? (
-									(logger.breadcrumb({ message: 'App: Navigating to WalletSetupScreen', category: 'navigation' }),
-										<WalletSetupScreen
-											onWalletSetupComplete={handleWalletSetupComplete}
-											onCreateWallet={() => { }}
-											onImportWallet={() => { }}
-										/>)
-								) : (
-									(logger.breadcrumb({ message: 'App: Navigating to MainTabs', category: 'navigation' }),
-										<Navigation />)
-								)}
-							</View>
-						</BottomSheetModalProvider>
-					</ToastProvider>
+					<NetworkWrapper>
+						<ToastProvider>
+							<BottomSheetModalProvider>
+								<View style={styles.container}>
+									<StatusBar style="auto" />
+									{needsWalletSetup ? (
+										(logger.breadcrumb({ message: 'App: Navigating to WalletSetupScreen', category: 'navigation' }),
+											<WalletSetupScreen
+												onWalletSetupComplete={handleWalletSetupComplete}
+												onCreateWallet={() => { }}
+												onImportWallet={() => { }}
+											/>)
+									) : (
+										(logger.breadcrumb({ message: 'App: Navigating to MainTabs', category: 'navigation' }),
+											<Navigation />)
+									)}
+								</View>
+							</BottomSheetModalProvider>
+						</ToastProvider>
+					</NetworkWrapper>
 				</GestureHandlerRootView>
 			</SafeAreaProvider>
 		</PaperProvider>

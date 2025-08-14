@@ -29,8 +29,8 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 
 	const {
 		step,
-		goToTerms,
 		goToWelcome,
+		goToTerms,
 		handleTermsAccepted,
 		handleCreateWallet,
 		handleImportWallet,
@@ -76,6 +76,12 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 		<View style={styles.container}>
 			{step === 'welcome' && (
 				<View style={styles.welcomeContainer}>
+					<View style={styles.headerContainer}>
+						<View style={styles.headerSpacer} />
+						<Text style={styles.headerTitle}>Welcome</Text>
+						<View style={styles.headerSpacer} />
+					</View>
+
 					<View style={styles.neonBarImageContainer}>
 						<Image
 							source={neonBarImage}

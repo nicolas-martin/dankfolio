@@ -191,13 +191,14 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		isLoading: false
 	});
 
+	const goToWelcome = () => setStep('welcome');
 	const goToTerms = (action: 'create' | 'import') => {
 		setNextAction(action);
 		setStep('terms');
 	};
 	const goToCreate = () => setStep('create');
 	const goToImport = () => setStep('import');
-	const goToWelcome = () => setStep('welcome');
+
 
 	const handleTermsAccepted = () => {
 		if (nextAction === 'create') {
@@ -280,10 +281,10 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 
 	return {
 		step,
+		goToWelcome,
 		goToTerms,
 		goToCreate,
 		goToImport,
-		goToWelcome,
 		handleTermsAccepted,
 		handleCreateWallet,
 		handleImportWallet: handleImportWalletClick,

@@ -45,7 +45,7 @@ export const useStyles = () => {
 		},
 		cardContent: {
 			margin: 0,
-			padding: theme.spacing.sm, // Reduced from md to sm
+			padding: theme.spacing.md, // Increased back to md for better spacing
 			width: '100%',
 		},
 		equivalentValueText: {
@@ -73,7 +73,7 @@ export const useStyles = () => {
 			alignItems: 'center',
 			flexDirection: 'row',
 			justifyContent: 'space-between',
-			minHeight: 40, // Reduced from 44 to 40
+			minHeight: 44, // Increased from 40 to 44 for more breathing room
 			width: '100%',
 		},
 		modalContent: {
@@ -96,8 +96,8 @@ export const useStyles = () => {
 			borderRadius: theme.spacing.sm,
 			borderWidth: 0,
 			color: theme.colors.onSurface,
-			flex: 1,
-			fontSize: theme.typography.fontSize.xl,
+			flexShrink: 1,
+			fontSize: theme.typography.fontSize.lg, // Reduced from xl to lg
 			fontWeight: 'bold',
 			paddingHorizontal: 0,
 			paddingVertical: 0,
@@ -107,7 +107,7 @@ export const useStyles = () => {
 			alignItems: 'center',
 			flexDirection: 'row',
 			justifyContent: 'flex-end',
-			minHeight: 36, // Reduced from 40 to 36
+			minHeight: 40, // Increased from 36 to 40 for better spacing
 		},
 		rightSection: {
 			alignItems: 'flex-end',
@@ -135,7 +135,7 @@ export const useStyles = () => {
 			alignItems: 'center',
 			flexDirection: 'row',
 			justifyContent: 'space-between',
-			marginTop: theme.spacing.xs / 2,
+			marginTop: theme.spacing.xs, // Increased from xs/2 to xs for better spacing
 			width: '100%',
 		},
 		secondaryValueContainer: {
@@ -144,7 +144,7 @@ export const useStyles = () => {
 		},
 		secondaryValueText: {
 			color: theme.colors.onSurfaceVariant,
-			fontSize: theme.typography.fontSize.xs,
+			fontSize: theme.typography.fontSize.xs, // Keep xs for secondary text
 			textAlign: 'right',
 		},
 		selectedTokenDetails: {
@@ -194,7 +194,7 @@ export const useStyles = () => {
 		tokenBalance: {
 			...theme.fonts.bodySmall,
 			color: theme.colors.onSurfaceVariant,
-			fontSize: theme.typography.fontSize.xs,
+			fontSize: theme.typography.fontSize.xs, // Keep xs for balance text
 		},
 		tokenDetails: { // This is the one from previous line 84
 			flex: 1,
@@ -246,9 +246,16 @@ export const useStyles = () => {
 		tokenSymbol: {
 			...theme.fonts.titleMedium,
 			color: theme.colors.onSurface,
-			fontSize: theme.typography.fontSize.base,
+			fontSize: theme.typography.fontSize.sm, // Reduced from base to sm
 			fontWeight: '600',
 			marginRight: theme.spacing.xs,
+		},
+		currencyLabel: {
+			...theme.fonts.bodyMedium,
+			color: theme.colors.onSurfaceVariant,
+			fontSize: theme.typography.fontSize.sm, // Reduced from base to sm
+			fontWeight: '600',
+			marginLeft: theme.spacing.xs,
 		},
 		tokenTextContainer: {
 			marginLeft: theme.spacing.xs,

@@ -389,8 +389,7 @@ const Trade: React.FC = () => {
 				toCoinId: toCoin.address,
 				amount: rawAmount.toString(),
 				slippageBps: (1 * 100).toString(), // Default 1% slippage
-				userPublicKey: wallet.address,
-				allowMultiHop: allowMultiHop
+				userPublicKey: wallet.address
 			});
 
 			// Sign the prepared transaction
@@ -664,10 +663,10 @@ const Trade: React.FC = () => {
 
 					{/* Routing Options for meme-to-meme swaps */}
 					{fromCoin && toCoin &&
-						fromCoin.mintAddress !== NATIVE_SOL_ADDRESS &&
-						fromCoin.mintAddress !== SOLANA_ADDRESS &&
-						toCoin.mintAddress !== NATIVE_SOL_ADDRESS &&
-						toCoin.mintAddress !== SOLANA_ADDRESS && (
+						fromCoin.address !== NATIVE_SOL_ADDRESS &&
+						fromCoin.address !== SOLANA_ADDRESS &&
+						toCoin.address !== NATIVE_SOL_ADDRESS &&
+						toCoin.address !== SOLANA_ADDRESS && (
 							<Card style={styles.routingCard}>
 								<Card.Content>
 									<View style={styles.routingRow}>

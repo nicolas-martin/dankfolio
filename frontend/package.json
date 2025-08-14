@@ -48,6 +48,7 @@
     "expo-device": "~7.1.4",
     "expo-haptics": "~14.1.4",
     "expo-linear-gradient": "^14.1.5",
+    "expo-network": "^7.1.5",
     "expo-secure-store": "~14.2.3",
     "expo-splash-screen": "~0.30.10",
     "expo-status-bar": "~2.2.3",

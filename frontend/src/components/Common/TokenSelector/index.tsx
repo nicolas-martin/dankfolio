@@ -534,6 +534,11 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 											editable={isAmountEditable}
 											{...textInputProps}
 										/>
+										{selectedToken && (
+											<Text style={styles.currencyLabel}>
+												{enableUsdToggle && currentInputUnit === 'USD' ? 'CAD' : selectedToken.symbol}
+											</Text>
+										)}
 										{enableUsdToggle && selectedToken && (
 											<TouchableOpacity
 												onPress={handleUnitToggle}
