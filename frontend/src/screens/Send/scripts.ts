@@ -187,83 +187,112 @@ export const validateForm = async (
 };
 
 export const handleTokenTransfer = async (formData: TokenTransferFormData): Promise<string> => {
-	try {
-		const walletAddress = usePortfolioStore.getState().wallet?.address;
-		if (!walletAddress) {
-			logger.error('[handleTokenTransfer] No wallet address found in store.');
-			throw new Error('Wallet not connected. Please connect your wallet.');
+	const MAX_RETRIES = 3;
+	const RETRY_DELAY_MS = 1000; // Start with 1 second
+	
+	for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+		try {
+			const walletAddress = usePortfolioStore.getState().wallet?.address;
+			if (!walletAddress) {
+				logger.error('[handleTokenTransfer] No wallet address found in store.');
+				throw new Error('Wallet not connected. Please connect your wallet.');
+			}
+
+			logger.info(`[handleTokenTransfer] Attempt ${attempt}/${MAX_RETRIES} - Preparing transaction`);
+
+			const unsignedTransaction = await prepareCoinTransfer(
+				formData.toAddress,
+				formData.selectedTokenMint,
+				parseFloat(formData.amount),
+				walletAddress // userPublicKey
+			);
+
+			// 🔍 LOG UNSIGNED TRANSACTION FOR TESTING
+			console.log(`🔍 UNSIGNED TRANSACTION CAPTURED (Attempt ${attempt}):`);
+			console.log('📋 Transaction Base64:', unsignedTransaction);
+			console.log('📋 Transaction Length:', unsignedTransaction.length);
+			console.log('📋 From Address:', walletAddress);
+			console.log('📋 To Address:', formData.toAddress);
+			console.log('📋 Token Mint:', formData.selectedTokenMint);
+			console.log('📋 Amount:', formData.amount);
+			console.log('📋 Copy this for tests: const CAPTURED_UNSIGNED_TX = \'' + unsignedTransaction + '\';');
+
+			const keys = await getActiveWalletKeys();
+			if (!keys || !keys.privateKey || !keys.publicKey) {
+				logger.error('[handleTokenTransfer] Failed to get active wallet keys or keys are incomplete.');
+				throw new Error('Failed to retrieve wallet keys for signing.');
+			}
+
+			if (keys.publicKey !== walletAddress) {
+				logger.error('[handleTokenTransfer] Mismatch between store public key and keychain public key.');
+				throw new Error('Wallet key mismatch. Please try reconnecting your wallet.');
+			}
+
+			const signedTransaction = await signTransferTransaction(
+				unsignedTransaction,
+				keys.publicKey,
+				keys.privateKey
+			);
+
+			// Log transaction details for debugging (no sensitive data)
+			if (__DEV__) {
+				console.log(`🔍 Transaction signed successfully (Attempt ${attempt})`);
+				console.log('📋 Transaction Length:', signedTransaction.length);
+				console.log('📋 Public Key:', keys.publicKey);
+			}
+
+			const submitResponse = await grpcApi.submitCoinTransfer({
+				signedTransaction,
+				unsignedTransaction
+			});
+
+			logger.breadcrumb({ category: 'send_tokens', message: 'Token transfer submitted to backend', data: { txHash: submitResponse.transactionHash, attempt } });
+			logger.info(`[handleTokenTransfer] Success on attempt ${attempt}/${MAX_RETRIES}`);
+			return submitResponse.transactionHash;
+		} catch (error) {
+			logger.exception(error, { functionName: 'handleTokenTransfer', params: { toAddress: formData.toAddress, mint: formData.selectedTokenMint, amount: formData.amount, attempt } });
+
+			// Check if this is a retryable blockhash expiration error
+			const isBlockhashExpired = error.message?.includes('BLOCKHASH_EXPIRED') ||
+				error.message?.includes('Blockhash not found') ||
+				error.message?.includes('Transaction expired');
+
+			if (isBlockhashExpired && attempt < MAX_RETRIES) {
+				const retryDelay = RETRY_DELAY_MS * Math.pow(2, attempt - 1); // Exponential backoff
+				logger.warn(`[handleTokenTransfer] Blockhash expired on attempt ${attempt}. Retrying in ${retryDelay}ms...`);
+				
+				// Wait before retrying (transparent to user)
+				await new Promise(resolve => setTimeout(resolve, retryDelay));
+				continue; // Try again with fresh transaction
+			}
+
+			// If this was the last attempt, or it's a non-retryable error, handle it
+			if (attempt === MAX_RETRIES) {
+				logger.error(`[handleTokenTransfer] All ${MAX_RETRIES} attempts failed`);
+			}
+
+			// Handle specific error cases for final error reporting
+			if (isBlockhashExpired) {
+				throw new Error('Network congestion detected. Please try again in a moment.');
+			}
+
+			if (error.message?.includes('insufficient funds')) {
+				throw new Error('Insufficient funds for this transaction. Please check your balance and try again.');
+			}
+
+			// For network or RPC errors, suggest retry
+			if (error.message?.includes('network') || error.message?.includes('timeout')) {
+				throw new Error('Network error. Please check your connection and try again.');
+			}
+
+			// For other errors, pass through the error message but clean it up
+			const errorMessage = error.message || 'Failed to send tokens';
+			throw new Error(errorMessage.replace(/\(.*?\)/g, '').trim());
 		}
-
-		const unsignedTransaction = await prepareCoinTransfer(
-			formData.toAddress,
-			formData.selectedTokenMint,
-			parseFloat(formData.amount),
-			walletAddress // userPublicKey
-		);
-
-		// 🔍 LOG UNSIGNED TRANSACTION FOR TESTING
-		console.log('🔍 UNSIGNED TRANSACTION CAPTURED:');
-		console.log('📋 Transaction Base64:', unsignedTransaction);
-		console.log('📋 Transaction Length:', unsignedTransaction.length);
-		console.log('📋 From Address:', walletAddress);
-		console.log('📋 To Address:', formData.toAddress);
-		console.log('📋 Token Mint:', formData.selectedTokenMint);
-		console.log('📋 Amount:', formData.amount);
-		console.log('📋 Copy this for tests: const CAPTURED_UNSIGNED_TX = \'' + unsignedTransaction + '\';');
-
-		const keys = await getActiveWalletKeys();
-		if (!keys || !keys.privateKey || !keys.publicKey) {
-			logger.error('[handleTokenTransfer] Failed to get active wallet keys or keys are incomplete.');
-			throw new Error('Failed to retrieve wallet keys for signing.');
-		}
-
-		if (keys.publicKey !== walletAddress) {
-			logger.error('[handleTokenTransfer] Mismatch between store public key and keychain public key.');
-			throw new Error('Wallet key mismatch. Please try reconnecting your wallet.');
-		}
-
-		const signedTransaction = await signTransferTransaction(
-			unsignedTransaction,
-			keys.publicKey,
-			keys.privateKey
-		);
-
-		// Log transaction details for debugging (no sensitive data)
-		if (__DEV__) {
-			console.log('🔍 Transaction signed successfully');
-			console.log('📋 Transaction Length:', signedTransaction.length);
-			console.log('📋 Public Key:', keys.publicKey);
-		}
-
-		const submitResponse = await grpcApi.submitCoinTransfer({
-			signedTransaction,
-			unsignedTransaction
-		});
-
-		logger.breadcrumb({ category: 'send_tokens', message: 'Token transfer submitted to backend', data: { txHash: submitResponse.transactionHash } });
-		return submitResponse.transactionHash;
-	} catch (error) {
-		logger.exception(error, { functionName: 'handleTokenTransfer', params: { toAddress: formData.toAddress, mint: formData.selectedTokenMint, amount: formData.amount } });
-
-		// Handle specific error cases
-		if (error.message?.includes('Blockhash not found') ||
-			error.message?.includes('Transaction expired')) {
-			throw new Error('Transaction expired. Please try submitting again.');
-		}
-
-		if (error.message?.includes('insufficient funds')) {
-			throw new Error('Insufficient funds for this transaction. Please check your balance and try again.');
-		}
-
-		// For network or RPC errors, suggest retry
-		if (error.message?.includes('network') || error.message?.includes('timeout')) {
-			throw new Error('Network error. Please check your connection and try again.');
-		}
-
-		// For other errors, pass through the error message but clean it up
-		const errorMessage = error.message || 'Failed to send tokens';
-		throw new Error(errorMessage.replace(/\(.*?\)/g, '').trim());
 	}
+
+	// If we get here, all retries failed (shouldn't happen with proper error handling above)
+	throw new Error('Unable to complete transaction. Please try again.');
 };
 
 // Removed local formatTokenBalance. The import aliasing 'formatTokenBalance as formatBalance'

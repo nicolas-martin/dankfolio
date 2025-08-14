@@ -414,6 +414,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		);
 	};
 
+
 	const renderSendButton = () => (
 		<TouchableOpacity
 			onPress={handleSubmit}

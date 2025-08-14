@@ -291,7 +291,9 @@ func (s *Service) buildTransaction(ctx context.Context, payer solana.PublicKey, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert generic blockhash to solana blockhash: %w", err)
 	}
-	slog.Debug("Recent blockhash obtained", "blockhash", solanaBlockHash)
+	slog.Info("Recent blockhash obtained for transaction", 
+		"blockhash", solanaBlockHash.String(),
+		"payer", payer.String())
 
 	tx, err := solana.NewTransaction(
 		instructions,
@@ -567,6 +569,17 @@ func (s *Service) SubmitTransfer(ctx context.Context, req *TransferRequest) (str
 
 	if sendErr != nil {
 		slog.Error("Failed to submit transaction to blockchain", "trade_id", trade.ID, "error", sendErr)
+		
+		// Check if this is a blockhash expiration error
+		errMsg := sendErr.Error()
+		if strings.Contains(errMsg, "Blockhash not found") || 
+		   strings.Contains(errMsg, "BlockhashNotFound") {
+			slog.Warn("Transaction failed due to expired blockhash", "trade_id", trade.ID)
+			// Don't mark trade as failed - this is recoverable by re-preparing
+			return "", fmt.Errorf("BLOCKHASH_EXPIRED: Transaction blockhash has expired. Please try again.")
+		}
+		
+		// For other errors, mark trade as failed
 		trade.Status = "failed"
 		errStr := sendErr.Error()
 		trade.Error = errStr
