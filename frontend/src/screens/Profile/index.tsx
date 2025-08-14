@@ -278,6 +278,12 @@ const Profile = () => {
 						initialLayout={{ width: layout.width }}
 						swipeEnabled={true}
 						style={styles.tabContent}
+						lazy={({ route }) => route.key === 'transactions' || route.key === 'pnl'}
+						renderLazyPlaceholder={({ route }) => (
+							<View style={styles.centered}>
+								<Text style={styles.noWalletText}>Loading {route.title}...</Text>
+							</View>
+						)}
 					/>
 				</View>
 			</View>
