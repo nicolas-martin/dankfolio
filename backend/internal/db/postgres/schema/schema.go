@@ -81,9 +81,9 @@ type Trade struct {
 	FromCoinPKID        uint64  `gorm:"column:from_coin_pk_id;index:idx_trades_from_coin_pk_id"`
 	ToCoinMintAddress   string  `gorm:"column:to_coin_mint_address;type:text;index:idx_trades_to_mint"`
 	ToCoinPKID          uint64  `gorm:"column:to_coin_pk_id;index:idx_trades_to_coin_pk_id"`
-	CoinSymbol          string  `gorm:"column:coin_symbol"`     // Primary coin symbol for display
-	Type                string  `gorm:"column:type;not null"`   // e.g., "buy", "sell", "swap"
-	Amount              float64 `gorm:"column:amount;not null"` // Amount of 'FromCoin' for sells/swaps, 'ToCoin' for buys
+	CoinSymbol          string  `gorm:"column:coin_symbol"`               // Primary coin symbol for display
+	Type                string  `gorm:"column:type;not null"`             // e.g., "buy", "sell", "swap"
+	Amount              float64 `gorm:"column:amount;not null"`           // Amount of 'FromCoin' for sells/swaps, 'ToCoin' for buys
 	OutputAmount        float64 `gorm:"column:output_amount;default:0.0"` // Amount of 'ToCoin' received in swaps
 
 	// Fee Information
@@ -104,20 +104,22 @@ type Trade struct {
 
 	// Price Impact
 	PriceImpactPercent float64 `gorm:"column:price_impact_percent;default:0.0"` // Price impact as percentage
-	
+
 	// USD Values at Time of Trade (for accurate PnL calculation)
 	FromUSDPrice float64 `gorm:"column:from_usd_price;default:0.0"` // USD price of FROM token at trade time
 	ToUSDPrice   float64 `gorm:"column:to_usd_price;default:0.0"`   // USD price of TO token at trade time
 	TotalUSDCost float64 `gorm:"column:total_usd_cost;default:0.0"` // Total USD cost of the trade
 
-	Status              string    `gorm:"column:status;not null;index:idx_trades_status"` // e.g., "pending", "completed", "failed"
-	TransactionHash     string    `gorm:"column:transaction_hash"`
-	UnsignedTransaction string    `gorm:"column:unsigned_transaction;index:idx_trades_unsigned_tx"` // For Solana, this could be base64 encoded transaction
+	Status              string         `gorm:"column:status;not null;index:idx_trades_status"` // e.g., "pending", "completed", "failed"
+	TransactionHash     string         `gorm:"column:transaction_hash"`
+	UnsignedTransaction string         `gorm:"column:unsigned_transaction;index:idx_trades_unsigned_tx"` // For Solana, this could be base64 encoded transaction
 	CreatedAt           time.Time      `gorm:"column:created_at;default:CURRENT_TIMESTAMP;index:idx_trades_created_at"`
 	CompletedAt         time.Time      `gorm:"column:completed_at"`
 	Confirmations       int32          `gorm:"column:confirmations;default:0"`
 	Finalized           bool           `gorm:"column:finalized;default:false"`
 	Error               string         `gorm:"column:error"`
+	FromAddress         string         `gorm:"column:from_address"`
+	ToAddress           string         `gorm:"column:to_address"`
 	DeletedAt           gorm.DeletedAt `gorm:"column:deleted_at;index"`
 }
 

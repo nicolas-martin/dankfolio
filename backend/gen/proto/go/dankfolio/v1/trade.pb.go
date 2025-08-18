@@ -44,6 +44,8 @@ type Trade struct {
 	PlatformFeePercent     *float64               `protobuf:"fixed64,19,opt,name=platform_fee_percent,json=platformFeePercent,proto3,oneof" json:"platform_fee_percent,omitempty"`
 	PlatformFeeDestination *string                `protobuf:"bytes,20,opt,name=platform_fee_destination,json=platformFeeDestination,proto3,oneof" json:"platform_fee_destination,omitempty"`
 	OutputAmount           *float64               `protobuf:"fixed64,21,opt,name=output_amount,json=outputAmount,proto3,oneof" json:"output_amount,omitempty"` // Amount of output token received in swaps
+	FromAddress            string                 `protobuf:"bytes,22,opt,name=fromAddress,proto3" json:"fromAddress,omitempty"`
+	ToAddress              string                 `protobuf:"bytes,23,opt,name=toAddress,proto3" json:"toAddress,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -209,6 +211,20 @@ func (x *Trade) GetOutputAmount() float64 {
 		return *x.OutputAmount
 	}
 	return 0
+}
+
+func (x *Trade) GetFromAddress() string {
+	if x != nil {
+		return x.FromAddress
+	}
+	return ""
+}
+
+func (x *Trade) GetToAddress() string {
+	if x != nil {
+		return x.ToAddress
+	}
+	return ""
 }
 
 // GetSwapQuoteRequest is the request for getting a trade quote
@@ -1032,7 +1048,7 @@ var File_dankfolio_v1_trade_proto protoreflect.FileDescriptor
 
 const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"\n" +
-	"\x18dankfolio/v1/trade.proto\x12\fdankfolio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb5\x06\n" +
+	"\x18dankfolio/v1/trade.proto\x12\fdankfolio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf5\x06\n" +
 	"\x05Trade\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12 \n" +
@@ -1056,7 +1072,9 @@ const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"\x13platform_fee_amount\x18\x12 \x01(\x01H\x02R\x11platformFeeAmount\x88\x01\x01\x125\n" +
 	"\x14platform_fee_percent\x18\x13 \x01(\x01H\x03R\x12platformFeePercent\x88\x01\x01\x12=\n" +
 	"\x18platform_fee_destination\x18\x14 \x01(\tH\x04R\x16platformFeeDestination\x88\x01\x01\x12(\n" +
-	"\routput_amount\x18\x15 \x01(\x01H\x05R\foutputAmount\x88\x01\x01B\x0f\n" +
+	"\routput_amount\x18\x15 \x01(\x01H\x05R\foutputAmount\x88\x01\x01\x12 \n" +
+	"\vfromAddress\x18\x16 \x01(\tR\vfromAddress\x12\x1c\n" +
+	"\ttoAddress\x18\x17 \x01(\tR\ttoAddressB\x0f\n" +
 	"\r_completed_atB\b\n" +
 	"\x06_errorB\x16\n" +
 	"\x14_platform_fee_amountB\x17\n" +

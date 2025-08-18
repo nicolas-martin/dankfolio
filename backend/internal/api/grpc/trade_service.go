@@ -78,7 +78,7 @@ func (s *tradeServiceHandler) GetSwapQuote(ctx context.Context, req *connect.Req
 		slog.Error("Failed to fetch trade quote", "error", err)
 		// Check for Jupiter TOKEN_NOT_TRADABLE error and provide friendly message
 		if isTokenNotTradableError(err) {
-			return nil, connect.NewError(connect.CodeInvalidArgument, 
+			return nil, connect.NewError(connect.CodeInvalidArgument,
 				fmt.Errorf("This token is not available for trading. It may be a new token that hasn't been approved for trading yet, or it might have trading restrictions."))
 		}
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade quote: %w", err))
@@ -137,7 +137,7 @@ func (s *tradeServiceHandler) PrepareSwap(ctx context.Context, req *connect.Requ
 	if err != nil {
 		// Check for Jupiter TOKEN_NOT_TRADABLE error and provide friendly message
 		if isTokenNotTradableError(err) {
-			return nil, connect.NewError(connect.CodeInvalidArgument, 
+			return nil, connect.NewError(connect.CodeInvalidArgument,
 				fmt.Errorf("This token is not available for trading. It may be a new token that hasn't been approved for trading yet, or it might have trading restrictions."))
 		}
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to prepare swap: %w", err))

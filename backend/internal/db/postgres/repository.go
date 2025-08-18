@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/lib/pq"
 
@@ -43,7 +43,7 @@ func (r *Repository[S, M]) Get(ctx context.Context, id string) (*M, error) {
 	// Add repository-level tracing
 	ctx, span := withRepositorySpan(ctx, "get", getTableName[S]())
 	defer span.End()
-	
+
 	var schemaItem S
 	// Default to "id" as primary key column name.
 	// Specific types like schema.Coin might override GetID() to return a different value
@@ -70,7 +70,7 @@ func (r *Repository[S, M]) GetByField(ctx context.Context, field string, value a
 	ctx, span := withRepositorySpan(ctx, "get_by_field", getTableName[S]())
 	defer span.End()
 	span.SetAttributes(attribute.String("db.query.field", field))
-	
+
 	var schemaItem S
 	if err := r.db.WithContext(ctx).Where(field+" = ?", value).First(&schemaItem).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -411,6 +411,8 @@ func (r *Repository[S, M]) toModel(s S) any {
 			Confirmations:          v.Confirmations,
 			Finalized:              v.Finalized,
 			Error:                  v.Error,
+			FromAddress:            v.FromAddress,
+			ToAddress:              v.ToAddress,
 		}
 	case schema.Wallet:
 		return &model.Wallet{
@@ -494,6 +496,8 @@ func (r *Repository[S, M]) fromModel(m M) any {
 			Confirmations:          v.Confirmations,
 			Finalized:              v.Finalized,
 			Error:                  v.Error,
+			ToAddress:              v.ToAddress,
+			FromAddress:            v.FromAddress,
 		}
 	case model.Wallet:
 		return &schema.Wallet{

@@ -162,6 +162,8 @@ export interface Transaction {
 	transactionHash?: string;
 	fee?: number;
 	platformFeeAmount?: number;
+	fromAddress: string;
+	toAddress: string;
 }
 
 export interface ListTradesRequest {

@@ -24,7 +24,7 @@ const ActivityRow: React.FC<ActivityRowProps> = ({
 			case 'received':
 				return {
 					title: 'Received',
-					subtitle: item.counterparty ? `From ${shortAddress(item.counterparty)}` : 'Received',
+					subtitle: item.counterparty ? `From ${shortAddress(item.counterparty)}` : '',
 					baseTokenIcon: mintOutCoin?.logoURI || mintInCoin?.logoURI,
 					actionBadgeType: 'arrow-down' as const,
 					primaryAmount: item.amountOut || item.amountIn || 0,
@@ -35,7 +35,7 @@ const ActivityRow: React.FC<ActivityRowProps> = ({
 			case 'sent':
 				return {
 					title: 'Sent',
-					subtitle: item.counterparty ? `To ${shortAddress(item.counterparty)}` : 'Sent',
+					subtitle: item.counterparty ? `To ${shortAddress(item.counterparty)}` : '',
 					baseTokenIcon: mintInCoin?.logoURI || mintOutCoin?.logoURI,
 					actionBadgeType: 'paper-plane' as const,
 					primaryAmount: item.amountIn || item.amountOut || 0,
@@ -94,31 +94,6 @@ const ActivityRow: React.FC<ActivityRowProps> = ({
 		return null;
 	};
 
-	// Render status chip for non-completed transactions
-	const renderStatusChip = () => {
-		if (item.status === 'pending') {
-			return (
-				<View style={[styles.statusChip, styles.statusPending]}>
-					<Text style={[styles.statusText, styles.statusTextPending]}>
-						Pending
-					</Text>
-				</View>
-			);
-		}
-
-		if (item.status === 'failed') {
-			return (
-				<View style={[styles.statusChip, styles.statusFailed]}>
-					<Text style={[styles.statusText, styles.statusTextFailed]}>
-						Failed
-					</Text>
-				</View>
-			);
-		}
-
-		return null;
-	};
-
 	const handlePress = () => {
 		onPress?.(item);
 	};
@@ -169,7 +144,6 @@ const ActivityRow: React.FC<ActivityRowProps> = ({
 						</Text>
 					)}
 
-					{renderStatusChip()}
 				</View>
 			</View>
 		</TouchableOpacity>

@@ -354,6 +354,8 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 		CreatedAt:           time.Now(),
 		Confirmations:       0,
 		Finalized:           false,
+		FromAddress:         params.UserWalletAddress,
+		ToAddress:           params.UserWalletAddress,
 	}
 
 	// Apply comprehensive fee breakdown if available

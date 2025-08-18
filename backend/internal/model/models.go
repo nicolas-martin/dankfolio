@@ -15,8 +15,8 @@ import (
 type TradeStatus int
 
 const (
-	SolMint        = "So11111111111111111111111111111111111111112" // Wrapped SOL mint address
-	NativeSolMint  = "11111111111111111111111111111111"            // Native SOL identifier
+	SolMint       = "So11111111111111111111111111111111111111112" // Wrapped SOL mint address
+	NativeSolMint = "11111111111111111111111111111111"            // Native SOL identifier
 
 	// Trade status constants - enum-style constants
 	TradeStatusPending TradeStatus = iota
@@ -80,14 +80,14 @@ func ParseTradeStatus(status string) TradeStatus {
 // Coin represents a token or coin in the system (unified model)
 // Field names aligned with BirdEye API for consistency
 type Coin struct {
-	ID              uint64   `json:"id,omitempty"`
-	Address         string   `json:"address"` // Was: MintAddress (BirdEye uses 'address')
-	Name            string   `json:"name"`
-	Symbol          string   `json:"symbol"`
-	Decimals        int      `json:"decimals"`
-	Description     string   `json:"description"`
-	LogoURI         string   `json:"logoURI"`                     // Was: IconUrl (BirdEye uses logoURI)
-	Tags            []string `json:"tags,omitempty"`
+	ID          uint64   `json:"id,omitempty"`
+	Address     string   `json:"address"` // Was: MintAddress (BirdEye uses 'address')
+	Name        string   `json:"name"`
+	Symbol      string   `json:"symbol"`
+	Decimals    int      `json:"decimals"`
+	Description string   `json:"description"`
+	LogoURI     string   `json:"logoURI"` // Was: IconUrl (BirdEye uses logoURI)
+	Tags        []string `json:"tags,omitempty"`
 
 	// Price and Market Data (aligned with BirdEye)
 	Price                  float64 `json:"price"`
@@ -147,7 +147,7 @@ type Trade struct {
 
 	// Price Impact
 	PriceImpactPercent float64 `json:"price_impact_percent,omitempty"` // Price impact as percentage
-	
+
 	// USD Values at Time of Trade (for accurate PnL calculation)
 	FromUSDPrice float64 `json:"from_usd_price,omitempty"` // USD price of FROM token at trade time
 	ToUSDPrice   float64 `json:"to_usd_price,omitempty"`   // USD price of TO token at trade time
@@ -161,6 +161,9 @@ type Trade struct {
 	Confirmations       int32     `json:"confirmations"`
 	Finalized           bool      `json:"finalized"`
 	Error               string    `json:"error,omitempty"`
+
+	FromAddress string `json:"fromAddress"`
+	ToAddress   string `json:"toAddress"`
 }
 
 // GetID implements the Entity interface
@@ -263,13 +266,11 @@ func FilterAndSortCoins(coins []Coin, query string, tags []string, minVolume24h 
 	return filtered[start:end]
 }
 
-
 // // TokenBalance represents a token balance for a specific mint
 // type TokenBalance struct {
 // 	MintAddress string  `json:"mint_address"`
 // 	Amount      float64 `json:"amount"`
 // }
-
 
 // ToProto converts a model.Coin to a pb.Coin
 // Note: This requires the generated pb package to be imported,

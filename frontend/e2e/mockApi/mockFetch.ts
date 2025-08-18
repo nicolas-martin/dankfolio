@@ -587,6 +587,8 @@ async function handleListTrades(options?: FetchInit) {
 			finalized: true,
 			createdAt: timestampFromDate(new Date(Date.now() - 3600000)), // 1 hour ago
 			completedAt: timestampFromDate(new Date(Date.now() - 3540000)), // 59 minutes ago
+			fromAddress: "GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R",
+			toAddress: "GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R",
 		}),
 		create(TradeSchema, {
 			id: 'mock_trade_2_profit',
@@ -604,6 +606,8 @@ async function handleListTrades(options?: FetchInit) {
 			finalized: true,
 			createdAt: timestampFromDate(new Date(Date.now() - 7200000)), // 2 hours ago
 			completedAt: timestampFromDate(new Date(Date.now() - 7140000)),
+			fromAddress: "GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R",
+			toAddress: "GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R",
 		}),
 		create(TradeSchema, {
 			id: 'mock_trade_3_pending',
@@ -620,6 +624,8 @@ async function handleListTrades(options?: FetchInit) {
 			confirmations: 2,
 			finalized: false,
 			createdAt: timestampFromDate(new Date(Date.now() - 300000)), // 5 minutes ago
+			fromAddress: "GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R",
+			toAddress: "GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R",
 		}),
 		create(TradeSchema, {
 			id: 'mock_trade_4_failed',
@@ -637,6 +643,8 @@ async function handleListTrades(options?: FetchInit) {
 			finalized: false,
 			error: 'Insufficient liquidity in pool',
 			createdAt: timestampFromDate(new Date(Date.now() - 10800000)), // 3 hours ago
+			fromAddress: "GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R",
+			toAddress: "GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R",
 		}),
 		create(TradeSchema, {
 			id: 'mock_trade_5_loss',
@@ -654,6 +662,48 @@ async function handleListTrades(options?: FetchInit) {
 			finalized: true,
 			createdAt: timestampFromDate(new Date(Date.now() - 86400000)), // 1 day ago
 			completedAt: timestampFromDate(new Date(Date.now() - 86340000)),
+			fromAddress: "GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R",
+			toAddress: "GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R",
+		}),
+		// Mock "sent" transaction
+		create(TradeSchema, {
+			id: 'mock_trade_6_sent',
+			userId: requestData.userId || 'mock_user_id',
+			fromCoinId: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
+			toCoinId: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+			type: 'transfer',
+			amount: 50.0,
+			outputAmount: 50.0,
+			price: 1.0,
+			fee: 0.001,
+			status: 'completed',
+			transactionHash: 'mock_tx_hash_sent_6',
+			confirmations: 150,
+			finalized: true,
+			createdAt: timestampFromDate(new Date(Date.now() - 2 * 86400000)), // 2 days ago
+			completedAt: timestampFromDate(new Date(Date.now() - 2 * 86400000 + 60000)),
+			fromAddress: "GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R",
+			toAddress: '6hbS1d1JRRta3GtJC7XNo16gg3PTb41QJVzy6kWsZnav',
+		}),
+		// Mock "received" transaction
+		create(TradeSchema, {
+			id: 'mock_trade_7_received',
+			userId: requestData.userId || 'mock_user_id',
+			fromCoinId: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', // BONK
+			toCoinId: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
+			type: 'transfer',
+			amount: 1000000,
+			outputAmount: 1000000,
+			price: 0.0000089,
+			fee: 0.0,
+			status: 'completed',
+			transactionHash: 'mock_tx_hash_received_7',
+			confirmations: 200,
+			finalized: true,
+			createdAt: timestampFromDate(new Date(Date.now() - 3 * 86400000)), // 3 days ago
+			completedAt: timestampFromDate(new Date(Date.now() - 3 * 86400000 + 60000)),
+			fromAddress: '6hbS1d1JRRta3GtJC7XNo16gg3PTb41QJVzy6kWsZnav',
+			toAddress: requestData.userId || 'mock_user_id',
 		}),
 	];
 

@@ -520,7 +520,7 @@ export const grpcApi: grpcModel.API = {
 	},
 
 	// createWallet removed for security - wallets should be generated client-side
-	
+
 	async registerWallet(request: grpcModel.RegisterWalletRequest): Promise<grpcModel.RegisterWalletResponse> {
 		const serviceName = 'WalletService';
 		const methodName = 'registerWallet';
@@ -529,7 +529,7 @@ export const grpcApi: grpcModel.API = {
 			grpcUtils.logRequest(serviceName, methodName, request);
 
 			const response = await walletClient.registerWallet(
-				{ publicKey: request.publicKey }, 
+				{ publicKey: request.publicKey },
 				{ headers: grpcUtils.getRequestHeaders() }
 			);
 
@@ -665,6 +665,8 @@ export const grpcApi: grpcModel.API = {
 					transactionHash: trade.transactionHash,
 					fee: trade.fee,
 					platformFeeAmount: trade.platformFeeAmount,
+					fromAddress: trade.fromAddress,
+					toAddress: trade.toAddress,
 				};
 
 				return mappedTransaction;

@@ -23,7 +23,7 @@ export const useStyles = () => {
 			alignItems: 'center',
 			backgroundColor: theme.colors.background,
 			borderColor: theme.colors.background,
-			borderRadius: 9,
+			borderRadius: 24,
 			borderWidth: 8,
 			bottom: -5,
 			// elevation: 3,
@@ -54,7 +54,7 @@ export const useStyles = () => {
 		},
 		subtitle: {
 			color: theme.colors.onSurface,
-			fontSize: 13,
+			fontSize: theme.typography.fontSize.xs,
 			opacity: 0.7,
 		},
 		textContent: {
@@ -63,19 +63,19 @@ export const useStyles = () => {
 		},
 		title: {
 			color: theme.colors.onSurface,
-			fontSize: 16,
+			fontSize: theme.typography.fontSize.sm,
 			fontWeight: '600',
 			marginBottom: 2,
 		},
 		timestamp: {
 			color: theme.colors.onSurface,
-			fontSize: 11,
+			fontSize: theme.typography.fontSize.xs,
 			marginBottom: 2,
 			opacity: 0.7,
 		},
 		primaryAmount: {
 			color: theme.colors.onSurface,
-			fontSize: 16,
+			fontSize: theme.typography.fontSize.sm,
 			fontWeight: '500',
 			marginBottom: 1,
 		},
@@ -84,35 +84,9 @@ export const useStyles = () => {
 		},
 		secondaryAmount: {
 			color: theme.colors.onSurface,
-			fontSize: 13,
+			fontSize: theme.typography.fontSize.xs,
 			opacity: 0.7,
 		},
-
-		// Status styles
-		statusChip: {
-			borderRadius: 12,
-			marginTop: 2,
-			paddingHorizontal: 8,
-			paddingVertical: 2,
-		},
-		statusPending: {
-			backgroundColor: '#FFF3E0', // Amber background
-		},
-		statusFailed: {
-			backgroundColor: '#FFEBEE', // Red background
-		},
-		statusText: {
-			fontSize: 11,
-			fontWeight: '500',
-		},
-		statusTextPending: {
-			color: '#F57C00', // Amber text
-		},
-		statusTextFailed: {
-			color: theme.trend.negative,
-		},
-
-		// Icon container styles
 		iconContainer: {
 			marginRight: 12,
 			position: 'relative',
@@ -134,7 +108,6 @@ export const useStyles = () => {
 			borderWidth: 2,
 			justifyContent: 'center',
 		},
-		// Loading and error states
 		centerContainer: {
 			alignItems: 'center',
 			flex: 1,
