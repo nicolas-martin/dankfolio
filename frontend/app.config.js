@@ -14,7 +14,7 @@ module.exports = ({ config }) => ({
 	name: "Kaiju Swap",
 	slug: "kaiju",
 	owner: "martinni39",
-	version: "1.0.0",
+	version: "1.0." + process.env.EAS_BUILD_NUMBER,
 	orientation: "portrait",
 	icon: "./assets/icon.png",
 	userInterfaceStyle: "dark",
@@ -69,6 +69,7 @@ module.exports = ({ config }) => ({
 	},
 	android: {
 		package: "com.nicolasmartin.kaiju",
+		versionCode: parseInt(process.env.EAS_BUILD_NUMBER || '1'),
 		googleServicesFile: "./google-services.json"
 	},
 	extra: {

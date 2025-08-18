@@ -8,7 +8,7 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "autoIncrement": true,
+      "autoIncrement": false,
       "ios": {
         "simulator": true,
         "buildConfiguration": "Debug"
@@ -27,7 +27,7 @@
     "simulator-release": {
       "extends": "production",
       "distribution": "internal",
-      "autoIncrement": true,
+      "autoIncrement": false,
       "env": {
         "APP_ENV": "production-simulator",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",
