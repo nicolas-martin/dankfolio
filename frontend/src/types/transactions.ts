@@ -39,4 +39,6 @@ export interface Transaction {
 	transactionHash?: string; // Optional
 	fee?: number; // Transaction fee
 	platformFeeAmount?: number; // Platform fee amount
+	fromAddress: string;
+	toAddress: string;
 }

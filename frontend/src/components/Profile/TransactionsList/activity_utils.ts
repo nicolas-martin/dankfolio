@@ -83,7 +83,7 @@ export const txActionFromEvent = (tx: Transaction, userWalletAddress?: string): 
  */
 const getCounterparty = (tx: Transaction, userWalletAddress?: string): string | undefined => {
 	if (tx.type === TransactionType.TRANSFER) {
-		if (tx.address === userWalletAddress) {
+		if (tx.fromAddress === userWalletAddress) {
 			return tx.toAddress;
 		} else {
 			return tx.fromAddress;

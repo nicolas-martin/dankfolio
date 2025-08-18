@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { useCoinStore } from '@/store/coins';
 import ActivityIcon from './ActivityIcon';
 import { ActivityRowProps } from './activity_types';
-import { formatAmount, shortAddress, formatFiat, formatTimeAgo } from './activity_utils';
+import { shortAddress, formatFiat, formatTimeAgo } from './activity_utils';
+import { formatTokenBalance } from '@/utils/numberFormat';
 import { useStyles } from './activity_styles';
 
 const ActivityRow: React.FC<ActivityRowProps> = ({
@@ -75,14 +76,14 @@ const ActivityRow: React.FC<ActivityRowProps> = ({
 	// Format primary amount with sign
 	const formatPrimaryAmount = () => {
 		const sign = displayData.isPositive ? '+' : '-';
-		const formatted = formatAmount(displayData.primaryAmount);
+		const formatted = formatTokenBalance(displayData.primaryAmount, 8);
 		return `${sign}${formatted} ${displayData.primarySymbol}`;
 	};
 
 	// Format secondary amount for swaps
 	const formatSecondaryAmount = () => {
 		if (item.action === 'swap' && displayData.secondaryAmount && displayData.secondarySymbol) {
-			const formatted = formatAmount(displayData.secondaryAmount);
+			const formatted = formatTokenBalance(displayData.secondaryAmount, 8);
 			return `-${formatted} ${displayData.secondarySymbol}`;
 		}
 
