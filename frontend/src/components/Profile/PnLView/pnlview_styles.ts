@@ -7,6 +7,19 @@ export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	return useMemo(() => {
 		const styles = StyleSheet.create({
+			allocationColumn: {
+				flex: 0.7,
+				justifyContent: 'center',
+			},
+			allocationColumnCenter: {
+				flex: 0.7,
+				justifyContent: 'center',
+			},
+			allocationText: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: 11,
+				fontWeight: '500',
+			},
 			arrowColumn: {
 				flex: 0.3,
 				justifyContent: 'center',
@@ -16,6 +29,19 @@ export const useStyles = () => {
 			},
 			contentContainer: {
 				backgroundColor: theme.colors.surface,
+			},
+			costBasisColumn: {
+				flex: 1.1,
+				justifyContent: 'center',
+			},
+			costBasisColumnCenter: {
+				flex: 1.1,
+				justifyContent: 'center',
+			},
+			costBasisText: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: 11,
+				fontWeight: '500',
 			},
 			emptyContainer: {
 				alignItems: 'center',
@@ -78,22 +104,96 @@ export const useStyles = () => {
 				fontWeight: '600',
 				letterSpacing: 0.5,
 			},
+			iconColumn: {
+				flex: 0.4,
+				justifyContent: 'center',
+			},
+			iconColumnCell: {
+				flex: 0.4,
+				justifyContent: 'center',
+			},
 			lastRow: {
 				borderBottomWidth: 0,
+			},
+			negativeSmallText: {
+				color: theme.colors.error,
+				fontSize: 10,
+			},
+			negativeText: {
+				color: theme.colors.error,
+			},
+			neutralSmallText: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: 10,
+			},
+			neutralText: {
+				color: theme.colors.onSurfaceVariant,
+			},
+			pnlColumn: {
+				flex: 1.4,
+				justifyContent: 'center',
+			},
+			pnlColumnCenter: {
+				flex: 1.4,
+				justifyContent: 'center',
+			},
+			pnlContainer: {
+				alignItems: 'flex-end',
+			},
+			pnlPercentText: {
+				fontSize: 10,
+				marginTop: 2,
+			},
+			pnlUsdText: {
+				fontSize: 11,
+				fontWeight: '600',
+			},
+			positiveSmallText: {
+				color: theme.success,
+				fontSize: 10,
+			},
+			positiveText: {
+				color: theme.success,
 			},
 			scrollContent: {
 				flexGrow: 1,
 				paddingBottom: 100,
+			},
+			summaryContainer: {
+				backgroundColor: theme.colors.surface,
+				borderBottomColor: theme.colors.surfaceVariant,
+				borderBottomWidth: 1,
+				paddingHorizontal: theme.spacing.lg,
+				paddingVertical: theme.spacing.md,
+			},
+			summaryItem: {
+				flex: 1,
+			},
+			summaryLabel: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: theme.typography.fontSize.xs,
+				fontWeight: '500',
+				marginBottom: 4,
+			},
+			summaryRow: {
+				flexDirection: 'row',
+				justifyContent: 'space-between',
+				marginBottom: theme.spacing.md,
+			},
+			summaryValue: {
+				color: theme.colors.onSurface,
+				fontSize: theme.typography.fontSize.lg,
+				fontWeight: '700',
 			},
 			symbolCellContent: {
 				alignItems: 'flex-start',
 				flexDirection: 'row',
 			},
 			symbolColumn: {
-				flex: 1.2,
+				flex: 1.3,
 			},
 			symbolColumnStart: {
-				flex: 1.2,
+				flex: 1.3,
 				justifyContent: 'flex-start',
 			},
 			tableHeader: {
@@ -112,12 +212,15 @@ export const useStyles = () => {
 				marginTop: 2,
 			},
 			tokenIcon: {
-				borderRadius: 20,
-				height: 40,
-				width: 40,
+				borderRadius: 14,
+				height: 28,
+				width: 28,
 			},
 			tokenInfoContainer: {
 				alignItems: 'center',
+			},
+			tokenNameContainer: {
+				alignItems: 'flex-start',
 			},
 			tokenShares: {
 				color: theme.colors.onSurfaceVariant,
@@ -132,15 +235,15 @@ export const useStyles = () => {
 			},
 			tokenValue: {
 				color: theme.colors.onSurface,
-				fontSize: theme.typography.fontSize.sm,
+				fontSize: 11,
 				fontWeight: '600',
 			},
 			valueColumn: {
-				flex: 1.5,
+				flex: 1.1,
 				justifyContent: 'center',
 			},
 			valueColumnCenter: {
-				flex: 1.5,
+				flex: 1.1,
 				justifyContent: 'center',
 			},
 		});
