@@ -56,7 +56,7 @@ const BASE_COINS_DATA = {
 		symbol: 'USDC',
 		decimals: 6,
 		description: 'USD Coin',
-		logoUri: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v.png',
+		logoUri: 'https://coin-icon.us-ord-1.linodeobjects.com/tokens/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v.png',
 		tags: ['stablecoin', 'verified'],
 		price: 1.0,
 		price24hChangePercent: 0.1,

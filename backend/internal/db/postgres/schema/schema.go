@@ -84,6 +84,7 @@ type Trade struct {
 	CoinSymbol          string  `gorm:"column:coin_symbol"`     // Primary coin symbol for display
 	Type                string  `gorm:"column:type;not null"`   // e.g., "buy", "sell", "swap"
 	Amount              float64 `gorm:"column:amount;not null"` // Amount of 'FromCoin' for sells/swaps, 'ToCoin' for buys
+	OutputAmount        float64 `gorm:"column:output_amount;default:0.0"` // Amount of 'ToCoin' received in swaps
 
 	// Fee Information
 	Fee            float64 `gorm:"column:fee;default:0.0"`              // Total fee in USD

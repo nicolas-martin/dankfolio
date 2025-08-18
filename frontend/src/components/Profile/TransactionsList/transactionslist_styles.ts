@@ -23,10 +23,22 @@ export const useStyles = () => {
 				justifyContent: 'center',
 				paddingVertical: theme.spacing['4xl'],
 			},
+			amountContainer: {
+				marginTop: theme.spacing.xs,
+			},
 			coinAmount: {
 				color: theme.colors.onSurfaceVariant,
 				fontSize: theme.typography.fontSize.sm,
-				marginTop: theme.spacing.xs,
+			},
+			fromAmount: {
+				color: theme.colors.onSurface,
+				fontSize: theme.typography.fontSize.sm,
+				fontWeight: '600',
+			},
+			toAmount: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: theme.typography.fontSize.xs,
+				marginTop: 2,
 			},
 			coinColumn: {
 				alignItems: 'center',

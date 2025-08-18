@@ -118,6 +118,14 @@ const TransactionsList = () => {
 		const isLastItem = index === transactions.length - 1;
 		const transactionStyles = isLastItem ? [styles.transactionItem, styles.transactionItemLast] : [styles.transactionItem];
 
+		// Format amounts with symbols
+		const fromSymbol = fromCoin?.symbol || '';
+		const toSymbol = toCoin?.symbol || '';
+		
+		// For swaps, amount is the input amount and outputAmount is what we receive
+		const fromAmount = item.amount;
+		const toAmount = item.outputAmount || null;
+
 		return (
 			<View key={item.id} style={transactionStyles}>
 				<View style={styles.transactionMainRow}>
@@ -130,7 +138,7 @@ const TransactionsList = () => {
 								style={styles.transactionTypeIcon}
 							/>
 							<Text style={styles.transactionType}>
-								{item.type === TransactionType.SWAP ? 'Swap' : item.type === TransactionType.TRANSFER ? 'Transfer' : 'Transaction'}
+								{item.type === TransactionType.SWAP ? 'Swap' : item.type === TransactionType.TRANSFER ? 'Send' : 'Transaction'}
 							</Text>
 						</View>
 						<View style={styles.transactionRow}>
@@ -161,9 +169,28 @@ const TransactionsList = () => {
 								</>
 							)}
 						</View>
-						<Text style={styles.coinAmount}>
-							{formatPrice(item.amount, false)}
-						</Text>
+						<View style={styles.amountContainer}>
+							{isSwap ? (
+								<>
+									<Text style={styles.fromAmount}>
+										{formatPrice(fromAmount, false)} {fromSymbol}
+									</Text>
+									{toAmount !== null && toSymbol ? (
+										<Text style={styles.toAmount}>
+											→ {formatPrice(toAmount, false)} {toSymbol}
+										</Text>
+									) : toSymbol ? (
+										<Text style={styles.toAmount}>
+											→ {toSymbol}
+										</Text>
+									) : null}
+								</>
+							) : (
+								<Text style={styles.coinAmount}>
+									{formatPrice(fromAmount, false)} {fromSymbol}
+								</Text>
+							)}
+						</View>
 					</View>
 					<View style={styles.transactionRight}>
 						<Text style={styles.transactionDate}>

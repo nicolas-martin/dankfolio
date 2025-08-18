@@ -44,6 +44,7 @@ message Trade {
   optional double platform_fee_amount = 18;
   optional double platform_fee_percent = 19;
   optional string platform_fee_destination = 20;
+  optional double output_amount = 21; // Amount of output token received in swaps
 }
 
 // GetSwapQuoteRequest is the request for getting a trade quote

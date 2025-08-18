@@ -43,6 +43,7 @@ type Trade struct {
 	PlatformFeeAmount      *float64               `protobuf:"fixed64,18,opt,name=platform_fee_amount,json=platformFeeAmount,proto3,oneof" json:"platform_fee_amount,omitempty"`
 	PlatformFeePercent     *float64               `protobuf:"fixed64,19,opt,name=platform_fee_percent,json=platformFeePercent,proto3,oneof" json:"platform_fee_percent,omitempty"`
 	PlatformFeeDestination *string                `protobuf:"bytes,20,opt,name=platform_fee_destination,json=platformFeeDestination,proto3,oneof" json:"platform_fee_destination,omitempty"`
+	OutputAmount           *float64               `protobuf:"fixed64,21,opt,name=output_amount,json=outputAmount,proto3,oneof" json:"output_amount,omitempty"` // Amount of output token received in swaps
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -201,6 +202,13 @@ func (x *Trade) GetPlatformFeeDestination() string {
 		return *x.PlatformFeeDestination
 	}
 	return ""
+}
+
+func (x *Trade) GetOutputAmount() float64 {
+	if x != nil && x.OutputAmount != nil {
+		return *x.OutputAmount
+	}
+	return 0
 }
 
 // GetSwapQuoteRequest is the request for getting a trade quote
@@ -1024,7 +1032,7 @@ var File_dankfolio_v1_trade_proto protoreflect.FileDescriptor
 
 const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"\n" +
-	"\x18dankfolio/v1/trade.proto\x12\fdankfolio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf9\x05\n" +
+	"\x18dankfolio/v1/trade.proto\x12\fdankfolio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb5\x06\n" +
 	"\x05Trade\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12 \n" +
@@ -1047,12 +1055,14 @@ const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"\x05error\x18\x0f \x01(\tH\x01R\x05error\x88\x01\x01\x123\n" +
 	"\x13platform_fee_amount\x18\x12 \x01(\x01H\x02R\x11platformFeeAmount\x88\x01\x01\x125\n" +
 	"\x14platform_fee_percent\x18\x13 \x01(\x01H\x03R\x12platformFeePercent\x88\x01\x01\x12=\n" +
-	"\x18platform_fee_destination\x18\x14 \x01(\tH\x04R\x16platformFeeDestination\x88\x01\x01B\x0f\n" +
+	"\x18platform_fee_destination\x18\x14 \x01(\tH\x04R\x16platformFeeDestination\x88\x01\x01\x12(\n" +
+	"\routput_amount\x18\x15 \x01(\x01H\x05R\foutputAmount\x88\x01\x01B\x0f\n" +
 	"\r_completed_atB\b\n" +
 	"\x06_errorB\x16\n" +
 	"\x14_platform_fee_amountB\x17\n" +
 	"\x15_platform_fee_percentB\x1b\n" +
-	"\x19_platform_fee_destination\"\xad\x02\n" +
+	"\x19_platform_fee_destinationB\x10\n" +
+	"\x0e_output_amount\"\xad\x02\n" +
 	"\x13GetSwapQuoteRequest\x12 \n" +
 	"\ffrom_coin_id\x18\x01 \x01(\tR\n" +
 	"fromCoinId\x12\x1c\n" +

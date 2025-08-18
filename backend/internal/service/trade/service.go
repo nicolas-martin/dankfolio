@@ -343,7 +343,8 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 		ToCoinPKID:          toCoinModel.ID,
 		CoinSymbol:          fromCoinModel.Symbol,
 		Type:                "swap",
-		Amount:              outputAmount,        // Store the output amount (what we receive)
+		Amount:              inputAmountDecimal,  // Store the input amount (what we're spending)
+		OutputAmount:        outputAmount,        // Store the output amount (what we receive)
 		FromUSDPrice:        fromCoinModel.Price, // USD price of FROM token at trade time
 		ToUSDPrice:          toCoinModel.Price,   // USD price of TO token at trade time
 		TotalUSDCost:        totalUSDCost,        // Total USD cost of the trade

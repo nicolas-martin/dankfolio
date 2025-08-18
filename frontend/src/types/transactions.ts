@@ -30,7 +30,8 @@ export interface Transaction {
 	toCoinMintAddress?: string; // Mint address of the to coin
 	fromCoinIconUrl?: string; // Optional, for later enhancement
 	toCoinIconUrl?: string; // Optional, for later enhancement
-	amount: number; // Representing the amount of fromCoinSymbol or toCoinSymbol
+	amount: number; // Input amount (what we're spending) for swaps, or transfer amount
+	outputAmount?: number; // Output amount (what we're receiving) for swaps
 	price?: number; // Price per token at the time of transaction
 	totalValue?: number; // Total value of the transaction (amount * price)
 	status: TransactionStatus;

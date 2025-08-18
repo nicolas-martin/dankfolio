@@ -419,6 +419,10 @@ func convertModelToProtoTrade(trade *model.Trade) *pb.Trade {
 		pbTrade.Error = &trade.Error
 	}
 
+	if trade.OutputAmount > 0 {
+		pbTrade.OutputAmount = &trade.OutputAmount
+	}
+
 	if !trade.CreatedAt.IsZero() {
 		pbTrade.CreatedAt = timestamppb.New(trade.CreatedAt)
 	}

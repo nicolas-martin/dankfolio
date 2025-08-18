@@ -127,6 +127,7 @@ type Trade struct {
 	CoinSymbol          string  `json:"coin_symbol"` // This might be redundant if From/ToCoin provides symbol, or useful for primary display
 	Type                string  `json:"type"`
 	Amount              float64 `json:"amount"`
+	OutputAmount        float64 `json:"output_amount"` // Amount of 'ToCoin' received in swaps
 
 	// Fee Information
 	Fee            float64 `json:"fee"`                        // Total fee in USD
