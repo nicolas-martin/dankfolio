@@ -7,6 +7,9 @@ export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	return useMemo(() => {
 		const styles = StyleSheet.create({
+			amountContainer: {
+				marginTop: theme.spacing.xs,
+			},
 			arrowIcon: {
 				height: 36,
 				margin: 0,
@@ -23,22 +26,9 @@ export const useStyles = () => {
 				justifyContent: 'center',
 				paddingVertical: theme.spacing['4xl'],
 			},
-			amountContainer: {
-				marginTop: theme.spacing.xs,
-			},
 			coinAmount: {
 				color: theme.colors.onSurfaceVariant,
 				fontSize: theme.typography.fontSize.sm,
-			},
-			fromAmount: {
-				color: theme.colors.onSurface,
-				fontSize: theme.typography.fontSize.sm,
-				fontWeight: '600',
-			},
-			toAmount: {
-				color: theme.colors.onSurfaceVariant,
-				fontSize: theme.typography.fontSize.xs,
-				marginTop: 2,
 			},
 			coinColumn: {
 				alignItems: 'center',
@@ -113,6 +103,11 @@ export const useStyles = () => {
 				marginTop: theme.spacing.md,
 				textAlign: 'center',
 			},
+			fromAmount: {
+				color: theme.colors.onSurface,
+				fontSize: theme.typography.fontSize.sm,
+				fontWeight: '600',
+			},
 			iconContainer: {
 				backgroundColor: theme.colors.surfaceVariant,
 				borderRadius: theme.spacing.xl,
@@ -170,6 +165,11 @@ export const useStyles = () => {
 				color: theme.colors.onSurfaceVariant,
 				fontSize: theme.typography.fontSize.sm,
 				marginHorizontal: theme.spacing.xs,
+			},
+			toAmount: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: theme.typography.fontSize.xs,
+				marginTop: 2,
 			},
 			transactionAmount: {
 				color: theme.colors.onSurface,
