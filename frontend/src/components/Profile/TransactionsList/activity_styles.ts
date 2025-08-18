@@ -10,7 +10,7 @@ export const useStyles = () => {
 		// Row styles
 		activityRow: {
 			alignItems: 'center',
-			backgroundColor: theme.colors.background,
+			backgroundColor: theme.colors.surface,
 			flexDirection: 'row',
 			minHeight: 72,
 			paddingHorizontal: 16,
@@ -21,8 +21,8 @@ export const useStyles = () => {
 		},
 		badge: {
 			alignItems: 'center',
-			backgroundColor: theme.colors.background,
-			borderColor: theme.colors.background,
+			backgroundColor: theme.colors.surface,
+			borderColor: theme.colors.surface,
 			borderRadius: 24,
 			borderWidth: 8,
 			bottom: -5,
@@ -44,7 +44,7 @@ export const useStyles = () => {
 			overflow: 'hidden',
 		},
 		container: {
-			backgroundColor: theme.colors.background,
+			backgroundColor: theme.colors.surface,
 			flex: 1,
 		},
 		// Right column styles
@@ -92,7 +92,7 @@ export const useStyles = () => {
 			position: 'relative',
 		},
 		tokenImage: {
-			backgroundColor: theme.colors.background,
+			backgroundColor: theme.colors.surface,
 			borderColor: theme.colors.surface,
 			borderRadius: 24,
 			borderWidth: 2,
