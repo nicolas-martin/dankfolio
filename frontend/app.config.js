@@ -14,7 +14,7 @@ module.exports = ({ config }) => ({
 	name: "Kaiju Swap",
 	slug: "kaiju",
 	owner: "martinni39",
-	version: "1.0.0",
+	version: "1.0.1",
 	orientation: "portrait",
 	icon: "./assets/icon.png",
 	userInterfaceStyle: "dark",
