@@ -37,6 +37,7 @@ import {
 	useSpringLine,
 	createHorizontalDottedLinePoints
 } from './scripts';
+import { formatPrice } from '@/utils/numberFormat';
 
 const initChartPressState = { x: 0, y: { y: 0 } };
 
@@ -318,10 +319,7 @@ export default function CoinChart({
 							labelPosition: { x: 'outset', y: 'inset' },
 							axisSide: { x: 'bottom', y: 'left' },
 							formatXLabel: timeFormat.axis, // Use period-specific format
-							formatYLabel: v => v.toLocaleString('en-US', {
-								minimumFractionDigits: 6,
-								maximumFractionDigits: 6
-							}),
+							formatYLabel: v => formatPrice(v, false),
 							lineColor: {
 								grid: {
 									x: styles.chartUIColors.grid.x,
