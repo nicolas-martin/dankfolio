@@ -69,10 +69,10 @@ const PnLView = () => {
 	// Sort the data based on current sort settings
 	const sortedData = useMemo(() => {
 		if (!pnlData || pnlData.length === 0) return [];
-		
+
 		const sorted = [...pnlData].sort((a, b) => {
 			let comparison = 0;
-			
+
 			switch (sortBy) {
 				case 'value':
 					comparison = a.currentValue - b.currentValue;
@@ -88,10 +88,10 @@ const PnLView = () => {
 				default:
 					return 0;
 			}
-			
+
 			return sortDirection === 'ascending' ? comparison : -comparison;
 		});
-		
+
 		return sorted;
 	}, [pnlData, sortBy, sortDirection, totalPortfolioValue]);
 
@@ -165,24 +165,24 @@ const PnLView = () => {
 						<DataTable.Title numeric style={styles.costBasisColumn}>
 							<Text style={styles.headerText}>COST</Text>
 						</DataTable.Title>
-						<DataTable.Title 
-							numeric 
+						<DataTable.Title
+							numeric
 							sortDirection={sortBy === 'value' ? sortDirection : undefined}
 							onPress={() => handleSort('value')}
 							style={styles.valueColumn}
 						>
 							<Text style={styles.headerText}>VALUE</Text>
 						</DataTable.Title>
-						<DataTable.Title 
-							numeric 
+						<DataTable.Title
+							numeric
 							sortDirection={sortBy === 'pnl' ? sortDirection : undefined}
 							onPress={() => handleSort('pnl')}
 							style={styles.pnlColumn}
 						>
 							<Text style={styles.headerText}>P&L</Text>
 						</DataTable.Title>
-						<DataTable.Title 
-							numeric 
+						<DataTable.Title
+							numeric
 							sortDirection={sortBy === 'allocation' ? sortDirection : undefined}
 							onPress={() => handleSort('allocation')}
 							style={styles.allocationColumn}
@@ -257,7 +257,7 @@ const PnLView = () => {
 											styles.pnlPercentText,
 											isEssentiallyZero ? styles.neutralSmallText : (isPositive ? styles.positiveSmallText : styles.negativeSmallText)
 										]}>
-											{isEssentiallyZero ? '0.00%' : `${isPositive ? '+' : ''}${formatPercentage(percentageValue, 2, true)}`}
+											{isEssentiallyZero ? '0.00%' : `${formatPercentage(percentageValue, 2, true)}`}
 										</Text>
 									</View>
 								</DataTable.Cell>
