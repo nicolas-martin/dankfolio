@@ -17,7 +17,9 @@ export const useStyles = () => {
 			paddingVertical: 12,
 		},
 		activityRowSeparator: {
-			height: 12,
+			backgroundColor: theme.colors.surfaceVariant,
+			height: 0.5,
+			marginHorizontal: theme.spacing.lg,
 		},
 		badge: {
 			alignItems: 'center',
@@ -98,7 +100,6 @@ export const useStyles = () => {
 			borderWidth: 2,
 		},
 		listContainer: {
-			paddingHorizontal: 16,
 			paddingVertical: 8,
 		},
 		fallbackIcon: {
