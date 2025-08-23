@@ -13,10 +13,13 @@ import (
 
 // UpdateTrendingTokensFromBirdeye orchestrates fetching and enrichment of trending tokens.
 func (s *Service) UpdateTrendingTokensFromBirdeye(ctx context.Context) (*TrendingTokensOutput, error) {
-	slog.Info("Starting trending token fetch and enrichment process...")
+	slog.Info("🔥 BIRDEYE API CALL: Starting trending token fetch and enrichment process...")
 
 	// Step 1: Get trending tokens from Birdeye
 	fetchTime := time.Now() // Capture fetch attempt time
+	slog.Info("📡 Making actual Birdeye API call for trending tokens", 
+		slog.Int("limit", 10), 
+		slog.String("sortBy", "rank"))
 	birdeyeTokens, err := s.birdeyeClient.GetTrendingTokens(ctx, birdeye.TrendingTokensParams{Limit: 10, SortBy: birdeye.SortByRank})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trending tokens from Birdeye: %w", err)
@@ -30,7 +33,9 @@ func (s *Service) UpdateTrendingTokensFromBirdeye(ctx context.Context) (*Trendin
 		}, nil
 
 	}
-	slog.Info("Successfully received trending tokens from Birdeye", "count", len(birdeyeTokens.Data.Tokens))
+	slog.Info("✅ Successfully received trending tokens from Birdeye API", 
+		slog.Int("count", len(birdeyeTokens.Data.Tokens)),
+		slog.Time("fetchTime", fetchTime))
 
 	// Step 2: Enrich the Birdeye tokens concurrently
 	enrichedCoins, err := s.processBirdeyeTokens(ctx, birdeyeTokens.Data.Tokens)

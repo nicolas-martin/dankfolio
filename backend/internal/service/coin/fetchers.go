@@ -29,7 +29,8 @@ func (s *Service) runTrendingTokenFetcher(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			slog.InfoContext(ctx, "Periodically fetching trending tokens...")
-			_, _, err := s.GetTrendingCoinsRPC(ctx, 10, 0)
+			// Call the fetch function directly to get fresh data from Birdeye
+			err := s.FetchAndStoreTrendingTokens(ctx)
 			if err != nil {
 				slog.ErrorContext(ctx, "Failed to fetch and store trending tokens periodically", slog.Any("error", err))
 			} else {
@@ -55,7 +56,8 @@ func (s *Service) runNewTokenFetcher(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			slog.InfoContext(ctx, "Periodically fetching new tokens...")
-			_, _, err := s.GetNewCoins(ctx, 10, 0)
+			// Call the fetch function directly to get fresh data from Birdeye
+			err := s.FetchAndStoreNewTokens(ctx)
 			if err != nil {
 				slog.ErrorContext(ctx, "Failed to fetch and store new tokens periodically", slog.Any("error", err))
 			} else {
@@ -81,7 +83,8 @@ func (s *Service) runTopGainersTokenFetcher(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			slog.InfoContext(ctx, "Periodically fetching top gainers tokens...")
-			_, _, err := s.GetTopGainersCoins(ctx, 10, 0)
+			// Call the fetch function directly to get fresh data from Birdeye
+			err := s.FetchAndStoreTopGainersTokens(ctx)
 			if err != nil {
 				slog.ErrorContext(ctx, "Failed to fetch and store top gainers tokens periodically", slog.Any("error", err))
 			} else {
@@ -147,7 +150,7 @@ func (s *Service) FetchAndStoreTrendingTokens(ctx context.Context) error {
 				currentCoin := coin
 				// Add "trending" tag
 				currentCoin.Tags = append(currentCoin.Tags, "trending")
-				
+
 				// Process logo through image proxy to upload to S3
 				s.processLogoURL(ctx, &currentCoin)
 
@@ -176,11 +179,11 @@ func (s *Service) FetchAndStoreTrendingTokens(ctx context.Context) error {
 		}
 
 		slog.InfoContext(ctx, "Trending coin store refresh transaction complete", slog.Time("fetchTimestamp", enrichedCoins.FetchTimestamp), slog.Int("enrichedCoinsProcessed", len(enrichedCoins.Coins)))
-		
+
 		// Invalidate cache after successful DB update
 		s.cache.Delete(cacheKey_trending)
 		slog.InfoContext(ctx, "Invalidated trending coins cache after DB refresh")
-		
+
 		return nil
 	})
 }
@@ -251,7 +254,7 @@ func (s *Service) FetchAndStoreTopGainersTokens(ctx context.Context) error {
 				currentCoin := coin
 				// Add "top-gainer" tag
 				currentCoin.Tags = append(currentCoin.Tags, "top-gainer")
-				
+
 				// Process logo through image proxy to upload to S3
 				s.processLogoURL(ctx, &currentCoin)
 
@@ -280,11 +283,11 @@ func (s *Service) FetchAndStoreTopGainersTokens(ctx context.Context) error {
 		}
 
 		slog.InfoContext(ctx, "Top gainers coin store refresh transaction complete", slog.Int("enrichedCoinsProcessed", len(enrichedCoins)))
-		
+
 		// Invalidate cache after successful DB update
 		s.cache.Delete(cacheKey_top)
 		slog.InfoContext(ctx, "Invalidated top gainers coins cache after DB refresh")
-		
+
 		return nil
 	})
 }
@@ -296,6 +299,8 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 		offset := 0
 
 		// Fetch new listing tokens from Birdeye with meme platform enabled
+		slog.InfoContext(ctx, "📡 Calling Birdeye GetNewListingTokens API...", 
+			slog.Int("limit", limit), slog.Int("offset", offset))
 		birdeyeTokens, err := s.birdeyeClient.GetNewListingTokens(ctx, birdeye.NewListingTokensParams{
 			Limit:               limit,
 			Offset:              offset,
@@ -306,6 +311,8 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 			return fmt.Errorf("failed to get new listing tokens from Birdeye: %w", err)
 		}
 
+		slog.InfoContext(ctx, "📊 Birdeye API Response for new tokens", 
+			slog.Int("tokensReceived", len(birdeyeTokens.Data.Items)))
 		if len(birdeyeTokens.Data.Items) == 0 {
 			slog.InfoContext(ctx, "No new listing tokens found from Birdeye.")
 			return nil
@@ -397,7 +404,7 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 				if !isNewCoinTagPresent {
 					currentCoin.Tags = append(currentCoin.Tags, "new-coin")
 				}
-				
+
 				// Process logo through image proxy to upload to S3
 				s.processLogoURL(ctx, &currentCoin)
 
@@ -426,11 +433,11 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 		}
 
 		slog.InfoContext(ctx, "New coins store refresh (Birdeye source) transaction complete", slog.Int("enriched_coins_processed_count", len(enrichedCoins)))
-		
+
 		// Invalidate cache after successful DB update
 		s.cache.Delete(cacheKey_new)
 		slog.InfoContext(ctx, "Invalidated new coins cache after DB refresh")
-		
+
 		return nil
 	})
 }
@@ -590,4 +597,3 @@ func (s *Service) GetXStocksCoins(ctx context.Context, limit, offset int32) ([]m
 
 	return coins, totalCount, nil
 }
-
