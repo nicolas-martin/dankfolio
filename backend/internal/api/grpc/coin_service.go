@@ -233,11 +233,19 @@ func (s *coinServiceHandler) GetNewCoins(
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get new coins: %w", err))
 	}
 
-	// Convert domain models to protobuf
+	// Convert domain models to protobuf and collect symbols for logging
 	pbCoins := make([]*pb.Coin, len(modelCoins))
+	symbols := make([]string, len(modelCoins))
 	for i, coinModel := range modelCoins {
 		pbCoins[i] = convertModelCoinToPbCoin(&coinModel)
+		symbols[i] = coinModel.Symbol
 	}
+	
+	// Log the symbols being returned for debugging
+	slog.InfoContext(ctx, "🆕 GetNewCoins returning coins", 
+		"count", len(modelCoins),
+		"symbols", symbols,
+		"totalCount", totalCount)
 
 	resp := &pb.GetAvailableCoinsResponse{
 		Coins:      pbCoins,
@@ -270,11 +278,19 @@ func (s *coinServiceHandler) GetTrendingCoins(
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trending coins: %w", err))
 	}
 
-	// Convert domain models to protobuf
+	// Convert domain models to protobuf and collect symbols for logging
 	pbCoins := make([]*pb.Coin, len(modelCoins))
+	symbols := make([]string, len(modelCoins))
 	for i, coinModel := range modelCoins {
 		pbCoins[i] = convertModelCoinToPbCoin(&coinModel)
+		symbols[i] = coinModel.Symbol
 	}
+	
+	// Log the symbols being returned for debugging
+	slog.InfoContext(ctx, "📈 GetTrendingCoins returning coins", 
+		"count", len(modelCoins),
+		"symbols", symbols,
+		"totalCount", totalCount)
 
 	resp := &pb.GetAvailableCoinsResponse{
 		Coins:      pbCoins,
@@ -307,11 +323,19 @@ func (s *coinServiceHandler) GetTopGainersCoins(
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get top gainer coins: %w", err))
 	}
 
-	// Convert domain models to protobuf
+	// Convert domain models to protobuf and collect symbols for logging
 	pbCoins := make([]*pb.Coin, len(modelCoins))
+	symbols := make([]string, len(modelCoins))
 	for i, coinModel := range modelCoins {
 		pbCoins[i] = convertModelCoinToPbCoin(&coinModel)
+		symbols[i] = coinModel.Symbol
 	}
+	
+	// Log the symbols being returned for debugging
+	slog.InfoContext(ctx, "🚀 GetTopGainersCoins returning coins", 
+		"count", len(modelCoins),
+		"symbols", symbols,
+		"totalCount", totalCount)
 
 	resp := &pb.GetAvailableCoinsResponse{
 		Coins:      pbCoins,

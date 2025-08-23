@@ -296,3 +296,4 @@ Both scripts create `.env` files from examples that require manual configuration
 - Database maintains separate entries for SOL and wSOL
 - Price data is synchronized between them
 - The normalization is transparent to users
+- remember to add the appcheck token when querying the grpc api locally. The test token is located in the backend/.env file
