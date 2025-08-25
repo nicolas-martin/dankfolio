@@ -319,9 +319,9 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	}
 
 	// Calculate USD values for the trade
-	// For swaps, use the output value as the cost basis to account for slippage
-	// This ensures PnL starts at ~0% immediately after the trade
-	totalUSDCost := outputAmount * toCoinModel.Price
+	// Cost basis should be what we spent (input value), not what we received
+	// This represents the actual cost of acquiring the tokens
+	totalUSDCost := inputAmountDecimal * fromCoinModel.Price
 
 	slog.Info("Trade amount tracking",
 		"from_token", fromCoinModel.Symbol,
@@ -330,9 +330,9 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 		"output_amount", outputAmount,
 		"from_market_price", fromCoinModel.Price,
 		"to_market_price", toCoinModel.Price,
-		"input_value_usd", inputAmountDecimal*fromCoinModel.Price,
-		"output_value_usd", totalUSDCost,
-		"slippage_cost_usd", (inputAmountDecimal*fromCoinModel.Price)-totalUSDCost)
+		"input_value_usd", totalUSDCost,
+		"output_value_usd", outputAmount*toCoinModel.Price,
+		"slippage_cost_usd", totalUSDCost-(outputAmount*toCoinModel.Price))
 
 	// Create trade record with essential information
 	trade := &model.Trade{

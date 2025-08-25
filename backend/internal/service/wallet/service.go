@@ -791,27 +791,33 @@ func (s *Service) GetPortfolioPnL(ctx context.Context, walletAddress string) (to
 				continue
 			}
 
+			// For swaps, use OutputAmount (what we received), for buys use Amount
+			amountReceived := trade.Amount
+			if trade.Type == "swap" && trade.OutputAmount > 0 {
+				amountReceived = trade.OutputAmount
+			}
+
 			data.totalCost += costInUSD
-			data.totalAmount += trade.Amount
+			data.totalAmount += amountReceived
 			costBasisMap[tokenID] = data
 
 			// Track holdings based on trades
-			holdings[tokenID] += trade.Amount
+			holdings[tokenID] += amountReceived
 			slog.Debug("Added to holdings from trade",
 				"token", tokenID,
-				"amount", trade.Amount,
+				"amount", amountReceived,
+				"trade_type", trade.Type,
+				"output_amount", trade.OutputAmount,
 				"new_total", holdings[tokenID])
 		}
 
 		// For swaps, also track what we spent
-		if trade.Type == "swap" && trade.FromCoinMintAddress != "" && trade.FromUSDPrice > 0 && trade.TotalUSDCost > 0 {
-			// Calculate input amount from USD values
-			// Input amount = Total USD cost / FROM token USD price
-			inputAmount := trade.TotalUSDCost / trade.FromUSDPrice
-			holdings[trade.FromCoinMintAddress] -= inputAmount
+		if trade.Type == "swap" && trade.FromCoinMintAddress != "" {
+			// Use the actual input amount (what we spent)
+			holdings[trade.FromCoinMintAddress] -= trade.Amount
 			slog.Debug("Subtracted from holdings for swap",
 				"token", trade.FromCoinMintAddress,
-				"amount", inputAmount,
+				"amount", trade.Amount,
 				"from_usd_price", trade.FromUSDPrice,
 				"total_usd_cost", trade.TotalUSDCost,
 				"new_total", holdings[trade.FromCoinMintAddress])

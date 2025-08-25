@@ -413,13 +413,24 @@ func convertModelToProtoTrade(trade *model.Trade) *pb.Trade {
 		TransactionHash: trade.TransactionHash,
 		Confirmations:   trade.Confirmations,
 		Finalized:       trade.Finalized,
+		FromAddress:     trade.FromAddress,
+		ToAddress:       trade.ToAddress,
 	}
 
 	if trade.Error != "" {
 		pbTrade.Error = &trade.Error
 	}
 
-	if trade.OutputAmount > 0 {
+	// Always include OutputAmount for swaps, even if it's 0
+	// This ensures the frontend can display the received amount correctly
+	if trade.Type == "swap" {
+		pbTrade.OutputAmount = &trade.OutputAmount
+		slog.Debug("Setting OutputAmount for trade",
+			"trade_id", trade.ID,
+			"output_amount", trade.OutputAmount,
+			"from_coin", trade.FromCoinMintAddress,
+			"to_coin", trade.ToCoinMintAddress)
+	} else if trade.OutputAmount > 0 {
 		pbTrade.OutputAmount = &trade.OutputAmount
 	}
 
