@@ -1,20 +1,20 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { View, ScrollView, RefreshControl, SafeAreaView, useWindowDimensions } from 'react-native';
-import { Text, Button } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { TabView, TabBar } from 'react-native-tab-view';
-import { handleTokenPress, sortTokensByValue, createCoinCardProps } from './profile_scripts';
+import { handleTokenPress } from './profile_scripts';
 import { usePortfolioStore } from '@store/portfolio';
 import { useStyles } from './profile_styles';
-import TokenListCard from '@/components/Home/TokenListCard';
 import TransactionsList from '@/components/Profile/TransactionsList';
+import ProfileOverview from '@/components/Profile/ProfileOverview';
+import TokensList from '@/components/Profile/TokensList';
 import ScreenHeader from '@/components/Common/ScreenHeader';
-import { ProfileIcon, WalletIcon, CoinsIcon, SendIcon, SettingsIcon, SwapIcon } from '@components/Common/Icons';
+import { ProfileIcon, WalletIcon, SettingsIcon, SwapIcon } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
 import type { ProfileScreenNavigationProp } from './profile_types';
 import PnLView from '@/components/Profile/PnLView';
-import { formatPrice } from 'utils/numberFormat';
 
 const Profile = () => {
 	const navigation = useNavigation<ProfileScreenNavigationProp>();
@@ -33,10 +33,6 @@ const Profile = () => {
 	const [index, setIndex] = useState(0);
 	const [routes] = useState(tabs.map(tab => ({ key: tab.key, title: tab.title })));
 
-	const sendButtonIcon = useCallback(() => (
-		<SendIcon size={20} color={styles.colors.onPrimary} />
-	), [styles.colors.onPrimary]);
-
 
 
 	useEffect(() => {
@@ -47,9 +43,6 @@ const Profile = () => {
 
 	const totalValue = totalPortfolioValue ?? 0;
 
-	const sortedTokens = useMemo(() => {
-		return sortTokensByValue(tokens);
-	}, [tokens]);
 
 	const handleRefresh = async () => {
 		if (!wallet) return;
@@ -92,78 +85,29 @@ const Profile = () => {
 	);
 
 	const OverviewTab = () => (
-		<View style={styles.tabContainer}>
-			<View style={styles.tabContentContainer}>
-				<View style={styles.portfolioSection}>
-					<Text style={styles.portfolioTitle} accessible={true}>Total Portfolio Value</Text>
-					<Text style={styles.portfolioValue} accessible={true}>
-						{formatPrice(totalValue, true)}
-					</Text>
-					<Text style={styles.portfolioSubtext} accessible={true}>
-						{tokens.length} Token{tokens.length !== 1 ? 's' : ''}
-					</Text>
-					<Button
-						mode="contained"
-						icon={sendButtonIcon}
-						onPress={() => {
-							logger.breadcrumb({ category: 'navigation', message: 'Navigating to SendTokensScreen from Profile' });
-							navigation.navigate('SendTokens');
-						}}
-						{...styles.sendButtonStyle}
-						contentStyle={styles.sendButtonContent}
-						disabled={tokens.length === 0}
-						accessible={true}
-						testID="send-tokens-button"
-					>
-						<Text style={styles.sendButtonText}>Send Tokens</Text>
-					</Button>
-				</View>
-			</View>
-		</View>
+		<ProfileOverview
+			totalValue={totalValue}
+			tokensCount={tokens.length}
+			onSendPress={() => {
+				logger.breadcrumb({ category: 'navigation', message: 'Navigating to SendTokensScreen from Profile' });
+				navigation.navigate('SendTokens');
+			}}
+			disabled={tokens.length === 0}
+		/>
 	);
 
 	const TokensTab = () => (
-		<View style={styles.tabContainer}>
-			<View style={styles.tabContentContainer}>
-				{sortedTokens.length === 0 ? (
-					<View style={styles.emptyTokensContainer}>
-						<View style={styles.tokensHeader} accessible={false}>
-							<View style={styles.tokensIcon}>
-								<CoinsIcon size={24} color={styles.colors.onSurface} />
-							</View>
-							<Text style={styles.tokensTitle} accessible={true} testID="your-tokens-title">Your Tokens</Text>
-						</View>
-						<View style={styles.emptyStateContainer} accessible={false}>
-							<View style={styles.emptyStateIcon}>
-								<WalletIcon size={48} color={styles.colors.onSurfaceVariant} />
-							</View>
-							<Text style={styles.emptyStateTitle} accessible={true}>No Tokens Found</Text>
-							<Text style={styles.emptyStateText} accessible={true}>
-								Your wallet doesn&apos;t contain any tokens yet. Start trading to build your portfolio!
-							</Text>
-						</View>
-					</View>
-				) : (
-					<TokenListCard
-						title=''
-						coins={sortedTokens.map(token => createCoinCardProps(token))}
-						showSparkline={false}
-						showBalanceAndValue={true}
-						noHorizontalMargin={true}
-						noRoundedCorners={true}
-						onCoinPress={(coin) => {
-							logger.breadcrumb({
-								category: 'ui',
-								message: 'Pressed token card on ProfileScreen',
-								data: { tokenSymbol: coin.symbol, tokenMint: coin.address }
-							});
-							handleTokenPress(coin, navigation.navigate);
-						}}
-						testIdPrefix="profile-token"
-					/>
-				)}
-			</View>
-		</View>
+		<TokensList
+			tokens={tokens}
+			onTokenPress={(coin) => {
+				logger.breadcrumb({
+					category: 'ui',
+					message: 'Pressed token card on ProfileScreen',
+					data: { tokenSymbol: coin.symbol, tokenMint: coin.address }
+				});
+				handleTokenPress(coin, navigation.navigate);
+			}}
+		/>
 	);
 
 
