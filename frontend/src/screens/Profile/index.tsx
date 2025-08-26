@@ -10,7 +10,7 @@ import { useStyles } from './profile_styles';
 import TokenListCard from '@/components/Home/TokenListCard';
 import TransactionsList from '@/components/Profile/TransactionsList';
 import ScreenHeader from '@/components/Common/ScreenHeader';
-import { ProfileIcon, WalletIcon, CoinsIcon, SendIcon, SettingsIcon, SwapIcon, ChartLineIcon } from '@components/Common/Icons';
+import { ProfileIcon, WalletIcon, CoinsIcon, SendIcon, SettingsIcon, SwapIcon } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
 import type { ProfileScreenNavigationProp } from './profile_types';
 import PnLView from '@/components/Profile/PnLView';
@@ -27,7 +27,7 @@ const Profile = () => {
 		{ key: 'overview', title: 'Overview', icon: ProfileIcon },
 		{ key: 'tokens', title: 'Tokens', icon: WalletIcon },
 		{ key: 'transactions', title: 'Transactions', icon: SwapIcon },
-		{ key: 'pnl', title: 'PnL', icon: ChartLineIcon },
+		// { key: 'pnl', title: 'PnL', icon: ChartLineIcon },
 	];
 
 	const [index, setIndex] = useState(0);
