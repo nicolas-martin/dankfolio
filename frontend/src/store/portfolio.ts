@@ -130,7 +130,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 	},
 
 	fetchPortfolioBalance: async (address: string, forceRefresh?: boolean) => {
-		logger.info('🔄 [PortfolioStore] fetchPortfolioBalance called for address:', address);
+		logger.info('🔄 [PortfolioStore] fetchPortfolioBalance called for address:', address, 'forceRefresh:', forceRefresh);
 		if (address === '') {
 			logger.warn('⚠️ [PortfolioStore] fetchPortfolioBalance called with empty address');
 			throw new Error('Address is empty');
@@ -138,15 +138,21 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 
 		try {
 			set({ isLoading: true, error: null });
-			logger.log('⏳ [PortfolioStore] Calling grpcApi.getWalletBalance...');
-			const balance = await grpcApi.getWalletBalance(address);
-			logger.log('✅ [PortfolioStore] Received balance data:', balance);
+			logger.info('⏳ [PortfolioStore] Calling grpcApi.getWalletBalance...');
+			let balance;
+			try {
+				balance = await grpcApi.getWalletBalance(address);
+				logger.info('✅ [PortfolioStore] Received balance data:', JSON.stringify(balance));
+			} catch (balanceError) {
+				logger.error('❌ [PortfolioStore] Failed to get wallet balance:', balanceError);
+				throw balanceError;
+			}
 
 			const coinStore = useCoinStore.getState();
 			let coinMap = coinStore.coinMap;
 
 			const balanceIds = balance.balances.map((b: { id: string }) => b.id);
-			logger.log(`📊 [PortfolioStore] Found ${balanceIds.length} portfolio tokens to fetch:`, balanceIds.slice(0, 5), balanceIds.length > 5 ? `... and ${balanceIds.length - 5} more` : '');
+			logger.info(`📊 [PortfolioStore] Found ${balanceIds.length} portfolio tokens to fetch:`, balanceIds.slice(0, 5), balanceIds.length > 5 ? `... and ${balanceIds.length - 5} more` : '');
 
 			// Use batch API to fetch all portfolio coins efficiently
 			const startTime = Date.now();
@@ -169,7 +175,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 			let fetchedCoins: typeof cachedCoins = [];
 			if (addressesToFetch.length > 0) {
 				try {
-					logger.log(`📊 [PortfolioStore] Using batch API to fetch ${addressesToFetch.length} portfolio tokens`);
+					logger.info(`📊 [PortfolioStore] Using batch API to fetch ${addressesToFetch.length} portfolio tokens`);
 					fetchedCoins = await grpcApi.getCoinsByIDs(addressesToFetch, forceRefresh);
 
 					// Update coin store with fetched coins
@@ -204,6 +210,17 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 					logger.warn(`⚠️ [PortfolioStore] Skipping token for balance ID ${balance.id} because coin data is missing.`);
 					return null;
 				}
+				
+				// Log SOL coin data specifically
+				if (balance.id === '11111111111111111111111111111111') {
+					logger.info(`💎 [PortfolioStore] SOL coin data:`, {
+						address: coin.address,
+						symbol: coin.symbol,
+						price: coin.price,
+						amount: balance.amount
+					});
+				}
+				
 				const tokenValue = balance.amount * coin.price;
 				return {
 					mintAddress: balance.id,
@@ -216,7 +233,16 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 
 			logger.log('📈 [PortfolioStore] Processed tokens before filtering:', tokens.length);
 			const filteredTokens = tokens.filter((token: PortfolioToken | null): token is PortfolioToken => token !== null);
-			logger.log('📊 [PortfolioStore] Filtered tokens (displayed in portfolio):', filteredTokens.map(t => ({ symbol: t.coin.symbol, mintAddress: t.mintAddress, value: t.value })));
+
+			// Log SOL balance specifically
+			const solToken = filteredTokens.find(t => t.mintAddress === '11111111111111111111111111111111');
+			if (solToken) {
+				logger.log('💎 [PortfolioStore] SOL Balance:', solToken.amount, 'SOL, Value: $', solToken.value);
+			} else {
+				logger.warn('⚠️ [PortfolioStore] No SOL balance found in tokens!');
+			}
+
+			logger.log('📊 [PortfolioStore] Filtered tokens (displayed in portfolio):', filteredTokens.map(t => ({ symbol: t.coin.symbol, mintAddress: t.mintAddress, amount: t.amount, value: t.value })));
 
 			// Calculate total portfolio value from tokens
 			const calculatedPortfolioValue = filteredTokens.reduce((total, token) => total + token.value, 0);

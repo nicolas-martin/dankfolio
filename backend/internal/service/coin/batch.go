@@ -24,7 +24,8 @@ func (s *Service) GetCoinsByAddresses(ctx context.Context, addresses []string, f
 	// Validate addresses
 	var validAddresses []string
 	for _, address := range addresses {
-		if util.IsValidSolanaAddress(address) {
+		// Special case for native SOL which is not a real Solana address
+		if address == model.NativeSolMint || util.IsValidSolanaAddress(address) {
 			validAddresses = append(validAddresses, address)
 		} else {
 			slog.WarnContext(ctx, "Invalid Solana address provided", "address", address)
@@ -249,6 +250,16 @@ type coinUpdateResult struct {
 
 // fetchSingleCoin fetches and enriches a single coin (called by worker goroutines)
 func (s *Service) fetchSingleCoin(ctx context.Context, address string, workerID int) coinFetchResult {
+	// Special handling for native SOL
+	if address == model.NativeSolMint {
+		nativeSol, err := s.getNativeSolCoin(ctx)
+		if err != nil {
+			slog.WarnContext(ctx, "Worker failed to get native SOL", "worker_id", workerID, "error", err)
+			return coinFetchResult{coin: nil, err: err}
+		}
+		return coinFetchResult{coin: nativeSol, err: nil}
+	}
+	
 	tokenOverview, err := s.birdeyeClient.GetTokenOverview(ctx, address)
 	if err != nil {
 		slog.WarnContext(ctx, "Worker failed to fetch token overview", "worker_id", workerID, "address", address, "error", err)

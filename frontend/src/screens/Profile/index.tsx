@@ -46,12 +46,15 @@ const Profile = () => {
 
 	const handleRefresh = async () => {
 		if (!wallet) return;
+		logger.info('[Profile] Pull-to-refresh initiated for wallet:', wallet.address);
 		logger.breadcrumb({ category: 'profile', message: 'Portfolio refresh initiated from ProfileScreen' });
 		setIsRefreshing(true);
 		try {
 			// Only refresh portfolio balance for overview and tokens tabs
 			// Transactions and PnL tabs handle their own refresh
+			logger.info('[Profile] Calling fetchPortfolioBalance with forceRefresh=true');
 			await fetchPortfolioBalance(wallet.address, true);
+			logger.info('[Profile] Portfolio refresh completed');
 		} catch (error: unknown) {
 			if (error instanceof Error) {
 				showToast({
