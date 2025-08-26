@@ -297,3 +297,4 @@ Both scripts create `.env` files from examples that require manual configuration
 - Price data is synchronized between them
 - The normalization is transparent to users
 - remember to add the appcheck token when querying the grpc api locally. The test token is located in the backend/.env file
+- when querying the local grpc api don't forget that add the `X-Firebase-AppCheck` header with the value that's in the `backend/.env` 951c7c245ea7e1818f3a5e6ee9f5e56e939480dc2f8f4d75696a0dbf88033b6f

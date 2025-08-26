@@ -60,7 +60,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to get SPL token accounts: %v", err)
 	}
-	
+
 	// Get Token2022 accounts
 	token2022ProgramID := solana.MustPublicKeyFromBase58("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb")
 	accounts2022, err := solRPC.GetTokenAccountsByOwner(
@@ -90,11 +90,11 @@ func main() {
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.Header([]string{"Token ID", "Amount", "Program"}) // Added Program column
-	
+
 	// Add SOL balance first
 	solBalance := float64(solData.Value) / float64(solana.LAMPORTS_PER_SOL)
 	table.Append([]string{"SOL (Native)", fmt.Sprintf("%.9f", solBalance), "System"})
-	
+
 	// Process regular SPL tokens
 	for _, account := range accounts.Value {
 		parsedData := account.Account.Data.GetRawJSON()
@@ -107,7 +107,7 @@ func main() {
 		}
 		table.Append([]string{parsedAccount.Parsed.Info.Mint, fmt.Sprintf("%.9f", parsedAccount.Parsed.Info.TokenAmount.UiAmount), "SPL Token"})
 	}
-	
+
 	// Process Token2022 accounts
 	if accounts2022 != nil {
 		for _, account := range accounts2022.Value {

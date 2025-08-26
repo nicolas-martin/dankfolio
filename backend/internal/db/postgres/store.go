@@ -90,6 +90,12 @@ func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level, env st
 		if err := db.AutoMigrate(&schema.Coin{}, &schema.Trade{}, &schema.Wallet{}, &schema.NaughtyWord{}); err != nil {
 			return nil, fmt.Errorf("failed to auto-migrate schemas: %w", err)
 		}
+		
+		// Drop unused columns from trades table
+		if err := dropUnusedTradeColumns(db); err != nil {
+			slog.Warn("Failed to drop unused trade columns", "error", err)
+			// Don't fail startup - just log the warning
+		}
 	}
 
 	// Use NewStoreWithDB to initialize the repositories
@@ -371,4 +377,41 @@ func (s *Store) DeleteAccount(ctx context.Context, walletPublicKey string) error
 		slog.InfoContext(ctx, "Successfully deleted account", "wallet", walletPublicKey)
 		return nil
 	})
+}
+
+// dropUnusedTradeColumns drops columns that are no longer used in the Trade model
+func dropUnusedTradeColumns(db *gorm.DB) error {
+	migrator := db.Migrator()
+	
+	// List of columns to drop
+	columnsToRemove := []string{
+		"platform_fee_mint",
+		"platform_fee_destination", 
+		"route_fee_amount",
+		"route_fee_mints",
+		"route_fee_details",
+	}
+	
+	// Check if trades table exists
+	if !migrator.HasTable(&schema.Trade{}) {
+		slog.Debug("Trades table does not exist yet, skipping column cleanup")
+		return nil
+	}
+	
+	// Drop each column if it exists
+	for _, column := range columnsToRemove {
+		if migrator.HasColumn(&schema.Trade{}, column) {
+			if err := migrator.DropColumn(&schema.Trade{}, column); err != nil {
+				slog.Warn("Failed to drop column from trades table", 
+					"column", column, 
+					"error", err)
+				// Continue with other columns even if one fails
+			} else {
+				slog.Info("Successfully dropped unused column from trades table", 
+					"column", column)
+			}
+		}
+	}
+	
+	return nil
 }

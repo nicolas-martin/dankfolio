@@ -109,6 +109,11 @@ func (r *Repository[S, M]) Create(ctx context.Context, item *M) error {
 	if err := r.db.WithContext(ctx).Create(schemaItem).Error; err != nil {
 		return fmt.Errorf("failed to create item: %w", err)
 	}
+	// Update the model with the database-generated values (like ID)
+	// Need to assert the type since schemaItem is interface{}
+	if s, ok := schemaItem.(S); ok {
+		*item = r.toModel(s).(M)
+	}
 	return nil
 }
 
@@ -380,34 +385,35 @@ func (r *Repository[S, M]) toModel(s S) any {
 		}
 	case schema.Trade:
 		return &model.Trade{
-			ID:                     v.ID,
-			UserID:                 v.UserID,
-			FromCoinMintAddress:    v.FromCoinMintAddress,
-			FromCoinPKID:           v.FromCoinPKID,
-			ToCoinMintAddress:      v.ToCoinMintAddress,
-			ToCoinPKID:             v.ToCoinPKID,
-			CoinSymbol:             v.CoinSymbol,
-			Type:                   v.Type,
-			Amount:                 v.Amount,
-			FromUSDPrice:           v.FromUSDPrice,
-			ToUSDPrice:             v.ToUSDPrice,
-			TotalUSDCost:           v.TotalUSDCost,
-			Fee:                v.Fee,
-			TotalFeeAmount:     v.TotalFeeAmount,
-			TotalFeeMint:       v.TotalFeeMint,
-			PlatformFeeAmount:  v.PlatformFeeAmount,
-			PlatformFeeBps:     v.PlatformFeeBps,
-			PriceImpactPercent: v.PriceImpactPercent,
-			Status:                 v.Status,
-			TransactionHash:        v.TransactionHash,
-			UnsignedTransaction:    v.UnsignedTransaction,
-			CreatedAt:              v.CreatedAt,
-			CompletedAt:            v.CompletedAt,
-			Confirmations:          v.Confirmations,
-			Finalized:              v.Finalized,
-			Error:                  v.Error,
-			FromAddress:            v.FromAddress,
-			ToAddress:              v.ToAddress,
+			ID:                  v.ID,
+			UserID:              v.UserID,
+			FromCoinMintAddress: v.FromCoinMintAddress,
+			FromCoinPKID:        v.FromCoinPKID,
+			ToCoinMintAddress:   v.ToCoinMintAddress,
+			ToCoinPKID:          v.ToCoinPKID,
+			CoinSymbol:          v.CoinSymbol,
+			Type:                v.Type,
+			Amount:              v.Amount,
+			OutputAmount:        v.OutputAmount, // Add this field!
+			FromUSDPrice:        v.FromUSDPrice,
+			ToUSDPrice:          v.ToUSDPrice,
+			TotalUSDCost:        v.TotalUSDCost,
+			Fee:                 v.Fee,
+			TotalFeeAmount:      v.TotalFeeAmount,
+			TotalFeeMint:        v.TotalFeeMint,
+			PlatformFeeAmount:   v.PlatformFeeAmount,
+			PlatformFeeBps:      v.PlatformFeeBps,
+			PriceImpactPercent:  v.PriceImpactPercent,
+			Status:              v.Status,
+			TransactionHash:     v.TransactionHash,
+			UnsignedTransaction: v.UnsignedTransaction,
+			CreatedAt:           v.CreatedAt,
+			CompletedAt:         v.CompletedAt,
+			Confirmations:       v.Confirmations,
+			Finalized:           v.Finalized,
+			Error:               v.Error,
+			FromAddress:         v.FromAddress,
+			ToAddress:           v.ToAddress,
 		}
 	case schema.Wallet:
 		return &model.Wallet{
@@ -460,34 +466,35 @@ func (r *Repository[S, M]) fromModel(m M) any {
 		return sCoin
 	case model.Trade:
 		return &schema.Trade{
-			ID:                     v.ID,
-			UserID:                 v.UserID,
-			FromCoinMintAddress:    v.FromCoinMintAddress,
-			FromCoinPKID:           v.FromCoinPKID,
-			ToCoinMintAddress:      v.ToCoinMintAddress,
-			ToCoinPKID:             v.ToCoinPKID,
-			CoinSymbol:             v.CoinSymbol,
-			Type:                   v.Type,
-			Amount:                 v.Amount,
-			FromUSDPrice:           v.FromUSDPrice,
-			ToUSDPrice:             v.ToUSDPrice,
-			TotalUSDCost:           v.TotalUSDCost,
-			Fee:                v.Fee,
-			TotalFeeAmount:     v.TotalFeeAmount,
-			TotalFeeMint:       v.TotalFeeMint,
-			PlatformFeeAmount:  v.PlatformFeeAmount,
-			PlatformFeeBps:     v.PlatformFeeBps,
-			PriceImpactPercent: v.PriceImpactPercent,
-			Status:                 v.Status,
-			TransactionHash:        v.TransactionHash,
-			UnsignedTransaction:    v.UnsignedTransaction,
-			CreatedAt:              v.CreatedAt,
-			CompletedAt:            v.CompletedAt,
-			Confirmations:          v.Confirmations,
-			Finalized:              v.Finalized,
-			Error:                  v.Error,
-			ToAddress:              v.ToAddress,
-			FromAddress:            v.FromAddress,
+			ID:                  v.ID,
+			UserID:              v.UserID,
+			FromCoinMintAddress: v.FromCoinMintAddress,
+			FromCoinPKID:        v.FromCoinPKID,
+			ToCoinMintAddress:   v.ToCoinMintAddress,
+			ToCoinPKID:          v.ToCoinPKID,
+			CoinSymbol:          v.CoinSymbol,
+			Type:                v.Type,
+			Amount:              v.Amount,
+			OutputAmount:        v.OutputAmount, // Add this field!
+			FromUSDPrice:        v.FromUSDPrice,
+			ToUSDPrice:          v.ToUSDPrice,
+			TotalUSDCost:        v.TotalUSDCost,
+			Fee:                 v.Fee,
+			TotalFeeAmount:      v.TotalFeeAmount,
+			TotalFeeMint:        v.TotalFeeMint,
+			PlatformFeeAmount:   v.PlatformFeeAmount,
+			PlatformFeeBps:      v.PlatformFeeBps,
+			PriceImpactPercent:  v.PriceImpactPercent,
+			Status:              v.Status,
+			TransactionHash:     v.TransactionHash,
+			UnsignedTransaction: v.UnsignedTransaction,
+			CreatedAt:           v.CreatedAt,
+			CompletedAt:         v.CompletedAt,
+			Confirmations:       v.Confirmations,
+			Finalized:           v.Finalized,
+			Error:               v.Error,
+			ToAddress:           v.ToAddress,
+			FromAddress:         v.FromAddress,
 		}
 	case model.Wallet:
 		return &schema.Wallet{
