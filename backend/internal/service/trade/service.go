@@ -420,44 +420,32 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 
 		// Set platform fee information
 		trade.PlatformFeeAmount = actualPlatformFee
-		// Use the actual fee mint we determined above (either SOL if available, or input mint)
+		// Log platform fee info for debugging
 		if actualPlatformFee > 0 && actualFeeMint != "" {
-			trade.PlatformFeeMint = actualFeeMint
-			slog.Debug("Setting platform fee mint from actual fee collection",
+			slog.Debug("Setting platform fee from actual fee collection",
 				"platform_fee_mint", actualFeeMint,
 				"platform_fee_amount", actualPlatformFee)
 		} else if actualPlatformFee > 0 && platformFeeMint != "" {
-			// Fallback to Jupiter's platform fee mint if we didn't set one
-			trade.PlatformFeeMint = platformFeeMint
-			slog.Debug("Setting platform fee mint from Jupiter response",
+			slog.Debug("Setting platform fee from Jupiter response",
 				"platform_fee_mint", platformFeeMint,
 				"platform_fee_amount", actualPlatformFee)
 		}
 
-		// Set route fee (trading fee minus platform fee) and route fee mints
+		// Log route fee details for debugging (trading fee minus platform fee)
 		if tradingFee, err := strconv.ParseFloat(feeBreakdown.TradingFee, 64); err == nil {
 			routeFee := tradingFee - actualPlatformFee
 			if routeFee > 0 {
-				trade.RouteFeeAmount = routeFee
-
-				// Convert route fee mints map to slice
+				// Convert route fee mints map to slice for logging
 				routeFeeMintsSlice := make([]string, 0, len(routeFeeMintsMap))
 				for mint := range routeFeeMintsMap {
 					routeFeeMintsSlice = append(routeFeeMintsSlice, mint)
 				}
 
-				// Use route fee mints if available, otherwise fall back to total fee mint
-				if len(routeFeeMintsSlice) > 0 {
-					trade.RouteFeeMints = routeFeeMintsSlice
-				} else if totalFeeMint != "" {
-					trade.RouteFeeMints = []string{totalFeeMint}
-				}
+				slog.Debug("Route fee breakdown",
+					"route_fee_amount", routeFee,
+					"route_fee_mints", routeFeeMintsSlice,
+					"fee_breakdown", feeBreakdown)
 			}
-		}
-
-		// Store detailed fee breakdown as JSON
-		if feeBreakdownJSON, err := json.Marshal(feeBreakdown); err == nil {
-			trade.RouteFeeDetails = string(feeBreakdownJSON)
 		}
 
 		// Set price impact if available from the quote
@@ -472,10 +460,6 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 		slog.Debug("Using configured platform fee", "fee_bps", s.platformFeeBps)
 	}
 
-	// Set platform fee destination
-	if s.platformFeeAccountAddress != "" {
-		trade.PlatformFeeDestination = s.platformFeeAccountAddress
-	}
 
 	// Log comprehensive fee breakdown
 	slog.Info("Trade prepared with SOL fee breakdown",
@@ -486,6 +470,14 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	if err := s.store.Trades().Create(ctx, trade); err != nil {
 		return nil, fmt.Errorf("failed to create trade record: %w", err)
 	}
+
+	// Debug log the created trade to verify OutputAmount is set
+	slog.Info("Trade record created in PrepareSwap",
+		"trade_id", trade.ID,
+		"output_amount", trade.OutputAmount,
+		"from_coin", trade.FromCoinMintAddress,
+		"to_coin", trade.ToCoinMintAddress,
+		"type", trade.Type)
 
 	// Return structured response with fee breakdown
 	return &PrepareSwapResponse{
@@ -564,6 +556,12 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 	if trade == nil {
 		return nil, fmt.Errorf("no trade record found for the given transaction")
 	}
+
+	// Debug log to check if OutputAmount is preserved
+	slog.Info("Found existing trade in ExecuteTrade",
+		"trade_id", trade.ID,
+		"output_amount", trade.OutputAmount,
+		"status", trade.Status)
 
 	if req.UnsignedTransaction == "" {
 		return nil, fmt.Errorf("unsigned_transaction cannot be empty")
@@ -1149,13 +1147,8 @@ func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) 
 		if s.metrics != nil {
 			s.metrics.RecordTrade(ctx)
 			if trade.PlatformFeeAmount > 0 {
-				// Find symbol for the fee mint
-				feeCoin, err := s.coinService.GetCoinByAddress(ctx, trade.PlatformFeeMint)
-				if err == nil {
-					s.metrics.RecordPlatformFee(ctx, trade.PlatformFeeAmount, feeCoin.Symbol)
-				} else {
-					slog.Warn("Failed to get coin details for fee metric", "mint", trade.PlatformFeeMint)
-				}
+				// Record platform fee with SOL as default (most fees are in SOL)
+				s.metrics.RecordPlatformFee(ctx, trade.PlatformFeeAmount, "SOL")
 			}
 		}
 	}

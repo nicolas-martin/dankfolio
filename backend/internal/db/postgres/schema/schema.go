@@ -81,7 +81,7 @@ type Trade struct {
 	FromCoinPKID        uint64  `gorm:"column:from_coin_pk_id;index:idx_trades_from_coin_pk_id"`
 	ToCoinMintAddress   string  `gorm:"column:to_coin_mint_address;type:text;index:idx_trades_to_mint"`
 	ToCoinPKID          uint64  `gorm:"column:to_coin_pk_id;index:idx_trades_to_coin_pk_id"`
-	CoinSymbol          string  `gorm:"column:coin_symbol"`               // Primary coin symbol for display
+	CoinSymbol          string  `gorm:"column:coin_symbol"` // Kept for debugging database entries
 	Type                string  `gorm:"column:type;not null"`             // e.g., "buy", "sell", "swap"
 	Amount              float64 `gorm:"column:amount;not null"`           // Amount of 'FromCoin' for sells/swaps, 'ToCoin' for buys
 	OutputAmount        float64 `gorm:"column:output_amount;default:0.0"` // Amount of 'ToCoin' received in swaps
@@ -92,15 +92,8 @@ type Trade struct {
 	TotalFeeMint   string  `gorm:"column:total_fee_mint"`               // Mint address of the token used for total fees
 
 	// Platform Fee Information
-	PlatformFeeAmount      float64 `gorm:"column:platform_fee_amount;default:0.0"` // Platform fee amount in native units
-	PlatformFeeBps         int     `gorm:"column:platform_fee_bps;default:0"`
-	PlatformFeeMint        string  `gorm:"column:platform_fee_mint"`        // Mint address of the token used for platform fees
-	PlatformFeeDestination string  `gorm:"column:platform_fee_destination"` // Account receiving platform fees
-
-	// Route Fee Information (from Jupiter route plan)
-	RouteFeeAmount  float64        `gorm:"column:route_fee_amount;default:0.0"` // Total route fees in native units
-	RouteFeeMints   pq.StringArray `gorm:"column:route_fee_mints;type:text[]"`  // List of mints used for route fees
-	RouteFeeDetails string         `gorm:"column:route_fee_details;type:text"`  // JSON string of detailed route fee breakdown
+	PlatformFeeAmount float64 `gorm:"column:platform_fee_amount;default:0.0"` // Platform fee amount in native units
+	PlatformFeeBps    int     `gorm:"column:platform_fee_bps;default:0"`
 
 	// Price Impact
 	PriceImpactPercent float64 `gorm:"column:price_impact_percent;default:0.0"` // Price impact as percentage

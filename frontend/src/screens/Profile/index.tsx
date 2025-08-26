@@ -196,8 +196,8 @@ const Profile = () => {
 						renderTabBar={renderTabBar}
 						navigationState={{ index, routes }}
 						renderScene={(sceneProps) => {
-							// PnL and Transactions tabs handle their own refresh
-							if (sceneProps.route.key === 'pnl' || sceneProps.route.key === 'transactions') {
+							// Transactions and PnL tabs handle their own refresh/scrolling
+							if (sceneProps.route.key === 'transactions' || sceneProps.route.key === 'pnl') {
 								return renderScene(sceneProps);
 							}
 							// Overview and Tokens tabs use the portfolio refresh

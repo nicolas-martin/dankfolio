@@ -392,15 +392,10 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 	trade := &model.Trade{
 		Fee:                    calculatedFeeSOL, // Store calculated SOL fee
 		TotalFeeAmount:         calculatedFeeSOL,
-		TotalFeeMint:           model.SolMint,
-		PlatformFeeAmount:      0.0, // Explicitly 0 for transfers
-		PlatformFeeBps:         0,   // Explicitly 0 for transfers
-		PlatformFeeMint:        "",
-		PlatformFeeDestination: "",
-		RouteFeeAmount:         0.0,
-		RouteFeeMints:          nil,
-		RouteFeeDetails:        "",
-		PriceImpactPercent:     0.0,
+		TotalFeeMint:       model.SolMint,
+		PlatformFeeAmount:  0.0, // Explicitly 0 for transfers
+		PlatformFeeBps:     0,   // Explicitly 0 for transfers
+		PriceImpactPercent: 0.0,
 		FromCoinMintAddress:    finalFromCoinMint,
 		FromCoinPKID:           fromCoinPKID,
 		ToCoinMintAddress:      finalToCoinMint,

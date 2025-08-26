@@ -124,7 +124,7 @@ type Trade struct {
 	FromCoinPKID        uint64  `json:"from_coin_pk_id,omitempty"`
 	ToCoinMintAddress   string  `json:"to_coin_mint_address"`
 	ToCoinPKID          uint64  `json:"to_coin_pk_id,omitempty"`
-	CoinSymbol          string  `json:"coin_symbol"` // This might be redundant if From/ToCoin provides symbol, or useful for primary display
+	CoinSymbol          string  `json:"coin_symbol"` // Kept for debugging database entries
 	Type                string  `json:"type"`
 	Amount              float64 `json:"amount"`
 	OutputAmount        float64 `json:"output_amount"` // Amount of 'ToCoin' received in swaps
@@ -135,15 +135,8 @@ type Trade struct {
 	TotalFeeMint   string  `json:"total_fee_mint,omitempty"`   // Mint address of the token used for total fees
 
 	// Platform Fee Information
-	PlatformFeeAmount      float64 `json:"platform_fee_amount,omitempty"`      // Platform fee amount in native units
-	PlatformFeeBps         int     `json:"platform_fee_bps,omitempty"`         // Platform fee basis points (e.g., 10 for 0.1%)
-	PlatformFeeMint        string  `json:"platform_fee_mint,omitempty"`        // Mint address of the token used for platform fees
-	PlatformFeeDestination string  `json:"platform_fee_destination,omitempty"` // Account receiving platform fees
-
-	// Route Fee Information (from Jupiter route plan)
-	RouteFeeAmount  float64  `json:"route_fee_amount,omitempty"`  // Total route fees in native units
-	RouteFeeMints   []string `json:"route_fee_mints,omitempty"`   // List of mints used for route fees
-	RouteFeeDetails string   `json:"route_fee_details,omitempty"` // JSON string of detailed route fee breakdown
+	PlatformFeeAmount float64 `json:"platform_fee_amount,omitempty"` // Platform fee amount in native units
+	PlatformFeeBps    int     `json:"platform_fee_bps,omitempty"`    // Platform fee basis points (e.g., 10 for 0.1%)
 
 	// Price Impact
 	PriceImpactPercent float64 `json:"price_impact_percent,omitempty"` // Price impact as percentage

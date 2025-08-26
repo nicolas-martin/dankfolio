@@ -155,7 +155,7 @@ export interface Transaction {
 	fromCoinMintAddress?: string;
 	toCoinMintAddress?: string;
 	amount: number;
-	price?: number;
+	outputAmount?: number; // Amount received in swaps
 	totalValue?: number;
 	status: TransactionStatus;
 	date: string;

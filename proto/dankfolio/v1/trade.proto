@@ -32,7 +32,7 @@ message Trade {
   string to_coin_id = 4;   // Note: This will likely be ToCoinMintAddress in backend model
   string type = 5;
   double amount = 6;
-  double price = 7;
+  reserved 7; // Previously: price (deprecated)
   double fee = 8;
   string status = 9;
   string transaction_hash = 10;
@@ -41,9 +41,10 @@ message Trade {
   int32 confirmations = 13;
   bool finalized = 14;
   optional string error = 15;
+  reserved 16, 17; // Reserved for future use
   optional double platform_fee_amount = 18;
-  optional double platform_fee_percent = 19;
-  optional string platform_fee_destination = 20;
+  reserved 19; // Previously: platform_fee_percent (deprecated)
+  reserved 20; // Previously: platform_fee_destination (deprecated)
   optional double output_amount = 21; // Amount of output token received in swaps
   string fromAddress = 22;
   string toAddress = 23;
