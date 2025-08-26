@@ -87,7 +87,7 @@ func main() {
 		"token", *tokenSymbol)
 
 	// Send test trades
-	for i := 0; i < *tradeCount; i++ {
+	for i := range *tradeCount {
 		// Record a trade
 		metrics.RecordTrade(ctx)
 
@@ -114,4 +114,3 @@ func main() {
 		slog.Info("Dashboard URL: https://corsairsoftware.io/grafana/d/trade-metrics/dankfolio-trade-metrics")
 	}
 }
-

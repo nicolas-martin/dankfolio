@@ -460,7 +460,6 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 		slog.Debug("Using configured platform fee", "fee_bps", s.platformFeeBps)
 	}
 
-
 	// Log comprehensive fee breakdown
 	slog.Info("Trade prepared with SOL fee breakdown",
 		"total_sol_required", totalSolRequired,
@@ -1036,6 +1035,11 @@ func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) 
 
 	// If trade status is already final, return it as is.
 	if trade.Status == model.TradeStatusFinalized.String() || trade.Status == model.TradeStatusFailed.String() {
+		// Record metrics for finalized trades if not already done
+		if trade.Status == model.TradeStatusFinalized.String() && s.metrics != nil {
+			s.metrics.RecordTrade(ctx)
+			s.metrics.RecordPlatformFee(ctx, trade.PlatformFeeAmount, "SOL")
+		}
 		return trade, nil
 	}
 
@@ -1138,17 +1142,6 @@ func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) 
 				slog.Warn("Failed to update trade", "trade_id", trade.ID, "error", errUpdate)
 			} else {
 				slog.Info("Successfully updated trade", "trade_id", trade.ID, "status", trade.Status, "confirmations", trade.Confirmations, "finalized", trade.Finalized)
-			}
-		}
-	}
-
-	// Record metrics for finalized trades
-	if trade.Finalized && trade.Status == model.TradeStatusFinalized.String() {
-		if s.metrics != nil {
-			s.metrics.RecordTrade(ctx)
-			if trade.PlatformFeeAmount > 0 {
-				// Record platform fee with SOL as default (most fees are in SOL)
-				s.metrics.RecordPlatformFee(ctx, trade.PlatformFeeAmount, "SOL")
 			}
 		}
 	}
