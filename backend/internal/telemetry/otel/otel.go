@@ -105,7 +105,7 @@ func newMeterProvider(ctx context.Context, res *resource.Resource, endpoint stri
 		return nil, fmt.Errorf("failed to create gRPC connection: %w", err)
 	}
 
-	metricExporter, err := otlpmetricgrpc.New(ctx, 
+	metricExporter, err := otlpmetricgrpc.New(ctx,
 		otlpmetricgrpc.WithGRPCConn(conn),
 		otlpmetricgrpc.WithTimeout(10*time.Second),
 	)
@@ -114,7 +114,7 @@ func newMeterProvider(ctx context.Context, res *resource.Resource, endpoint stri
 	}
 
 	mp := sdkmetric.NewMeterProvider(
-		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter, 
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter,
 			sdkmetric.WithInterval(30*time.Second),
 			sdkmetric.WithTimeout(10*time.Second),
 		)),
@@ -129,7 +129,7 @@ func (t *Telemetry) Shutdown(ctx context.Context) error {
 	if t.TracerProvider == nil && t.MeterProvider == nil {
 		return nil
 	}
-	
+
 	shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
@@ -158,11 +158,11 @@ func NewNoOpTelemetry(serviceName string) *Telemetry {
 	// Create no-op providers explicitly
 	tracerProvider := sdktrace.NewTracerProvider()
 	meterProvider := sdkmetric.NewMeterProvider()
-	
+
 	// Set them as global providers
 	otel.SetTracerProvider(tracerProvider)
 	otel.SetMeterProvider(meterProvider)
-	
+
 	return &Telemetry{
 		TracerProvider: tracerProvider,
 		MeterProvider:  meterProvider,
@@ -170,3 +170,4 @@ func NewNoOpTelemetry(serviceName string) *Telemetry {
 		Meter:          meterProvider.Meter(serviceName),
 	}
 }
+

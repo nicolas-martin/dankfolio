@@ -9,8 +9,8 @@ import (
 
 // TradeMetrics encapsulates trade-related metrics
 type TradeMetrics struct {
-	tradesTotal        metric.Int64Counter
-	platformFeesTotal  metric.Float64Counter
+	tradesTotal       metric.Int64Counter
+	platformFeesTotal metric.Float64Counter
 }
 
 // New creates a new TradeMetrics instance
