@@ -116,11 +116,11 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 
 	clearWallet: () => {
 		logger.info('[PortfolioStore] Clearing wallet and tokens');
-		set({ 
-			wallet: null, 
-			tokens: [], 
-			error: null, 
-			pnlData: null, 
+		set({
+			wallet: null,
+			tokens: [],
+			error: null,
+			pnlData: null,
 			pnlError: null,
 			totalPortfolioValue: null,
 			totalCostBasis: null,
@@ -218,8 +218,13 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 			const filteredTokens = tokens.filter((token: PortfolioToken | null): token is PortfolioToken => token !== null);
 			logger.log('📊 [PortfolioStore] Filtered tokens (displayed in portfolio):', filteredTokens.map(t => ({ symbol: t.coin.symbol, mintAddress: t.mintAddress, value: t.value })));
 
+			// Calculate total portfolio value from tokens
+			const calculatedPortfolioValue = filteredTokens.reduce((total, token) => total + token.value, 0);
+			logger.log('💰 [PortfolioStore] Calculated total portfolio value from tokens:', calculatedPortfolioValue);
+
 			set({
 				tokens: filteredTokens,
+				totalPortfolioValue: calculatedPortfolioValue,
 				isLoading: false,
 				error: missingCoinIds.length > 0 ? `Some coins could not be loaded: [${missingCoinIds.join(', ')}]` : null
 			});
