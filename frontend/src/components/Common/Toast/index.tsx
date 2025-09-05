@@ -4,7 +4,7 @@ import { Portal, Snackbar, Text, IconButton } from 'react-native-paper';
 import { ToastProps, ToastType } from './toast_types';
 import { useStyles } from './toast_styles';
 import { getToastIcon as getOriginalToastIconComponent } from './toast_icons';
-import { SuccessAnimation, ErrorAnimation } from '../Animations';
+import { ErrorAnimation } from '../Animations';
 
 const ToastContext = createContext<{
 	showToast: (options: ToastProps) => void;
@@ -95,7 +95,9 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 	const OriginalIcon = getOriginalToastIconComponent(toastType as ToastType);
 
 	if (toastType === 'success') {
-		IconToRender = <SuccessAnimation size={28} loop={false} autoPlay={true} style={styles.statusIcon} />;
+		// Use static icon for success instead of animation
+		const SuccessIcon = getOriginalToastIconComponent('success' as ToastType);
+		IconToRender = SuccessIcon ? <SuccessIcon size={20} color={toastForegroundColor} style={styles.statusIcon} /> : null;
 	} else if (toastType === 'error') {
 		IconToRender = <ErrorAnimation size={28} loop={false} autoPlay={true} style={styles.statusIcon} />;
 	} else if (OriginalIcon) {
