@@ -139,6 +139,20 @@ export const useStyles = () => {
 				flex: 1,
 				marginLeft: theme.spacing.xl,
 			},
+			columnHeader: {
+				flexDirection: 'row',
+				justifyContent: 'space-between',
+				paddingHorizontal: 16,
+				paddingVertical: 12,
+				borderBottomWidth: StyleSheet.hairlineWidth,
+				borderBottomColor: colors.outline,
+			},
+			columnHeaderText: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: theme.typography.fontSize.sm,
+				fontWeight: '600',
+				textTransform: 'uppercase',
+			},
 		});
 
 		return {

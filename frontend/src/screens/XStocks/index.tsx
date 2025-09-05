@@ -75,6 +75,10 @@ const XStocks: React.FC = () => {
 					</View>
 				) : (
 					<View style={styles.listWrapper}>
+						<View style={styles.columnHeader}>
+							<Text style={styles.columnHeaderText}>Token</Text>
+							<Text style={styles.columnHeaderText}>Price / 24h</Text>
+						</View>
 						<View style={styles.listContainer}>
 							<FlatList
 								data={xStocksTokens}
