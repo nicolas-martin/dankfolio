@@ -22,6 +22,32 @@ export const useStyles = () => {
 		};
 		// const colors = theme.colors; // This variable was unused
 		const styles = StyleSheet.create({
+			actionButton: {
+				alignItems: 'center',
+				backgroundColor: theme.colors.surfaceVariant,
+				borderRadius: theme.borderRadius.lg,
+				minWidth: 120,
+				paddingHorizontal: theme.spacing['2xl'],
+				paddingVertical: theme.spacing.lg,
+			},
+			actionButtonDisabled: {
+				opacity: 0.5,
+			},
+			actionButtonIcon: {
+				marginBottom: theme.spacing.xs,
+			},
+			actionButtonLabel: {
+				color: theme.colors.onSurface,
+				fontSize: theme.typography.fontSize.sm,
+				fontWeight: '500',
+			},
+			actionButtonsContainer: {
+				flexDirection: 'row',
+				gap: theme.spacing['2xl'],
+				justifyContent: 'center',
+				marginBottom: theme.spacing['2xl'],
+				paddingHorizontal: theme.spacing.xl,
+			},
 			centered: {
 				alignItems: 'center',
 				justifyContent: 'center',
@@ -165,9 +191,13 @@ export const useStyles = () => {
 			},
 			portfolioValue: {
 				color: theme.colors.onSurface,
-				fontSize: 32, // No exact match
-				fontWeight: '700',
-				marginBottom: theme.spacing.sm,
+				fontSize: theme.typography.fontSize['4xl'],
+				fontWeight: 'bold',
+			},
+			portfolioValueContainer: {
+				alignItems: 'center',
+				paddingHorizontal: theme.spacing.xl,
+				paddingVertical: theme.spacing['3xl'],
 			},
 			profileHeader: { // Properties are already sorted
 				alignItems: 'center',
@@ -193,6 +223,15 @@ export const useStyles = () => {
 				flexGrow: 1,
 				paddingBottom: 100, // No exact match
 			},
+			sectionHeader: {
+				paddingHorizontal: theme.spacing.xl,
+				paddingVertical: theme.spacing.md,
+			},
+			sectionTitle: {
+				color: theme.colors.onSurface,
+				fontSize: theme.typography.fontSize.lg,
+				fontWeight: '600',
+			},
 			segmentedButtons: {
 				marginBottom: theme.spacing.lg,
 			},
@@ -215,54 +254,6 @@ export const useStyles = () => {
 			},
 			settingsButton: {
 				marginRight: -8, // No exact match
-			},
-			tabBar: {
-				backgroundColor: 'transparent',
-				borderBottomWidth: 0,
-				borderTopLeftRadius: theme.borderRadius.lg,
-				borderTopRightRadius: theme.borderRadius.lg,
-				elevation: 0,
-				shadowOpacity: 0,
-			},
-			tabContainer: {
-				flex: 1,
-			},
-			tabContent: {
-				flex: 1,
-			},
-			tabContentContainer: {
-				backgroundColor: theme.colors.surface,
-				flex: 1,
-			},
-			tabIndicator: {
-				backgroundColor: theme.colors.primary,
-				height: 3,
-			},
-			tabItem: {
-				paddingVertical: theme.spacing.md,
-			},
-			tabLabel: {
-				fontSize: 9,
-				fontWeight: '600',
-			},
-			tabLabelActive: {
-				color: theme.colors.primary,
-			},
-			tabLabelInactive: {
-				color: theme.colors.onSurfaceVariant,
-			},
-			tabViewContainer: {
-				backgroundColor: theme.colors.surface,
-				borderRadius: theme.borderRadius.lg,
-				elevation: 2,
-				flex: 1,
-				marginBottom: theme.spacing.lg,
-				marginHorizontal: theme.spacing.lg,
-				overflow: 'hidden',
-				shadowColor: theme.shadows.sm.shadowColor,
-				shadowOffset: theme.shadows.sm.shadowOffset,
-				shadowOpacity: 0.08,
-				shadowRadius: theme.spacing.xs,
 			},
 			themeToggleContainer: {
 				alignItems: 'center',
@@ -300,6 +291,18 @@ export const useStyles = () => {
 				color: theme.colors.onSurface,
 				fontSize: theme.typography.fontSize.xl,
 				fontWeight: '600',
+			},
+			tokensWrapper: {
+				backgroundColor: theme.colors.surface,
+				borderRadius: theme.borderRadius.lg,
+				elevation: 2,
+				marginBottom: theme.spacing.lg,
+				marginHorizontal: theme.spacing.lg,
+				overflow: 'hidden',
+				shadowColor: theme.shadows.sm.shadowColor,
+				shadowOffset: theme.shadows.sm.shadowOffset,
+				shadowOpacity: 0.08,
+				shadowRadius: theme.spacing.xs,
 			},
 			transactionDate: { // Style for the date part of subtitle (if styled differently) - now part of transactionSubtitleText
 				// fontSize: 13, (already in subtitle)

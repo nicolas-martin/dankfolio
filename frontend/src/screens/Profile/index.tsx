@@ -1,37 +1,22 @@
-import { useState, useEffect } from 'react';
-import { View, ScrollView, RefreshControl, SafeAreaView, useWindowDimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, ScrollView, RefreshControl, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
-import { TabView, TabBar } from 'react-native-tab-view';
 import { handleTokenPress } from './profile_scripts';
 import { usePortfolioStore } from '@store/portfolio';
 import { useStyles } from './profile_styles';
-import TransactionsList from '@/components/Profile/TransactionsList';
-import ProfileOverview from '@/components/Profile/ProfileOverview';
 import TokensList from '@/components/Profile/TokensList';
 import ScreenHeader from '@/components/Common/ScreenHeader';
-import { ProfileIcon, WalletIcon, SettingsIcon, SwapIcon } from '@components/Common/Icons';
+import { WalletIcon, SettingsIcon, SendIcon, ReceiveIcon } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
 import type { ProfileScreenNavigationProp } from './profile_types';
-import PnLView from '@/components/Profile/PnLView';
 
 const Profile = () => {
 	const navigation = useNavigation<ProfileScreenNavigationProp>();
 	const { showToast } = useToast();
 	const { wallet, tokens, fetchPortfolioBalance, isLoading: isPortfolioLoading, totalPortfolioValue } = usePortfolioStore();
 	const styles = useStyles();
-	const layout = useWindowDimensions();
-
-	const tabs = [
-		{ key: 'overview', title: 'Overview', icon: ProfileIcon },
-		{ key: 'tokens', title: 'Tokens', icon: WalletIcon },
-		{ key: 'transactions', title: 'Transactions', icon: SwapIcon },
-		// { key: 'pnl', title: 'PnL', icon: ChartLineIcon },
-	];
-
-	const [index, setIndex] = useState(0);
-	const [routes] = useState(tabs.map(tab => ({ key: tab.key, title: tab.title })));
 
 
 
@@ -87,49 +72,16 @@ const Profile = () => {
 		/>
 	);
 
-	const OverviewTab = () => (
-		<ProfileOverview
-			totalValue={totalValue}
-			tokensCount={tokens.length}
-			onSendPress={() => {
-				logger.breadcrumb({ category: 'navigation', message: 'Navigating to SendTokensScreen from Profile' });
-				navigation.navigate('SendTokens');
-			}}
-			disabled={tokens.length === 0}
-		/>
+	const ActionButton: React.FC<{ icon: React.ReactNode; label: string; onPress: () => void; disabled?: boolean }> = ({ icon, label, onPress, disabled = false }) => (
+		<TouchableOpacity
+			style={[styles.actionButton, disabled && styles.actionButtonDisabled]}
+			onPress={onPress}
+			disabled={disabled}
+		>
+			<View style={styles.actionButtonIcon}>{icon}</View>
+			<Text style={styles.actionButtonLabel}>{label}</Text>
+		</TouchableOpacity>
 	);
-
-	const TokensTab = () => (
-		<TokensList
-			tokens={tokens}
-			onTokenPress={(coin) => {
-				logger.breadcrumb({
-					category: 'ui',
-					message: 'Pressed token card on ProfileScreen',
-					data: { tokenSymbol: coin.symbol, tokenMint: coin.address }
-				});
-				handleTokenPress(coin, navigation.navigate);
-			}}
-		/>
-	);
-
-
-
-	const renderScene = ({ route }: { route: { key: string } }) => {
-		switch (route.key) {
-			case 'overview':
-				return <OverviewTab />;
-			case 'tokens':
-				return <TokensTab />;
-			case 'transactions':
-				return <TransactionsList />;
-			case 'pnl':
-				return <PnLView />;
-			default:
-				logger.warn(`Unknown route key: ${route.key}`);
-				return null;
-		}
-	};
 
 	const renderNoWalletState = () => (
 		<View style={styles.noWalletContainer}>
@@ -154,85 +106,70 @@ const Profile = () => {
 			</SafeAreaView>
 		);
 	}
-	const renderTabBar = props => {
-		const { key, ...restProps } = props;
-		return (
-			<TabBar
-				key={key}
-				{...restProps}
-				indicatorStyle={styles.tabIndicator}
-				style={styles.tabBar}
-				renderIcon={({ route, focused }) => {
-					const tab = tabs.find(t => t.key === route.key);
-					if (!tab) return null;
-					const IconComponent = tab.icon;
-					return (
-						<IconComponent
-							size={20}
-							color={focused ? styles.colors.primary : styles.colors.onSurfaceVariant}
-						/>
-					);
-				}}
-				renderLabel={({ route, focused }) => {
-					const tab = tabs.find(t => t.key === route.key);
-					return (
-						<Text style={[
-							styles.tabLabel,
-							focused ? styles.tabLabelActive : styles.tabLabelInactive
-						]}>
-							{tab ? tab.title : ''}
-						</Text>
-					);
-				}}
-				pressColor={styles.colors.primaryContainer}
-				labelStyle={styles.tabLabel}
-			/>
-		);
-	};
 
 	return (
 		<SafeAreaView style={styles.safeArea} accessible={false}>
 			<View style={styles.container} accessible={false} testID="profile-screen">
 				{renderHeader()}
-				<View style={styles.tabViewContainer}>
-					<TabView
-						renderTabBar={renderTabBar}
-						navigationState={{ index, routes }}
-						renderScene={(sceneProps) => {
-							// Transactions and PnL tabs handle their own refresh/scrolling
-							if (sceneProps.route.key === 'transactions' || sceneProps.route.key === 'pnl') {
-								return renderScene(sceneProps);
-							}
-							// Overview and Tokens tabs use the portfolio refresh
-							return (
-								<ScrollView
-									accessible={false}
-									contentContainerStyle={styles.scrollContent}
-									refreshControl={
-										<RefreshControl
-											refreshing={isRefreshing || isPortfolioLoading}
-											onRefresh={handleRefresh}
-											colors={styles.refreshControlColors}
-											tintColor={styles.colors.primary}
-										/>
-									}
-								>
-									{renderScene(sceneProps)}
-								</ScrollView>
-							);
-						}}
-						onIndexChange={setIndex}
-						initialLayout={{ width: layout.width }}
-						swipeEnabled={true}
-						style={styles.tabContent}
-						lazy={({ route }) => route.key === 'transactions' || route.key === 'pnl'}
-						renderLazyPlaceholder={({ route }) => (
-							<View style={styles.centered}>
-								<Text style={styles.noWalletText}>Loading {route.title}...</Text>
-							</View>
-						)}
-					/>
-				</View>
+				<ScrollView
+					accessible={false}
+					contentContainerStyle={styles.scrollContent}
+					refreshControl={
+						<RefreshControl
+							refreshing={isRefreshing || isPortfolioLoading}
+							onRefresh={handleRefresh}
+							colors={styles.refreshControlColors}
+							tintColor={styles.colors.primary}
+						/>
+					}
+				>
+					{/* Portfolio Value Section */}
+					<View style={styles.portfolioValueContainer}>
+						<Text style={styles.portfolioValue} testID="portfolio-total-value">
+							${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+						</Text>
+					</View>
+
+					{/* Action Buttons */}
+					<View style={styles.actionButtonsContainer}>
+						<ActionButton
+							icon={<ReceiveIcon size={24} color={styles.colors.primary} />}
+							label="Receive"
+							onPress={() => {
+								showToast({ message: 'Receive functionality coming soon', type: 'info' });
+							}}
+						/>
+						<ActionButton
+							icon={<SendIcon size={24} color={styles.colors.primary} />}
+							label="Send"
+							onPress={() => {
+								logger.breadcrumb({ category: 'navigation', message: 'Navigating to SendTokensScreen from Profile' });
+								navigation.navigate('SendTokens');
+							}}
+							disabled={tokens.length === 0}
+						/>
+					</View>
+
+					{/* Tokens Label */}
+					<View style={styles.sectionHeader}>
+						<Text style={styles.sectionTitle}>Tokens</Text>
+					</View>
+
+					{/* Tokens List */}
+					<View style={styles.tokensWrapper}>
+						<TokensList
+							tokens={tokens}
+							onTokenPress={(coin) => {
+								logger.breadcrumb({
+									category: 'ui',
+									message: 'Pressed token card on ProfileScreen',
+									data: { tokenSymbol: coin.symbol, tokenMint: coin.address }
+								});
+								handleTokenPress(coin, navigation.navigate);
+							}}
+						/>
+					</View>
+				</ScrollView>
 			</View>
 		</SafeAreaView>
 	);

@@ -8,6 +8,8 @@ import InfoState from '@/components/Common/InfoState';
 import NewCoins from '@components/Home/NewCoins/NewCoins';
 import TopTrendingGainers from 'components/Home/TopTrendingGainers';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import ScreenHeader from '@/components/Common/ScreenHeader/ScreenHeader';
+import { SearchIcon } from '@components/Common/Icons';
 import { handleCoinPress } from './home_scripts';
 import { HomeScreenNavigationProp } from './home_types';
 import { usePortfolioStore } from '@store/portfolio';
@@ -580,6 +582,18 @@ const HomeScreen = () => {
 
 	return (
 		<SafeAreaView style={styles.container} testID="home-screen">
+			<ScreenHeader
+				title="Home"
+				rightAction={{
+					icon: <SearchIcon size={24} color={styles.colors.onSurface} />,
+					onPress: () => {
+						logger.breadcrumb({ category: 'navigation', message: 'Navigating to Search from Home' });
+						navigation.navigate('Search');
+					},
+					testID: "search-button"
+				}}
+				showRightAction={true}
+			/>
 			{wallet ? renderCoinsList() : renderNoWalletState()}
 		</SafeAreaView>
 	);

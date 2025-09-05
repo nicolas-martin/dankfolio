@@ -7,6 +7,9 @@ export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	return useMemo(() => {
 		const styles = StyleSheet.create({
+			container: {
+				flex: 1,
+			},
 			emptyStateContainer: {
 				alignItems: 'center',
 				flex: 1,
@@ -33,13 +36,6 @@ export const useStyles = () => {
 			},
 			emptyTokensContainer: {
 				padding: theme.spacing.xl,
-			},
-			tabContainer: {
-				flex: 1,
-			},
-			tabContentContainer: {
-				backgroundColor: theme.colors.surface,
-				flex: 1,
 			},
 			tokensHeader: {
 				alignItems: 'center',

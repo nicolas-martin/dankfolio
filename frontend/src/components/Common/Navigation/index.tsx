@@ -4,13 +4,14 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { RootStackParamList } from '@/types/navigation';
 import { navigationMiddleware } from './middleware';
 import CustomHeader from './CustomHeader';
-import { HomeIcon, SearchIcon, ProfileIcon, XStocksIcon } from '@components/Common/Icons';
+import { HomeIcon, ClockIcon, ProfileIcon, XStocksIcon } from '@components/Common/Icons';
 import { BottomNavigation } from 'react-native-paper';
 import { useMemo } from 'react';
 import Home from '@screens/Home';
 import Profile from '@screens/Profile';
 import Search from '@screens/Search';
 import XStocks from '@screens/XStocks';
+import Transactions from '@screens/Transactions';
 import CoinDetail from '@screens/CoinDetail';
 import Trade from '@screens/Trade';
 import Send from '@screens/Send';
@@ -55,8 +56,8 @@ const TabNavigator = () => {
 						switch (route.name) {
 							case 'Home':
 								return <HomeIcon color={color} size={iconSize} testID="bottom-nav-home" />;
-							case 'Search':
-								return <SearchIcon color={color} size={iconSize} testID="bottom-nav-search" />;
+							case 'Transactions':
+								return <ClockIcon color={color} size={iconSize} testID="bottom-nav-transactions" />;
 							case 'XStocks':
 								return <XStocksIcon color={color} size={iconSize} testID="bottom-nav-xstocks" />;
 							case 'Profile':
@@ -69,8 +70,8 @@ const TabNavigator = () => {
 						switch (route.name) {
 							case 'Home':
 								return 'Home';
-							case 'Search':
-								return 'Explore';
+							case 'Transactions':
+								return 'Activity';
 							case 'XStocks':
 								return 'xStocks';
 							case 'Profile':
@@ -88,8 +89,8 @@ const TabNavigator = () => {
 				component={Home}
 			/>
 			<Tab.Screen
-				name="Search"
-				component={Search}
+				name="Transactions"
+				component={Transactions}
 			/>
 			<Tab.Screen
 				name="XStocks"
@@ -132,6 +133,11 @@ const Navigation = () => {
 				>
 					{() => <TabNavigator />}
 				</Stack.Screen>
+				<Stack.Screen
+					name="Search"
+					component={Search}
+					options={customHeaderOptions} // Use memoized options
+				/>
 				<Stack.Screen
 					name="CoinDetail"
 					component={CoinDetail}

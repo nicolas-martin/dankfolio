@@ -18,9 +18,8 @@ const TokensList: React.FC<TokensListProps> = ({
 	}, [tokens]);
 
 	return (
-		<View style={styles.tabContainer}>
-			<View style={styles.tabContentContainer}>
-				{sortedTokens.length === 0 ? (
+		<View style={styles.container}>
+			{sortedTokens.length === 0 ? (
 					<View style={styles.emptyTokensContainer}>
 						<View style={styles.tokensHeader} accessible={false}>
 							<View style={styles.tokensIcon}>
@@ -38,19 +37,18 @@ const TokensList: React.FC<TokensListProps> = ({
 							</Text>
 						</View>
 					</View>
-				) : (
-					<TokenListCard
-						title=''
-						coins={sortedTokens.map(token => createCoinCardProps(token))}
-						showSparkline={false}
-						showBalanceAndValue={true}
-						noHorizontalMargin={true}
-						noRoundedCorners={true}
-						onCoinPress={onTokenPress}
-						testIdPrefix="profile-token"
-					/>
-				)}
-			</View>
+			) : (
+				<TokenListCard
+					title=''
+					coins={sortedTokens.map(token => createCoinCardProps(token))}
+					showSparkline={false}
+					showBalanceAndValue={true}
+					noHorizontalMargin={true}
+					noRoundedCorners={true}
+					onCoinPress={onTokenPress}
+					testIdPrefix="profile-token"
+				/>
+			)}
 		</View>
 	);
 };

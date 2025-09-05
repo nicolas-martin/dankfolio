@@ -59,6 +59,9 @@ export const ChangeIcon: React.FC<IconBaseProps> = (props) => <MaterialIconBase 
 export const TrendUpIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="trending-up" {...props} />;
 export const TrendDownIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="trending-down" {...props} />;
 
+// Clock/History Icon
+export const ClockIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="clock" {...props} />;
+
 // Base icon components
 const FeatherIconBase: React.FC<IconProps> = (props) => {
 	const { name, size = 24, color = '#000', style } = props;
