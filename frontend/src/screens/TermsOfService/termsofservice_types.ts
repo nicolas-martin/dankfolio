@@ -1,9 +1,9 @@
 export interface TermsSection {
-  title: string;
-  content: string;
+	title: string;
+	content: string;
 }
 
 export interface TermsAcceptanceData {
-  accepted: boolean;
-  acceptedDate?: string;
+	accepted: boolean;
+	acceptedDate?: string;
 }

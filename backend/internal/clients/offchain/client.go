@@ -320,8 +320,6 @@ func (c *Client) fetchArweaveRaw(ctx context.Context, uri string) ([]byte, strin
 // --- Helpers ---
 
 func getIPFSGateways() []string {
-	// Can be made configurable later
-
 	return util.DefaultCIDv0Gateways
 }
 

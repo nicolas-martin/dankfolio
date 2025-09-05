@@ -27,6 +27,7 @@ export const CopyIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase nam
 export const SearchIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="search" {...props} />;
 export const SwapIcon: React.FC<IconBaseProps> = (props) => <AntDesignIconBase name="swap" {...props} />;
 export const SendIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="send" {...props} />;
+export const ReceiveIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="download" {...props} />;
 
 // Feature icons
 export const ProfileIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="user" {...props} />;

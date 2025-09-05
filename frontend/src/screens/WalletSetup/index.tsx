@@ -3,7 +3,7 @@ import { View, Text, TextInput, ActivityIndicator, ScrollView, TouchableOpacity,
 import { WalletSetupScreenProps } from './types';
 import { useToast } from '@/components/Common/Toast';
 import { usePortfolioStore } from '@store/portfolio';
-import { useWalletSetupLogic, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_DESC, CREATING_WALLET_TITLE, CREATING_WALLET_DESC, IMPORTING_WALLET_TITLE, IMPORTING_WALLET_DESC, WALLET_CREATED_TITLE, WALLET_CREATED_DESC } from './scripts';
+import { useWalletSetupLogic, IMPORT_WALLET_DESC, CREATING_WALLET_TITLE, CREATING_WALLET_DESC, IMPORTING_WALLET_TITLE, IMPORTING_WALLET_DESC, WALLET_CREATED_TITLE, WALLET_CREATED_DESC } from './scripts';
 import { logger } from '@/utils/logger';
 import CopyToClipboard from '@/components/Common/CopyToClipboard';
 import { env } from '@utils/env';
@@ -32,7 +32,6 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 		goToWelcome,
 		goToTerms,
 		handleTermsAccepted,
-		handleCreateWallet,
 		handleImportWallet,
 		recoveryPhrase,
 		handleRecoveryPhraseChange,
@@ -130,37 +129,6 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 			{step === 'terms' && (
 				<TermsOfService onTermsAccepted={handleTermsAccepted} />
 			)}
-			{step === 'create' && (
-				<View style={styles.createContainer}>
-					<View style={styles.headerContainer}>
-						<TouchableOpacity
-							onPress={() => {
-								logger.breadcrumb({ category: 'ui', message: 'Back button pressed from create step' });
-								goToWelcome();
-							}}
-							style={styles.backButton}
-						>
-							<Text style={styles.backButtonText}>←</Text>
-						</TouchableOpacity>
-						<Text style={styles.headerTitle}>Create a wallet</Text>
-						<View style={styles.headerSpacer} />
-					</View>
-
-					<View style={styles.createContent}>
-						<Text style={styles.title}>{CREATE_WALLET_TITLE}</Text>
-						<Text style={styles.subtitle}>{CREATE_WALLET_DESC}</Text>
-
-						<View style={styles.createButtonContainer}>
-							<TouchableOpacity
-								onPress={handleCreateWallet}
-								style={welcomeActionButtonStyle}
-							>
-								<Text style={styles.buttonText}>Create a new wallet</Text>
-							</TouchableOpacity>
-						</View>
-					</View>
-				</View>
-			)}
 			{step === 'import' && (
 				<View style={styles.importContainer}>
 					<View style={styles.headerContainer}>
@@ -217,7 +185,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 					) : (
 						<ScrollView showsVerticalScrollIndicator={false}>
 							<View style={styles.centeredContent}>
-								<CompletedAnimation />
+								<CompletedAnimation style={{ marginTop: 40 }} />
 								<Text style={styles.title}>{WALLET_CREATED_TITLE}</Text>
 								<Text style={styles.subtitle}>{WALLET_CREATED_DESC}</Text>
 
@@ -253,8 +221,10 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 													text={walletInfo.mnemonic}
 												/>
 											</View>
-											<View style={styles.mnemonicGrid}>
-												{renderMnemonicWords(walletInfo.mnemonic)}
+											<View style={styles.walletInfoValue}>
+												<View style={styles.mnemonicGrid}>
+													{renderMnemonicWords(walletInfo.mnemonic)}
+												</View>
 											</View>
 										</View>
 									)}

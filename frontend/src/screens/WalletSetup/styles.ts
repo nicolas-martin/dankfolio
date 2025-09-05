@@ -162,7 +162,6 @@ export const useStyles = () => {
 				flexDirection: 'row',
 				flexWrap: 'wrap',
 				justifyContent: 'space-between',
-				marginTop: 8,
 			},
 			mnemonicWord: {
 				alignItems: 'center',

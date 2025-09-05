@@ -27,36 +27,36 @@ export const handleGenerateWallet = async (): Promise<{ keypair: Keypair; wallet
 	logger.breadcrumb({ category: 'wallet_setup', message: 'Wallet generation started' });
 	try {
 		logger.info("Generating new wallet locally (secure client-side generation)...");
-		
+
 		// SECURITY: Generate wallet entirely on client side
 		// The server will never see the private key or mnemonic
-		
+
 		// 1. Generate mnemonic phrase (12 words)
 		const mnemonic = bip39.generateMnemonic(128); // 128 bits = 12 words
 		if (!mnemonic) {
 			throw new Error('Failed to generate mnemonic phrase');
 		}
-		
+
 		// 2. Generate seed from mnemonic
 		const seed = await bip39.mnemonicToSeed(mnemonic);
 		const derivedSeed = seed.subarray(0, 32);
-		
+
 		// 3. Create keypair from seed
 		const keypair = Keypair.fromSeed(derivedSeed);
-		
+
 		// 4. Convert to Base58 format for storage
 		const base58PrivateKeyOutput = toBase58PrivateKey(keypair.secretKey);
-		
+
 		// 5. Store securely in device keychain (never sent to server)
 		await storeCredentials(base58PrivateKeyOutput, mnemonic);
-		
+
 		// Small delay to ensure keychain write has propagated
 		await new Promise(resolve => setTimeout(resolve, 150));
-		
+
 		// 6. Store public key in portfolio store
 		const publicKey = keypair.publicKey.toBase58();
 		await usePortfolioStore.getState().setWallet(publicKey);
-		
+
 		// 7. Register ONLY the public key with the backend (secure approach)
 		try {
 			await grpcApi.registerWallet({ publicKey });
@@ -65,10 +65,10 @@ export const handleGenerateWallet = async (): Promise<{ keypair: Keypair; wallet
 			// Registration failure is not critical - wallet is still usable
 			logger.warn('Failed to register wallet with backend, continuing anyway', { error: regError });
 		}
-		
+
 		logger.info('New wallet generated locally and stored securely');
 		logger.breadcrumb({ category: 'wallet_setup', message: 'Wallet generated successfully', data: { publicKey } });
-		
+
 		return {
 			keypair,
 			walletData: {
@@ -107,7 +107,7 @@ export const handleImportWallet = async (mnemonic: string): Promise<Keypair> => 
 		// Store in portfolio store
 		const publicKey = keypair.publicKey.toBase58();
 		await usePortfolioStore.getState().setWallet(publicKey);
-		
+
 		// Register ONLY the public key with the backend (secure approach)
 		try {
 			await grpcApi.registerWallet({ publicKey });
@@ -196,13 +196,13 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		setNextAction(action);
 		setStep('terms');
 	};
-	const goToCreate = () => setStep('create');
 	const goToImport = () => setStep('import');
 
 
-	const handleTermsAccepted = () => {
+	const handleTermsAccepted = async () => {
 		if (nextAction === 'create') {
-			setStep('create');
+			// Skip the intermediate create screen and create wallet automatically
+			await handleCreateWallet();
 		} else if (nextAction === 'import') {
 			setStep('import');
 		}
@@ -283,7 +283,6 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		step,
 		goToWelcome,
 		goToTerms,
-		goToCreate,
 		goToImport,
 		handleTermsAccepted,
 		handleCreateWallet,
