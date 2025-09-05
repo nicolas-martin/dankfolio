@@ -23,12 +23,10 @@ export const useStyles = () => {
 		// const colors = theme.colors; // This variable was unused
 		const styles = StyleSheet.create({
 			actionButton: {
-				alignItems: 'center',
 				backgroundColor: theme.colors.surfaceVariant,
 				borderRadius: theme.borderRadius.lg,
-				minWidth: 120,
-				paddingHorizontal: theme.spacing['2xl'],
-				paddingVertical: theme.spacing.lg,
+				flex: 1,
+				minWidth: 90,
 			},
 			actionButtonDisabled: {
 				opacity: 0.5,
@@ -43,9 +41,9 @@ export const useStyles = () => {
 			},
 			actionButtonsContainer: {
 				flexDirection: 'row',
-				gap: theme.spacing['2xl'],
+				gap: theme.spacing.lg,
 				justifyContent: 'center',
-				marginBottom: theme.spacing['2xl'],
+				marginBottom: theme.spacing.xl,
 				paddingHorizontal: theme.spacing.xl,
 			},
 			centered: {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, RefreshControl, SafeAreaView, TouchableOpacity } from 'react-native';
-import { Text } from 'react-native-paper';
+import { View, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
+import { Text, Button } from 'react-native-paper';
 import * as Clipboard from 'expo-clipboard';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
@@ -89,16 +89,6 @@ const Profile = () => {
 		/>
 	);
 
-	const ActionButton: React.FC<{ icon: React.ReactNode; label: string; onPress: () => void; disabled?: boolean }> = ({ icon, label, onPress, disabled = false }) => (
-		<TouchableOpacity
-			style={[styles.actionButton, disabled && styles.actionButtonDisabled]}
-			onPress={onPress}
-			disabled={disabled}
-		>
-			<View style={styles.actionButtonIcon}>{icon}</View>
-			<Text style={styles.actionButtonLabel}>{label}</Text>
-		</TouchableOpacity>
-	);
 
 	const renderNoWalletState = () => (
 		<View style={styles.noWalletContainer}>
@@ -149,9 +139,8 @@ const Profile = () => {
 
 					{/* Action Buttons */}
 					<View style={styles.actionButtonsContainer}>
-						<ActionButton
-							icon={<ReceiveIcon size={24} color={styles.colors.primary} />}
-							label="Receive"
+						<Button
+							mode="elevated"
 							onPress={() => {
 								if (wallet?.address) {
 									copyToClipboard(wallet.address);
@@ -159,16 +148,31 @@ const Profile = () => {
 									showToast({ message: 'No wallet address available', type: 'error' });
 								}
 							}}
-						/>
-						<ActionButton
-							icon={<SendIcon size={24} color={styles.colors.primary} />}
-							label="Send"
+							icon={() => <ReceiveIcon size={24} color={styles.colors.primary} />}
+							style={styles.actionButton}
+							labelStyle={styles.actionButtonLabel}
+							elevation={3}
+						>
+							<Text>
+								Receive
+							</Text>
+						</Button>
+						<Button
+							mode="elevated"
 							onPress={() => {
 								logger.breadcrumb({ category: 'navigation', message: 'Navigating to SendTokensScreen from Profile' });
 								navigation.navigate('SendTokens');
 							}}
 							disabled={tokens.length === 0}
-						/>
+							icon={() => <SendIcon size={24} color={styles.colors.primary} />}
+							style={styles.actionButton}
+							labelStyle={styles.actionButtonLabel}
+							elevation={3}
+						>
+							<Text>
+								Send
+							</Text>
+						</Button>
 					</View>
 
 					{/* Tokens Label */}

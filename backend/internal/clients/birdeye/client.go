@@ -98,6 +98,13 @@ func (c *Client) GetTrendingTokens(ctx context.Context, params TrendingTokensPar
 
 // GetTokenOverview retrieves detailed overview information for a specific token from the BirdEye API.
 func (c *Client) GetTokenOverview(ctx context.Context, address string) (*TokenOverview, error) {
+	// Convert native SOL to wSOL for Birdeye API
+	// Native SOL (11111111111111111111111111111111) doesn't exist on Birdeye
+	if address == "11111111111111111111111111111111" {
+		slog.Debug("Converting native SOL to wSOL for Birdeye API", "original", address)
+		address = "So11111111111111111111111111111111111111112"
+	}
+	
 	queryParams := url.Values{}
 	queryParams.Add("address", address)
 
@@ -128,9 +135,20 @@ func (c *Client) GetTokensOverviewBatch(ctx context.Context, addresses []string)
 		return nil, fmt.Errorf("batch size %d exceeds maximum allowed %d", len(addresses), maxBatchSize)
 	}
 
+	// Convert native SOL to wSOL for Birdeye API
+	normalizedAddresses := make([]string, len(addresses))
+	for i, address := range addresses {
+		if address == "11111111111111111111111111111111" {
+			normalizedAddresses[i] = "So11111111111111111111111111111111111111112"
+			slog.Debug("Converting native SOL to wSOL for Birdeye batch API", "original", address)
+		} else {
+			normalizedAddresses[i] = address
+		}
+	}
+
 	// Build query parameters for both endpoints
 	queryParams := url.Values{}
-	for _, address := range addresses {
+	for _, address := range normalizedAddresses {
 		queryParams.Add("list_address", address)
 	}
 
@@ -184,9 +202,11 @@ func (c *Client) GetTokensOverviewBatch(ctx context.Context, addresses []string)
 
 	// Combine the results
 	var results []TokenOverviewData
-	for _, address := range addresses {
-		metadata, hasMetadata := metadataRes.data.Data[address]
-		tradeData, hasTradeData := tradeDataRes.data.Data[address]
+	for i, address := range addresses {
+		// Use normalized address for lookup
+		lookupAddress := normalizedAddresses[i]
+		metadata, hasMetadata := metadataRes.data.Data[lookupAddress]
+		tradeData, hasTradeData := tradeDataRes.data.Data[lookupAddress]
 
 		// Skip tokens that don't exist in either response
 		if !hasMetadata && !hasTradeData {
@@ -240,9 +260,20 @@ func (c *Client) GetTokensTradeDataBatch(ctx context.Context, addresses []string
 		return nil, fmt.Errorf("batch size %d exceeds maximum allowed %d", len(addresses), maxBatchSize)
 	}
 
+	// Convert native SOL to wSOL for Birdeye API
+	normalizedAddresses := make([]string, len(addresses))
+	for i, address := range addresses {
+		if address == "11111111111111111111111111111111" {
+			normalizedAddresses[i] = "So11111111111111111111111111111111111111112"
+			slog.Debug("Converting native SOL to wSOL for Birdeye trade data batch API", "original", address)
+		} else {
+			normalizedAddresses[i] = address
+		}
+	}
+
 	// Build query parameters with 24h timeframe
 	queryParams := url.Values{}
-	for _, address := range addresses {
+	for _, address := range normalizedAddresses {
 		queryParams.Add("list_address", address)
 	}
 	queryParams.Add("time_from", "24h") // 24 hour window
@@ -258,8 +289,14 @@ func (c *Client) GetTokensTradeDataBatch(ctx context.Context, addresses []string
 
 	// Convert map response to slice, maintaining order
 	var results []TokenTradeData
-	for _, address := range addresses {
-		if tradeData, exists := tradeDataResponse.Data[address]; exists {
+	for i, address := range addresses {
+		// Use normalized address for lookup
+		lookupAddress := normalizedAddresses[i]
+		if tradeData, exists := tradeDataResponse.Data[lookupAddress]; exists {
+			// If this was native SOL, restore the original address in the result
+			if address == "11111111111111111111111111111111" {
+				tradeData.Address = address
+			}
 			results = append(results, tradeData)
 		} else {
 			slog.Warn("Token trade data not found", "address", address)
