@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, RefreshControl, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
+import * as Clipboard from 'expo-clipboard';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { handleTokenPress } from './profile_scripts';
@@ -17,6 +18,22 @@ const Profile = () => {
 	const { showToast } = useToast();
 	const { wallet, tokens, fetchPortfolioBalance, isLoading: isPortfolioLoading, totalPortfolioValue } = usePortfolioStore();
 	const styles = useStyles();
+
+	// Simple copy to clipboard function without animations
+	const copyToClipboard = useCallback((text: string) => {
+		try {
+			Clipboard.setStringAsync(text);
+			showToast({ message: 'Wallet address copied', type: 'success' });
+			logger.breadcrumb({
+				category: 'ui',
+				message: 'Copied wallet address to clipboard',
+				data: { textLength: text.length }
+			});
+		} catch (error) {
+			logger.error('Failed to copy to clipboard:', error);
+			showToast({ message: 'Failed to copy address', type: 'error' });
+		}
+	}, [showToast]);
 
 
 
@@ -136,7 +153,11 @@ const Profile = () => {
 							icon={<ReceiveIcon size={24} color={styles.colors.primary} />}
 							label="Receive"
 							onPress={() => {
-								showToast({ message: 'Receive functionality coming soon', type: 'info' });
+								if (wallet?.address) {
+									copyToClipboard(wallet.address);
+								} else {
+									showToast({ message: 'No wallet address available', type: 'error' });
+								}
 							}}
 						/>
 						<ActionButton

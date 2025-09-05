@@ -29,33 +29,33 @@ const Success: React.FC<SuccessAnimationProps> = ({
 	const colorFilters = useMemo(() => [
 		{
 			keypath: "check", // The checkmark stroke
-			color: theme.colors.onSuccess, // White or contrasting color
+			color: theme.colors.onPrimary, // Use onPrimary which is white
 		},
 		{
 			keypath: "Shape Layer 2", // The main success circle background
-			color: theme.colors.success, // Theme success color (green)
+			color: theme.success, // Theme success color (green)
 		},
 		{
 			keypath: "Shape Layer 1", // Secondary circle/stroke
-			color: theme.colors.success, // Theme success color
+			color: theme.success, // Theme success color
 		},
 		{
 			keypath: "Ellipse 1", // Circle elements
-			color: theme.colors.success, // Theme success color
+			color: theme.success, // Theme success color
 		},
 		{
 			keypath: "Fill 1", // Fill elements
-			color: theme.colors.success, // Theme success color
+			color: theme.success, // Theme success color
 		},
 		{
 			keypath: "Stroke 1", // Stroke elements
-			color: theme.colors.onSuccess, // Contrasting color
+			color: theme.colors.onPrimary, // Use onPrimary which is white
 		},
 		{
 			keypath: "BG", // Background layer
 			color: theme.colors.surface, // Theme surface color
 		},
-	], [theme.colors]);
+	], [theme.colors, theme.success]);
 
 	return (
 		<LottieView

@@ -113,8 +113,8 @@ const Settings: React.FC = () => {
 						/>
 					</List.Section>
 
-					<List.Section 
-						title="Account Management" 
+					<List.Section
+						title="Account Management"
 						titleStyle={styles.sectionTitle}
 						style={styles.deleteAccountSection}
 					>
