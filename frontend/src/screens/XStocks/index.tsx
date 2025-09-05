@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, FlatList, RefreshControl, TouchableOpacity, Text, ActivityIndicator, SafeAreaView } from 'react-native';
 import { useXStocksData } from './xstocks_scripts';
 import { useStyles } from './xstocks_styles';
@@ -7,9 +7,12 @@ import { Coin } from '@/types';
 import CachedImage from '@/components/Common/CachedImage';
 import ScreenHeader from '@/components/Common/ScreenHeader';
 import { logger } from '@/utils/logger';
+import { InfoIcon } from '@/components/Common/Icons';
+import InfoModal from '@/components/Common/InfoModal';
 
 const XStocks: React.FC = () => {
 	const styles = useStyles();
+	const [isInfoModalVisible, setIsInfoModalVisible] = useState(false);
 	const {
 		xStocksTokens,
 		loading,
@@ -62,7 +65,15 @@ const XStocks: React.FC = () => {
 	}, [styles, handleCoinPress]);
 
 	const renderHeader = () => (
-		<ScreenHeader title="xStocks" />
+		<ScreenHeader
+			title="xStocks"
+			showRightAction={true}
+			rightAction={{
+				icon: <InfoIcon size={20} color={styles.infoIcon.color} />,
+				onPress: () => setIsInfoModalVisible(true),
+				testID: 'xstocks-info-button'
+			}}
+		/>
 	);
 
 	return (
@@ -106,6 +117,19 @@ const XStocks: React.FC = () => {
 					</View>
 				)}
 			</View>
+			<InfoModal
+				visible={isInfoModalVisible}
+				onClose={() => setIsInfoModalVisible(false)}
+				title="What is xStocks?"
+				message="xStocks brings the stock market experience to crypto. Trade meme coins like traditional stocks with features including:
+• Rea-time price tracking
+• Portfolio analytics
+• Market depth analysis
+• Advanced charting
+• Social sentiment tracking
+
+Experience professional trading tools designed specifically for Solana meme coins."
+			/>
 		</SafeAreaView>
 	);
 };

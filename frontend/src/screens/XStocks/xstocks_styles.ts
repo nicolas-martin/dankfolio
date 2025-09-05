@@ -153,6 +153,12 @@ export const useStyles = () => {
 				fontWeight: '600',
 				textTransform: 'uppercase',
 			},
+			infoButton: {
+				padding: 8,
+			},
+			infoIcon: {
+				color: theme.colors.onSurfaceVariant,
+			},
 		});
 
 		return {

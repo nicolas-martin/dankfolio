@@ -25,7 +25,8 @@ export const useStyles = () => {
     modalText: {
       color: theme.colors.onSurface,
       marginBottom: 15,
-      textAlign: 'center',
+      textAlign: 'left',
+      lineHeight: 22,
     },
     modalTitle: {
       color: theme.colors.onSurface,
