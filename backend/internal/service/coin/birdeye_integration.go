@@ -92,12 +92,24 @@ func (s *Service) processBirdeyeTokens(ctx context.Context, tokensToEnrich []bir
 		slog.Int("concurrency", scrapeMaxConcurrentEnrich))
 
 	cleanedToken := make([]birdeye.TokenDetails, 0)
+	filteredCount := 0
 	for _, token := range tokensToEnrich {
 		// Check if the token name is naughty before proceeding
 		if s.coinContainsNaughtyWord(token.Name, token.Symbol) {
+			slog.WarnContext(ctx, "⚠️ FILTERING OUT token due to banned words",
+				slog.String("name", token.Name),
+				slog.String("symbol", token.Symbol),
+				slog.String("address", token.Address))
+			filteredCount++
 			continue
 		}
 		cleanedToken = append(cleanedToken, token)
+	}
+	if filteredCount > 0 {
+		slog.WarnContext(ctx, "⚠️ SUMMARY: Filtered out tokens from trending list",
+			slog.Int("filtered_count", filteredCount),
+			slog.Int("original_count", len(tokensToEnrich)),
+			slog.Int("remaining_count", len(cleanedToken)))
 	}
 	enrichedCoinsResult := make([]model.Coin, 0, len(cleanedToken))
 	var wg sync.WaitGroup

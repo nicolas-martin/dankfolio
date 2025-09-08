@@ -17,6 +17,15 @@ import (
 // Background fetcher methods for trending, new, and top gainer tokens
 
 func (s *Service) runTrendingTokenFetcher(ctx context.Context) {
+	// Add panic recovery to prevent goroutine from crashing
+	defer func() {
+		if r := recover(); r != nil {
+			slog.ErrorContext(ctx, "PANIC in trending token fetcher - recovered and restarting", slog.Any("panic", r))
+			// Restart the fetcher after a panic
+			go s.runTrendingTokenFetcher(ctx)
+		}
+	}()
+	
 	if s.config == nil {
 		slog.ErrorContext(ctx, "runTrendingTokenFetcher: service config is nil")
 		return
@@ -299,7 +308,7 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 		offset := 0
 
 		// Fetch new listing tokens from Birdeye with meme platform enabled
-		slog.InfoContext(ctx, "📡 Calling Birdeye GetNewListingTokens API...", 
+		slog.InfoContext(ctx, "📡 Calling Birdeye GetNewListingTokens API...",
 			slog.Int("limit", limit), slog.Int("offset", offset))
 		birdeyeTokens, err := s.birdeyeClient.GetNewListingTokens(ctx, birdeye.NewListingTokensParams{
 			Limit:               limit,
@@ -311,7 +320,7 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 			return fmt.Errorf("failed to get new listing tokens from Birdeye: %w", err)
 		}
 
-		slog.InfoContext(ctx, "📊 Birdeye API Response for new tokens", 
+		slog.InfoContext(ctx, "📊 Birdeye API Response for new tokens",
 			slog.Int("tokensReceived", len(birdeyeTokens.Data.Items)))
 		if len(birdeyeTokens.Data.Items) == 0 {
 			slog.InfoContext(ctx, "No new listing tokens found from Birdeye.")
