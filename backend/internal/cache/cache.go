@@ -47,7 +47,6 @@ func NewGoGenericCacheAdapter[T any](logPrefix string) (*GoGenericCacheAdapter[T
 	}, nil
 }
 
-// Convenience constructors for specific cache types
 func NewCoinCache() (CoinCache, error) {
 	return NewGoGenericCacheAdapter[[]model.Coin]("coin")
 }

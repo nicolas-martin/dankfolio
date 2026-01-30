@@ -32,7 +32,7 @@ func NewService(birdeyeClient birdeye.ClientAPI, jupiterClient jupiter.ClientAPI
 	return s
 }
 
-func (s *Service) GetPriceHistory(ctx context.Context, address string, timeFrameConfig BackendTimeframeConfig, timeStr, addressType string) (*birdeye.PriceHistory, error) {
+func (s *Service) GetPriceHistory(ctx context.Context, address string, timeFrameConfig BackendTimeframeConfig, endTimeStr, addressType string) (*birdeye.PriceHistory, error) {
 	cacheKey := fmt.Sprintf("%s-%s", address, timeFrameConfig.HistoryType)
 
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
@@ -50,29 +50,29 @@ func (s *Service) GetPriceHistory(ctx context.Context, address string, timeFrame
 		return cachedData, nil
 	}
 
-	// Parse and calculate time range
-	parsedTime, err := time.Parse(time.RFC3339, timeStr)
+	// Parse the end time of the window (typically "now")
+	windowEnd, err := time.Parse(time.RFC3339, endTimeStr)
 	if err != nil {
-		slog.Error("Failed to parse time_from string", "timeFromStr", timeStr, "error", err)
-		return nil, fmt.Errorf("failed to parse time_from: %w", err)
+		slog.Error("Failed to parse end time string", "endTimeStr", endTimeStr, "error", err)
+		return nil, fmt.Errorf("failed to parse end time: %w", err)
 	}
 
-	// Calculate time range - ensure we have a meaningful time span
-	timeFrom := parsedTime.Add(-timeFrameConfig.DefaultViewDuration)
-	timeTo := parsedTime
+	// Calculate time window: [windowEnd - DefaultViewDuration, windowEnd]
+	// For example, if windowEnd is "now" and DefaultViewDuration is 1 hour,
+	// we fetch data from 1 hour ago until now
+	windowStart := windowEnd.Add(-timeFrameConfig.DefaultViewDuration)
 
 	// Round the times to appropriate granularity
-	roundedTimeFrom := roundDateDown(timeFrom, timeFrameConfig.Rounding)
-	roundedTimeTo := roundDateDown(timeTo, timeFrameConfig.Rounding)
+	roundedWindowStart := roundDateDown(windowStart, timeFrameConfig.Rounding)
+	roundedWindowEnd := roundDateDown(windowEnd, timeFrameConfig.Rounding)
 
 	// Ensure we have at least a minimum time span to get multiple data points
-	minTimeSpan := timeFrameConfig.DefaultViewDuration / 4 // At least 1/4 of the default duration
-	if roundedTimeTo.Sub(roundedTimeFrom) < minTimeSpan {
-		// Adjust the time range to ensure we get multiple data points
-		roundedTimeFrom = roundedTimeTo.Add(-timeFrameConfig.DefaultViewDuration)
+	minTimeSpan := timeFrameConfig.DefaultViewDuration / 4
+	if roundedWindowEnd.Sub(roundedWindowStart) < minTimeSpan {
+		roundedWindowStart = roundedWindowEnd.Add(-timeFrameConfig.DefaultViewDuration)
 		slog.Info("Adjusted time range to ensure minimum span",
-			"originalFrom", roundedTimeFrom.Add(timeFrameConfig.DefaultViewDuration),
-			"adjustedFrom", roundedTimeFrom,
+			"originalStart", roundedWindowStart.Add(timeFrameConfig.DefaultViewDuration),
+			"adjustedStart", roundedWindowStart,
 			"minTimeSpan", minTimeSpan)
 	}
 
@@ -80,13 +80,12 @@ func (s *Service) GetPriceHistory(ctx context.Context, address string, timeFrame
 		Address:     address,
 		AddressType: addressType,
 		HistoryType: timeFrameConfig.BirdeyeType,
-		TimeFrom:    roundedTimeFrom,
-		TimeTo:      roundedTimeTo,
+		TimeFrom:    roundedWindowStart,
+		TimeTo:      roundedWindowEnd,
 	}
 
 	result, err := s.birdeyeClient.GetPriceHistory(ctx, params)
 	if err != nil {
-		// It's good practice to log the specific parameters that failed.
 		slog.Error("Failed to fetch price history from birdeye", "params", fmt.Sprintf("%+v", params), "error", err)
 		return nil, fmt.Errorf("failed to fetch price history from birdeye: %w", err)
 	}
@@ -243,7 +242,7 @@ func (s *Service) GetPriceHistoriesByAddresses(ctx context.Context, requests []P
 
 	// Start worker goroutines
 	var wg sync.WaitGroup
-	for i := 0; i < maxWorkers; i++ {
+	for i := range maxWorkers {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
@@ -312,35 +311,33 @@ func (s *Service) fetchSinglePriceHistory(ctx context.Context, request PriceHist
 		}
 	}
 
-	// Parse and calculate time range
-	parsedTime, err := time.Parse(time.RFC3339, request.Time)
+	// Parse the end time of the window (typically "now")
+	windowEnd, err := time.Parse(time.RFC3339, request.Time)
 	if err != nil {
-		slog.ErrorContext(ctx, "Worker failed to parse time", "worker_id", workerID, "address", request.Address, "time", request.Time, "error", err)
+		slog.ErrorContext(ctx, "Worker failed to parse end time", "worker_id", workerID, "address", request.Address, "endTime", request.Time, "error", err)
 		return &PriceHistoryBatchResult{
 			Data:         nil,
 			Success:      false,
-			ErrorMessage: fmt.Sprintf("failed to parse time: %v", err),
+			ErrorMessage: fmt.Sprintf("failed to parse end time: %v", err),
 		}
 	}
 
-	// Calculate time range - ensure we have a meaningful time span
-	timeFrom := parsedTime.Add(-request.Config.DefaultViewDuration)
-	timeTo := parsedTime
+	// Calculate time window: [windowEnd - DefaultViewDuration, windowEnd]
+	windowStart := windowEnd.Add(-request.Config.DefaultViewDuration)
 
 	// Round the times to appropriate granularity
-	roundedTimeFrom := roundDateDown(timeFrom, request.Config.Rounding)
-	roundedTimeTo := roundDateDown(timeTo, request.Config.Rounding)
+	roundedWindowStart := roundDateDown(windowStart, request.Config.Rounding)
+	roundedWindowEnd := roundDateDown(windowEnd, request.Config.Rounding)
 
 	// Ensure we have at least a minimum time span to get multiple data points
-	minTimeSpan := request.Config.DefaultViewDuration / 4 // At least 1/4 of the default duration
-	if roundedTimeTo.Sub(roundedTimeFrom) < minTimeSpan {
-		// Adjust the time range to ensure we get multiple data points
-		roundedTimeFrom = roundedTimeTo.Add(-request.Config.DefaultViewDuration)
+	minTimeSpan := request.Config.DefaultViewDuration / 4
+	if roundedWindowEnd.Sub(roundedWindowStart) < minTimeSpan {
+		roundedWindowStart = roundedWindowEnd.Add(-request.Config.DefaultViewDuration)
 		slog.DebugContext(ctx, "Worker adjusted time range for minimum span",
 			"worker_id", workerID,
 			"address", request.Address,
-			"originalFrom", roundedTimeFrom.Add(request.Config.DefaultViewDuration),
-			"adjustedFrom", roundedTimeFrom,
+			"originalStart", roundedWindowStart.Add(request.Config.DefaultViewDuration),
+			"adjustedStart", roundedWindowStart,
 			"minTimeSpan", minTimeSpan)
 	}
 
@@ -348,8 +345,8 @@ func (s *Service) fetchSinglePriceHistory(ctx context.Context, request PriceHist
 		Address:     request.Address,
 		AddressType: request.AddressType,
 		HistoryType: request.Config.BirdeyeType,
-		TimeFrom:    roundedTimeFrom,
-		TimeTo:      roundedTimeTo,
+		TimeFrom:    roundedWindowStart,
+		TimeTo:      roundedWindowEnd,
 	}
 
 	result, err := s.birdeyeClient.GetPriceHistory(ctx, params)

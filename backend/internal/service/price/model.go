@@ -26,7 +26,7 @@ type PriceHistoryItem struct {
 // BackendTimeframeConfig defines the configuration for a specific timeframe for the backend.
 type BackendTimeframeConfig struct {
 	BirdeyeType         string        // e.g., "1m", "5m", "1H" for Birdeye API
-	DefaultViewDuration time.Duration // Default duration window for this granularity, derived from frontend config
+	DefaultViewDuration time.Duration // How far back from the end time to fetch data (e.g., 1h means fetch last hour)
 	Rounding            time.Duration // Rounding granularity in minutes, from frontend config
 	HistoryType         string        // The type of history to fetch, e.g., "1H", "4H", "1D"
 }
