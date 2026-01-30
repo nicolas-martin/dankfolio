@@ -1,4 +1,4 @@
-appId: com.nicolasmartin.dankfolio
+appId: com.nicolasmartin.kaiju
 env:
     FROM_SYMBOL: "sol"
     TO_SYMBOL: "jup"

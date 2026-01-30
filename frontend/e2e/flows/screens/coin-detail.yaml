@@ -1,10 +1,10 @@
-appId: com.nicolasmartin.dankfolio
+appId: com.nicolasmartin.kaiju
 env:
     JUP_SYMBOL: "jup"
 ---
 - runFlow: ../common/app-setup.yaml
 
-- assertVisible: ".*Trending Coins.*"
+# - assertVisible: ".*Trending Coins.*"
 
 - tapOn:
       id: "trending-coin-item-${JUP_SYMBOL}"

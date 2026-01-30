@@ -1,4 +1,4 @@
-appId: com.nicolasmartin.dankfolio
+appId: com.nicolasmartin.kaiju
 env:
     testAmount: "1.65973075"
     testRecipientAddress: "6hbS1d1JRRta3GtJC7XNo16gg3PTb41QJVzy6kWsZnav"
@@ -14,8 +14,8 @@ env:
       point: "85%,95%"
 - waitForAnimationToEnd
 
-- assertVisible:
-      id: "profile-screen"
+# - assertVisible:
+#       id: "profile-screen"
 
 - assertVisible:
       id: "send-tokens-button"

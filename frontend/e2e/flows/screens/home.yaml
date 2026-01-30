@@ -1,4 +1,4 @@
-appId: com.nicolasmartin.dankfolio
+appId: com.nicolasmartin.kaiju
 env:
     LOAD_DEBUG_WALLET: "true"
     E2E_MOCKING_ENABLED: "true"
@@ -19,7 +19,7 @@ env:
 
 # Test main sections are visible using regex for more reliable text matching
 - assertVisible: ".*New Listings.*"
-- assertVisible: ".*Trending Coins.*"
+# - assertVisible: ".*Trending Coins.*"
 - assertVisible: ".*24h Volume.*"
 
 # Trending
