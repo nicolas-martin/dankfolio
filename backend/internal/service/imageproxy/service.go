@@ -91,7 +91,7 @@ func (s *Service) generateS3Key(mintAddress string) string {
 // resolveImageURL resolves IPFS and other URLs to HTTP URLs
 func (s *Service) resolveImageURL(imageURL string) string {
 	// Use existing IPFS standardization logic
-	return util.StandardizeIpfsUrl(imageURL)
+	return util.StandardizeIpfsURL(imageURL)
 }
 
 // downloadImage downloads an image from the given URL with retry logic
@@ -99,7 +99,7 @@ func (s *Service) downloadImage(ctx context.Context, imageURL string) ([]byte, s
 	maxRetries := 3
 	baseDelay := time.Second
 
-	for attempt := 0; attempt < maxRetries; attempt++ {
+	for attempt := range maxRetries {
 		if attempt > 0 {
 			// Exponential backoff
 			delay := baseDelay * time.Duration(1<<(attempt-1))
