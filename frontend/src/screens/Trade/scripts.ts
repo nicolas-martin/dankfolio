@@ -152,24 +152,24 @@ export const pollTradeStatus = async (
 
 		if (statusResult.error) {
 			logger.error('Transaction failed during polling:', { error: statusResult.error, txHash });
-			setPollingStatus('failed');
+			setPollingStatus(PollingStatus.FAILED);
 			setPollingError(typeof statusResult.error === 'string' ? statusResult.error : JSON.stringify(statusResult.error));
 			stopPollingFn();
 		} else if (statusResult.finalized) {
 			logger.info('Transaction finalized!', { txHash });
-			setPollingStatus('finalized');
+			setPollingStatus(PollingStatus.FINALIZED);
 			stopPollingFn();
 			// Removed toast notification - status modal already shows finalization
 		} else if (statusResult.status === 'confirmed' || statusResult.status === 'processed') {
 			logger.info(`Transaction confirmed with ${statusResult.confirmations} confirmations, waiting for finalization...`, { txHash });
-			setPollingStatus('confirmed');
+			setPollingStatus(PollingStatus.CONFIRMED);
 		} else {
 			logger.info(`Current status: ${statusResult.status}, continuing poll...`, { txHash, status: statusResult.status });
-			setPollingStatus('polling');
+			setPollingStatus(PollingStatus.POLLING);
 		}
 	} catch (error: unknown) { // Changed to unknown
 		logger.exception(error, { functionName: 'pollTradeStatus', params: { txHash } });
-		setPollingStatus('failed');
+		setPollingStatus(PollingStatus.FAILED);
 		// Safely extract the error message with proper type handling
 		const errorMessage = error instanceof Error ? error.message : 'Failed to fetch transaction status';
 		setPollingError(errorMessage);
