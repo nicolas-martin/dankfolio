@@ -175,7 +175,6 @@ Time:        2.628 s, estimated 3 s
   🚨 Critical Missing Features (Top Priority)
 
   1. Fiat On-Ramp Integration
-    - Apple Pay integration (Moonshot's killer feature)
     - Credit/debit card support
     - Bank transfers
     - PayPal integration

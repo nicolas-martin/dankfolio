@@ -189,6 +189,9 @@ func main() {
 	birdeyeWrappedHTTP := clients.WrapHTTPClient(httpClient, "birdeye", apiTracker)
 	birdeyeClient := birdeye.NewClient(birdeyeWrappedHTTP, config.BirdEyeEndpoint, config.BirdEyeAPIKey)
 
+	offchainWrappedHTTP := clients.WrapHTTPClient(httpClient, "offchain", apiTracker)
+	offchainClient := offchain.NewClient(offchainWrappedHTTP)
+
 	header := map[string]string{
 		"Authorization": "Bearer " + config.SolanaRPCAPIKey,
 	}
@@ -200,11 +203,6 @@ func main() {
 	}))
 
 	solanaClient := solana.NewClient(solClient, apiTracker)
-
-	offchainWrappedHTTP := clients.WrapHTTPClient(httpClient, "offchain", apiTracker)
-	offchainClient := offchain.NewClient(offchainWrappedHTTP)
-
-	// No need to load stats or start background processing with OpenTelemetry
 
 	coinServiceConfig := &coin.Config{
 		BirdEyeBaseURL:             config.BirdEyeEndpoint,
