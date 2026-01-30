@@ -13,19 +13,19 @@ var DefaultCIDv0Gateways = []string{
 // Set this to false to disable automatic fallback
 var TryNextGatewayOnFailure = false
 
-func StandardizeIpfsUrl(iconUrlInput string) string {
-	if iconUrlInput == "" {
+func StandardizeIpfsURL(iconURLInput string) string {
+	if iconURLInput == "" {
 		return ""
 	}
 
 	// Check for subdomain IPFS format (like pump.ipfs.dweb.link or CID.ipfs.dweb.link)
-	if strings.Contains(iconUrlInput, ".ipfs.dweb.link/") {
+	if strings.Contains(iconURLInput, ".ipfs.dweb.link/") {
 		// Extract the CID from the subdomain
 		// URL format: https://subdomain.ipfs.dweb.link/path
 		// For pump.fun: https://pump.ipfs.dweb.link/CID_filename.webp
 		// For regular: https://CID.ipfs.dweb.link/path
 
-		parts := strings.SplitN(iconUrlInput, ".ipfs.dweb.link/", 2)
+		parts := strings.SplitN(iconURLInput, ".ipfs.dweb.link/", 2)
 		if len(parts) == 2 {
 			// Extract subdomain from the URL
 			urlParts := strings.Split(parts[0], "://")
@@ -47,15 +47,15 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 
 						// Use preferred gateway for pump.fun URLs
 						if len(DefaultCIDv0Gateways) == 0 {
-							slog.Error("No default gateways configured for pump.fun URL.", "url", iconUrlInput)
-							return iconUrlInput
+							slog.Error("No default gateways configured for pump.fun URL.", "url", iconURLInput)
+							return iconURLInput
 						}
 						return DefaultCIDv0Gateways[0] + cid + suffix
 					} else {
 						// No underscore found, treat the whole path as CID
 						if len(DefaultCIDv0Gateways) == 0 {
-							slog.Error("No default gateways configured for pump.fun URL.", "url", iconUrlInput)
-							return iconUrlInput
+							slog.Error("No default gateways configured for pump.fun URL.", "url", iconURLInput)
+							return iconURLInput
 						}
 						return DefaultCIDv0Gateways[0] + pathPart
 					}
@@ -66,27 +66,27 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 					// Check if it's a CIDv0 (starts with Qm and is 46 chars)
 					if strings.HasPrefix(cid, "Qm") && len(cid) == 46 {
 						if len(DefaultCIDv0Gateways) == 0 {
-							slog.Error("No default CIDv0 gateways configured for subdomain URL.", "url", iconUrlInput)
-							return iconUrlInput
+							slog.Error("No default CIDv0 gateways configured for subdomain URL.", "url", iconURLInput)
+							return iconURLInput
 						}
 						return DefaultCIDv0Gateways[0] + cid + "/" + pathPart
 					} else {
 						// It's a CIDv1 in subdomain format on dweb.link. It's already standard.
-						return iconUrlInput
+						return iconURLInput
 					}
 				}
 			}
 		}
 		// If parsing failed, return original
-		return iconUrlInput
+		return iconURLInput
 	}
 
 	// Check if it's an IPFS gateway URL (contains "/ipfs/")
-	if strings.Contains(iconUrlInput, "/ipfs/") {
+	if strings.Contains(iconURLInput, "/ipfs/") {
 		// Extract IPFS hash part (the part after "/ipfs/")
-		parts := strings.SplitN(iconUrlInput, "/ipfs/", 2)
+		parts := strings.SplitN(iconURLInput, "/ipfs/", 2)
 		if len(parts) < 2 || parts[1] == "" {
-			return iconUrlInput // Malformed or nothing after /ipfs/, return original
+			return iconURLInput // Malformed or nothing after /ipfs/, return original
 		}
 
 		ipfsPathContent := parts[1] // This is <hash_or_cid_or_cid_with_path_and_query>
@@ -103,16 +103,16 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 		if strings.HasPrefix(firstPathComponent, "Qm") && len(firstPathComponent) == 46 {
 			// It's CIDv0. Use the first default gateway.
 			if len(DefaultCIDv0Gateways) == 0 {
-				slog.Error("No default CIDv0 gateways configured.", "url", iconUrlInput)
-				return iconUrlInput // return original if no gateways are available
+				slog.Error("No default CIDv0 gateways configured.", "url", iconURLInput)
+				return iconURLInput // return original if no gateways are available
 			}
 			return DefaultCIDv0Gateways[0] + ipfsResourceIdentifier
 		} else {
 			// For now, use defaultCIDv0Gateways for CIDv1 as well
 			// This is because we want to use our paid Pinata gateway for all CIDs
 			if len(DefaultCIDv0Gateways) == 0 {
-				slog.Error("No default gateways configured for CIDv1.", "url", iconUrlInput)
-				return iconUrlInput
+				slog.Error("No default gateways configured for CIDv1.", "url", iconURLInput)
+				return iconURLInput
 			}
 			return DefaultCIDv0Gateways[0] + ipfsResourceIdentifier
 
@@ -130,13 +130,13 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 				return "https://" + subdomainPart + ".ipfs.dweb.link" + pathPart
 			*/
 		}
-	} else if strings.HasPrefix(iconUrlInput, "ipfs://") {
+	} else if after, ok := strings.CutPrefix(iconURLInput, "ipfs://"); ok {
 		// Handle raw ipfs:// URIs
-		trimmedCidAndPath := strings.TrimPrefix(iconUrlInput, "ipfs://")
+		trimmedCidAndPath := after
 
 		// Handle empty case
 		if trimmedCidAndPath == "" {
-			return iconUrlInput // Return original malformed URL
+			return iconURLInput // Return original malformed URL
 		}
 
 		firstPathComponent := strings.SplitN(trimmedCidAndPath, "/", 2)[0]
@@ -144,16 +144,16 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 		if strings.HasPrefix(firstPathComponent, "Qm") && len(firstPathComponent) == 46 {
 			// It's CIDv0. Use the first default gateway.
 			if len(DefaultCIDv0Gateways) == 0 {
-				slog.Error("No default CIDv0 gateways configured for raw CIDv0 URI.", "url", iconUrlInput)
-				return iconUrlInput // return original if no gateways are available
+				slog.Error("No default CIDv0 gateways configured for raw CIDv0 URI.", "url", iconURLInput)
+				return iconURLInput // return original if no gateways are available
 			}
 			return DefaultCIDv0Gateways[0] + trimmedCidAndPath
 		} else {
 			// For now, use defaultCIDv0Gateways for CIDv1 as well
 			// This is because we want to use our paid Pinata gateway for all CIDs
 			if len(DefaultCIDv0Gateways) == 0 {
-				slog.Error("No default gateways configured for CIDv1.", "url", iconUrlInput)
-				return iconUrlInput
+				slog.Error("No default gateways configured for CIDv1.", "url", iconURLInput)
+				return iconURLInput
 			}
 			return DefaultCIDv0Gateways[0] + trimmedCidAndPath
 
@@ -175,7 +175,7 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 
 	// Not an IPFS URL (including dexscreener, etc.), return as is
 	// This handles non-IPFS URLs like https://dd.dexscreener.com/... which should remain unchanged
-	return iconUrlInput
+	return iconURLInput
 }
 
 // GetNextGateway returns the next gateway in the list if TryNextGatewayOnFailure is true

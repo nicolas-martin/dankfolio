@@ -164,7 +164,7 @@ type CoinListInfo struct {
 	Change24h    float64        `json:"change24h,omitempty"`
 }
 
-// convert to model.Coin
+// ToModelCoin convert to model.Coin
 func (t *CoinListInfo) ToModelCoin() *model.Coin {
 	return &model.Coin{
 		Address:               t.Address,
@@ -186,7 +186,6 @@ func (t *CoinListInfo) ToModelCoin() *model.Coin {
 		LastUpdated:           "",
 	}
 }
-
 
 // SwapQuoteRequestBody represents the structure sent as quoteResponse in the Jupiter swap transaction request
 type SwapQuoteRequestBody struct {
@@ -219,7 +218,6 @@ type NewTokenInfo struct {
 	MintAuthority     any      `json:"mint_authority"`   // Can be null
 	FreezeAuthority   any      `json:"freeze_authority"` // Can be null
 }
-
 
 // ToModelCoin converts NewTokenInfo to model.Coin
 func (t *NewTokenInfo) ToModelCoin() *model.Coin {

@@ -342,12 +342,13 @@ func TestTrackCall_EndpointTruncation(t *testing.T) {
 			fullURL := server.URL + tc.path
 			var err error
 
-			if tc.method == "GET" {
+			switch tc.method {
+			case "GET":
 				// Use clientInstance which is *Client
-				_, _, err = GetRequest[map[string]interface{}](clientInstance, context.Background(), fullURL)
-			} else if tc.method == "POST" {
+				_, _, err = GetRequest[map[string]any](clientInstance, context.Background(), fullURL)
+			case "POST":
 				// Use clientInstance which is *Client
-				_, err = PostRequest[map[string]interface{}](clientInstance, context.Background(), fullURL, tc.requestBody)
+				_, err = PostRequest[map[string]any](clientInstance, context.Background(), fullURL, tc.requestBody)
 			}
 			require.NoError(t, err, "Request should not fail for path: %s", tc.path)
 

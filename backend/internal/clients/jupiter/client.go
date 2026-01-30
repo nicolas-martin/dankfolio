@@ -24,7 +24,6 @@ const (
 
 	// API endpoints - Keeping these constants for clarity
 	priceEndpoint     = "/price/v2"
-	swapQuoteEndpoint = "/swap/v1/quote"
 	tokenInfoEndpoint = "/tokens/v1/token"
 	tokenListEndpoint = "/tokens/v1/all"
 	swapEndpoint      = "/swap/v1/swap"
@@ -200,7 +199,7 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) ([]*Ne
 		if len(newToken.LogoURI) == 0 {
 			continue
 		}
-		stdLogoURI := util.StandardizeIpfsUrl(newToken.LogoURI)
+		stdLogoURI := util.StandardizeIpfsURL(newToken.LogoURI)
 
 		// Parse the CreatedAt timestamp from the Jupiter API response
 		var createdAtTime time.Time
