@@ -74,7 +74,7 @@ func (s *FeeMintSelector) SelectFeeMint(
 	// Priority 2: Apply our proven fee mint selection logic (from platform-fee-test)
 	// Also normalize native SOL to wSOL
 	nativeSolMint := "11111111111111111111111111111111"
-	
+
 	switch swapMode {
 	case "ExactOut":
 		// For ExactOut, must use input mint ONLY (Jupiter requirement)

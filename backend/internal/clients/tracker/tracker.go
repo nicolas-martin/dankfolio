@@ -87,20 +87,6 @@ func (t *APITracker) initMetrics() error {
 	return nil
 }
 
-// TrackCall tracks an API call (for backward compatibility)
-func (t *APITracker) TrackCall(serviceName, endpointName string) {
-	if t == nil || t.metrics.apiCallCounter == nil {
-		return
-	}
-
-	attrs := []attribute.KeyValue{
-		attribute.String("service.name", serviceName),
-		attribute.String("endpoint.name", endpointName),
-	}
-
-	t.metrics.apiCallCounter.Add(context.Background(), 1, metric.WithAttributes(attrs...))
-}
-
 // TrackCallWithContext tracks an API call with context
 func (t *APITracker) TrackCallWithContext(ctx context.Context, serviceName, endpointName string) {
 	if t == nil || t.metrics.apiCallCounter == nil {
@@ -217,7 +203,6 @@ func (t *APITracker) InstrumentCall(ctx context.Context, serviceName, endpointNa
 	return nil
 }
 
-// Helper functions
 func ExtractTraceID(ctx context.Context) string {
 	span := trace.SpanFromContext(ctx)
 	if span.SpanContext().IsValid() {
@@ -232,4 +217,3 @@ func LogWithTraceID(ctx context.Context, logger *slog.Logger, msg string, args .
 	}
 	logger.InfoContext(ctx, msg, args...)
 }
-

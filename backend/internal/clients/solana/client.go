@@ -72,7 +72,7 @@ func (c *Client) GetMetadataAccount(ctx context.Context, mint string) (*tm.Metad
 		}
 		return &deserializedMetadata, nil
 	}
-	
+
 	err := c.tracker.InstrumentCall(ctx, "solana", "GetMetadataAccount", func(ctx context.Context) error {
 		mintPubkey := solana.MustPublicKeyFromBase58(mint)
 		metadataPDA, bumpSeed, err := solana.FindTokenMetadataAddress(mintPubkey)
@@ -773,7 +773,7 @@ func (c *Client) GetTokenAccountsByOwner(ctx context.Context, ownerAddress bmode
 
 		// Token2022 program ID: TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb
 		token2022ProgramID := solana.MustPublicKeyFromBase58("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb")
-		
+
 		// Get regular SPL token accounts
 		tokenProgramID := solana.TokenProgramID
 		rpcConf := &rpc.GetTokenAccountsConfig{
@@ -784,12 +784,12 @@ func (c *Client) GetTokenAccountsByOwner(ctx context.Context, ownerAddress bmode
 		if err != nil {
 			return fmt.Errorf("failed to get SPL token accounts for %s: %w", ownerAddress, err)
 		}
-		
+
 		// Get Token2022 accounts
 		rpcConf2022 := &rpc.GetTokenAccountsConfig{
 			ProgramId: &token2022ProgramID,
 		}
-		
+
 		result2022, err := c.rpcConn.GetTokenAccountsByOwner(ctx, solOwner, rpcConf2022, rpcOpts)
 		if err != nil {
 			// Log but don't fail - not all wallets have Token2022 accounts
@@ -812,8 +812,8 @@ func (c *Client) GetTokenAccountsByOwner(ctx context.Context, ownerAddress bmode
 			}
 
 			if rpcOpts.Encoding == solana.EncodingJSONParsed {
-				rawJsonData := rpcAcc.Account.Data.GetRawJSON()
-				if err := json.Unmarshal(rawJsonData, &parsedAccount); err != nil {
+				rawJSONData := rpcAcc.Account.Data.GetRawJSON()
+				if err := json.Unmarshal(rawJSONData, &parsedAccount); err != nil {
 					slog.WarnContext(ctx, "failed to parse token account data (json)", "address", rpcAcc.Pubkey.String(), "error", err)
 					continue
 				}
@@ -840,7 +840,7 @@ func (c *Client) GetTokenAccountsByOwner(ctx context.Context, ownerAddress bmode
 				})
 			}
 		}
-		
+
 		// Process Token2022 accounts if found
 		if result2022 != nil {
 			for _, rpcAcc := range result2022.Value {
@@ -859,8 +859,8 @@ func (c *Client) GetTokenAccountsByOwner(ctx context.Context, ownerAddress bmode
 				}
 
 				if rpcOpts.Encoding == solana.EncodingJSONParsed {
-					rawJsonData := rpcAcc.Account.Data.GetRawJSON()
-					if err := json.Unmarshal(rawJsonData, &parsedAccount); err != nil {
+					rawJSONData := rpcAcc.Account.Data.GetRawJSON()
+					if err := json.Unmarshal(rawJSONData, &parsedAccount); err != nil {
 						slog.WarnContext(ctx, "failed to parse Token2022 account data (json)", "address", rpcAcc.Pubkey.String(), "error", err)
 						continue
 					}
@@ -870,8 +870,8 @@ func (c *Client) GetTokenAccountsByOwner(ctx context.Context, ownerAddress bmode
 						slog.WarnContext(ctx, "failed to parse UIAmountString to float for Token2022", "address", rpcAcc.Pubkey.String(), "uiAmountString", parsedAccount.Parsed.Info.TokenAmount.UIAmountString, "error", parseErr)
 						uiAmount = 0
 					}
-					
-					slog.InfoContext(ctx, "Found Token2022 token account", 
+
+					slog.InfoContext(ctx, "Found Token2022 token account",
 						"mint", parsedAccount.Parsed.Info.Mint,
 						"amount", uiAmount,
 						"owner", parsedAccount.Parsed.Info.Owner)
@@ -887,7 +887,7 @@ func (c *Client) GetTokenAccountsByOwner(ctx context.Context, ownerAddress bmode
 				}
 			}
 		}
-		
+
 		return nil
 	})
 
