@@ -165,9 +165,9 @@ func populateWebsiteFromMetadata(coin *model.Coin, metadata map[string]any) {
 		return
 	}
 	if website, ok := metadata["website"].(string); ok && website != "" {
-		coin.Website = ensureHttpHttps(website)
+		coin.Website = ensureHTTPHTTPS(website)
 	} else if externalURL, ok := metadata["external_url"].(string); ok && externalURL != "" {
-		coin.Website = ensureHttpHttps(externalURL)
+		coin.Website = ensureHTTPHTTPS(externalURL)
 	}
 }
 
@@ -252,7 +252,7 @@ func populateSocialLinksFromMetadata(coin *model.Coin, metadata map[string]any) 
 	// If populated via attributes, ensureHttpHttps is called here.
 	if val, ok := metadata["attributes"]; ok { // Check if attributes were processed for website
 		if _, ok := val.([]any); ok {
-			coin.Website = ensureHttpHttps(coin.Website)
+			coin.Website = ensureHTTPHTTPS(coin.Website)
 		}
 	}
 }
@@ -278,7 +278,7 @@ func cleanSocialLink(link string, expectedDomain string) string {
 
 	// If it's already a URL, ensure it's HTTPS if possible and check domain
 	if strings.Contains(link, expectedDomain) {
-		return ensureHttpHttps(link)
+		return ensureHTTPHTTPS(link)
 	}
 
 	// If it's a URL but wrong domain, return empty or log warning? For now return empty.
@@ -286,8 +286,8 @@ func cleanSocialLink(link string, expectedDomain string) string {
 	return ""
 }
 
-// ensureHttpHttps ensures a URL starts with http:// or https://
-func ensureHttpHttps(url string) string {
+// ensureHTTPHTTPS ensures a URL starts with http:// or https://
+func ensureHTTPHTTPS(url string) string {
 	url = strings.TrimSpace(url)
 	if url == "" {
 		return ""

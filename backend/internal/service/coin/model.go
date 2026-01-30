@@ -8,16 +8,14 @@ import (
 
 // Config holds the configuration for the coin service
 type Config struct {
-	BirdEyeBaseURL          string
-	BirdEyeAPIKey           string
-	SolanaRPCEndpoint       string
-	NewCoinsFetchInterval   time.Duration
-	TrendingFetchInterval   time.Duration
-	TopGainersFetchInterval time.Duration
+	BirdEyeBaseURL             string
+	BirdEyeAPIKey              string
+	SolanaRPCEndpoint          string
+	NewCoinsFetchInterval      time.Duration
+	TrendingFetchInterval      time.Duration
+	TopGainersFetchInterval    time.Duration
 	InitializeXStocksOnStartup bool
 }
-
-// --- Structs for Trending Tokens Output ---
 
 // TrendingTokensOutput matches the top-level structure for the trending tokens data.
 type TrendingTokensOutput struct {
@@ -25,7 +23,6 @@ type TrendingTokensOutput struct {
 	Coins          []model.Coin `json:"coins"` // Contains fully enriched Coin models
 }
 
-// --- End Trending Tokens Output Structs ---
 // TokenInfo represents a token from the Raydium API
 type TokenInfo struct {
 	Symbol   string `json:"symbol"`

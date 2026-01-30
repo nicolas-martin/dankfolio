@@ -84,12 +84,12 @@ func main() {
 		slog.String("solanaRPCEndpoint", config.SolanaRPCEndpoint),
 		slog.Int("platformFeeBps", config.PlatformFeeBps),
 		slog.String("platformFeeAccountAddress", config.PlatformFeeAccountAddress),
-		slog.String("jupiterApiUrl", config.JupiterApiUrl),
+		slog.String("jupiterApiUrl", config.JupiterAPIUrl),
 		slog.String("BirdEyeEndpoint", config.BirdEyeEndpoint),
 		slog.String("otlpEndpoint", config.OTLPEndpoint),
 		slog.Bool("initializeXStocksOnStartup", config.InitializeXStocksOnStartup),
 		slog.String("dbUrl", maskSensitiveURL(config.DBURL)),
-		slog.Bool("jupiterApiKeySet", config.JupiterApiKey != ""),
+		slog.Bool("jupiterApiKeySet", config.JupiterAPIKey != ""),
 		slog.Bool("birdEyeApiKeySet", config.BirdEyeAPIKey != ""),
 		slog.Bool("solanaRPCApiKeySet", config.SolanaRPCAPIKey != ""),
 		slog.Bool("platformPrivateKeySet", config.PlatformPrivateKey != ""),
@@ -184,7 +184,7 @@ func main() {
 
 	// Now initialize all clients with the properly initialized apiTracker
 	jupiterWrappedHTTP := clients.WrapHTTPClient(httpClient, "jupiter", apiTracker)
-	jupiterClient := jupiter.NewClient(jupiterWrappedHTTP, config.JupiterApiUrl, config.JupiterApiKey)
+	jupiterClient := jupiter.NewClient(jupiterWrappedHTTP, config.JupiterAPIUrl, config.JupiterAPIKey)
 
 	birdeyeWrappedHTTP := clients.WrapHTTPClient(httpClient, "birdeye", apiTracker)
 	birdeyeClient := birdeye.NewClient(birdeyeWrappedHTTP, config.BirdEyeEndpoint, config.BirdEyeAPIKey)
@@ -512,8 +512,8 @@ type Config struct {
 	BirdEyeAPIKey              string        `envconfig:"BIRDEYE_API_KEY" required:"true"`
 	GRPCPort                   int           `envconfig:"GRPC_PORT" default:"9000"`
 	DBURL                      string        `envconfig:"DB_URL" required:"true"`
-	JupiterApiKey              string        `envconfig:"JUPITER_API_KEY"`
-	JupiterApiUrl              string        `envconfig:"JUPITER_API_URL" required:"true"`
+	JupiterAPIKey              string        `envconfig:"JUPITER_API_KEY"`
+	JupiterAPIUrl              string        `envconfig:"JUPITER_API_URL" required:"true"`
 	Env                        string        `envconfig:"APP_ENV" required:"true"`
 	NewCoinsFetchInterval      time.Duration `envconfig:"NEW_COINS_FETCH_INTERVAL" required:"true"`
 	TrendingCoinsFetchInterval time.Duration `envconfig:"TRENDING_COINS_FETCH_INTERVAL" required:"true"`

@@ -104,7 +104,7 @@ func (c *Client) GetTokenOverview(ctx context.Context, address string) (*TokenOv
 		slog.Debug("Converting native SOL to wSOL for Birdeye API", "original", address)
 		address = "So11111111111111111111111111111111111111112"
 	}
-	
+
 	queryParams := url.Values{}
 	queryParams.Add("address", address)
 
@@ -423,7 +423,7 @@ func getRequest[T any](c *Client, ctx context.Context, requestURL string) (*T, e
 		slog.Error("Failed to parse URL for tracking", "url", requestURL, "error", err)
 		return nil, fmt.Errorf("failed to parse URL: %w", err)
 	}
-	
+
 	endpointName := parsedURL.Path
 	if endpointName == "" {
 		endpointName = "/"
@@ -593,7 +593,7 @@ func postRequest[T any](c *Client, ctx context.Context, requestURL string, reque
 	return &responseObject, nil
 }
 
-// getMaxWorkers returns the maximum number of workers for parallel processing
+// GetMaxWorkers returns the maximum number of workers for parallel processing
 func (c *Client) GetMaxWorkers() int {
 	// Limit concurrent requests to avoid rate limiting
 	// This should be configurable in production

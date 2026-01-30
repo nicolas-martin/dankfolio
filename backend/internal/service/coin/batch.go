@@ -131,7 +131,7 @@ func (s *Service) GetCoinsByAddresses(ctx context.Context, addresses []string, f
 		cacheKey := fmt.Sprintf("coin:%s", coin.Address)
 		s.cache.Set(cacheKey, []model.Coin{coin}, CoinCacheExpiry)
 	}
-	
+
 	slog.InfoContext(ctx, "Completed batch coin retrieval", "final_count", len(existingCoins), "cached_count", len(existingCoins))
 	return existingCoins, nil
 }
@@ -259,7 +259,7 @@ func (s *Service) fetchSingleCoin(ctx context.Context, address string, workerID 
 		}
 		return coinFetchResult{coin: nativeSol, err: nil}
 	}
-	
+
 	tokenOverview, err := s.birdeyeClient.GetTokenOverview(ctx, address)
 	if err != nil {
 		slog.WarnContext(ctx, "Worker failed to fetch token overview", "worker_id", workerID, "address", address, "error", err)
@@ -321,41 +321,41 @@ func (s *Service) updateCoinsBatch(ctx context.Context, coins []model.Coin) ([]m
 	updatedCoins := make([]model.Coin, 0, len(coins))
 	var mu sync.Mutex
 	var wg sync.WaitGroup
-	
+
 	// Use a semaphore to limit concurrent API calls
 	sem := make(chan struct{}, 5) // Limit to 5 concurrent updates
-	
+
 	for _, coin := range coins {
 		wg.Add(1)
 		coinCopy := coin // Important: capture loop variable
-		
+
 		go func() {
 			defer wg.Done()
-			sem <- struct{}{} // Acquire semaphore
+			sem <- struct{}{}        // Acquire semaphore
 			defer func() { <-sem }() // Release semaphore
-			
+
 			// Update market data for this coin
 			updated, err := s.updateCoinMarketData(ctx, &coinCopy)
 			if err != nil {
-				slog.WarnContext(ctx, "Failed to update coin market data in batch", 
-					"address", coinCopy.Address, 
+				slog.WarnContext(ctx, "Failed to update coin market data in batch",
+					"address", coinCopy.Address,
 					"error", err)
 				// Use original coin if update fails
 				updated = &coinCopy
 			}
-			
+
 			mu.Lock()
 			updatedCoins = append(updatedCoins, *updated)
 			mu.Unlock()
 		}()
 	}
-	
+
 	wg.Wait()
-	
-	slog.InfoContext(ctx, "Batch coin update completed", 
-		"requested", len(coins), 
+
+	slog.InfoContext(ctx, "Batch coin update completed",
+		"requested", len(coins),
 		"updated", len(updatedCoins))
-		
+
 	return updatedCoins, nil
 }
 
@@ -416,15 +416,11 @@ func (s *Service) fetchCoinsIndividually(ctx context.Context, addresses []string
 	return coins, nil
 }
 
-
-
 // batchUpdateCoinsInDB updates multiple coins in the database efficiently
 func (s *Service) batchUpdateCoinsInDB(ctx context.Context, coins []model.Coin) error {
 	// Convert to pointers for bulk upsert
 	coinPtrs := make([]model.Coin, len(coins))
-	for i, coin := range coins {
-		coinPtrs[i] = coin
-	}
+	copy(coinPtrs, coins)
 
 	// Use bulk upsert for better performance
 	if _, err := s.store.Coins().BulkUpsert(ctx, &coinPtrs); err != nil {

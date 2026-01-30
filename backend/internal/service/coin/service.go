@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	cacheKey_trending = "trendingCoins_rpc"
-	cacheKey_new      = "newCoins"
-	cacheKey_top      = "topGainersCoins"
+	cacheKeyTrending = "trendingCoins_rpc"
+	cacheKeyNew      = "newCoins"
+	cacheKeyTop      = "topGainersCoins"
 )
 
 // Service handles coin-related operations
@@ -40,7 +40,7 @@ type Service struct {
 	trendingMutex   sync.Mutex
 	newCoinsMutex   sync.Mutex
 	topGainersMutex sync.Mutex
-	
+
 	// Rate limiter for background image uploads
 	imageUploadLimiter chan struct{}
 }
@@ -58,16 +58,16 @@ func NewService(
 	imageProxy *imageproxy.Service,
 ) *Service {
 	service := &Service{
-		config:         config,
-		jupiterClient:  jupiterClient,
-		chainClient:    chainClient,
-		offchainClient: offchainClient,
-		store:          store,
-		birdeyeClient:  birdeyeClient,
-		apiTracker:     apiTracker,
-		cache:          coinCache,
-		naughtyWordSet: make(map[string]struct{}),
-		imageProxy:     imageProxy,
+		config:             config,
+		jupiterClient:      jupiterClient,
+		chainClient:        chainClient,
+		offchainClient:     offchainClient,
+		store:              store,
+		birdeyeClient:      birdeyeClient,
+		apiTracker:         apiTracker,
+		cache:              coinCache,
+		naughtyWordSet:     make(map[string]struct{}),
+		imageProxy:         imageProxy,
 		imageUploadLimiter: make(chan struct{}, 3), // Limit to 3 concurrent uploads
 	}
 	service.fetcherCtx, service.fetcherCancel = context.WithCancel(context.Background())
@@ -144,3 +144,4 @@ func (s *Service) Shutdown() {
 	}
 	slog.Info("Coin service shutdown complete.")
 }
+

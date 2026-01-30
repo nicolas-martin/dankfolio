@@ -31,7 +31,7 @@ type BackendTimeframeConfig struct {
 	HistoryType         string        // The type of history to fetch, e.g., "1H", "4H", "1D"
 }
 
-// Rounding is also used for CacheExpiry
+// TimeframeConfigMap Rounding is also used for CacheExpiry
 var TimeframeConfigMap = map[pb.GetPriceHistoryRequest_PriceHistoryType]BackendTimeframeConfig{
 	pb.GetPriceHistoryRequest_ONE_HOUR: {
 		BirdeyeType:         "1m",

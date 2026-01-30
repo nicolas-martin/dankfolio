@@ -96,6 +96,7 @@ func (s *Service) GetPriceHistory(ctx context.Context, address string, timeFrame
 	return result, nil
 }
 
+// GetCoinPrices gets the prices for multiple coins
 // TODO: Should we update all the data instead of just returning the price?
 func (s *Service) GetCoinPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
@@ -142,7 +143,7 @@ func (s *Service) GetCoinPrices(ctx context.Context, tokenAddresses []string) (m
 			mu.Lock()
 			prices[addr] = overview.Data.Price
 			mu.Unlock()
-			
+
 			slog.DebugContext(ctx, "Successfully fetched price", "address", addr, "api_address", apiAddress, "price", overview.Data.Price)
 		}(address)
 	}

@@ -190,7 +190,7 @@ func (s *Service) FetchAndStoreTrendingTokens(ctx context.Context) error {
 		slog.InfoContext(ctx, "Trending coin store refresh transaction complete", slog.Time("fetchTimestamp", enrichedCoins.FetchTimestamp), slog.Int("enrichedCoinsProcessed", len(enrichedCoins.Coins)))
 
 		// Invalidate cache after successful DB update
-		s.cache.Delete(cacheKey_trending)
+		s.cache.Delete(cacheKeyTrending)
 		slog.InfoContext(ctx, "Invalidated trending coins cache after DB refresh")
 
 		return nil
@@ -294,7 +294,7 @@ func (s *Service) FetchAndStoreTopGainersTokens(ctx context.Context) error {
 		slog.InfoContext(ctx, "Top gainers coin store refresh transaction complete", slog.Int("enrichedCoinsProcessed", len(enrichedCoins)))
 
 		// Invalidate cache after successful DB update
-		s.cache.Delete(cacheKey_top)
+		s.cache.Delete(cacheKeyTop)
 		slog.InfoContext(ctx, "Invalidated top gainers coins cache after DB refresh")
 
 		return nil
@@ -444,7 +444,7 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 		slog.InfoContext(ctx, "New coins store refresh (Birdeye source) transaction complete", slog.Int("enriched_coins_processed_count", len(enrichedCoins)))
 
 		// Invalidate cache after successful DB update
-		s.cache.Delete(cacheKey_new)
+		s.cache.Delete(cacheKeyNew)
 		slog.InfoContext(ctx, "Invalidated new coins cache after DB refresh")
 
 		return nil
@@ -549,7 +549,7 @@ func (s *Service) getCoinsCachedWithFallback(
 func (s *Service) GetNewCoins(ctx context.Context, limit, offset int32) ([]model.Coin, int32, error) {
 	return s.getCoinsCachedWithFallback(
 		ctx,
-		cacheKey_new,
+		cacheKeyNew,
 		s.store.ListNewestCoins,
 		s.FetchAndStoreNewTokens,
 		&s.newCoinsMutex,
@@ -563,7 +563,7 @@ func (s *Service) GetNewCoins(ctx context.Context, limit, offset int32) ([]model
 func (s *Service) GetTrendingCoinsRPC(ctx context.Context, limit, offset int32) ([]model.Coin, int32, error) {
 	return s.getCoinsCachedWithFallback(
 		ctx,
-		cacheKey_trending,
+		cacheKeyTrending,
 		s.store.ListTrendingCoins,
 		s.FetchAndStoreTrendingTokens,
 		&s.trendingMutex,
@@ -577,7 +577,7 @@ func (s *Service) GetTrendingCoinsRPC(ctx context.Context, limit, offset int32) 
 func (s *Service) GetTopGainersCoins(ctx context.Context, limit, offset int32) ([]model.Coin, int32, error) {
 	return s.getCoinsCachedWithFallback(
 		ctx,
-		cacheKey_top,
+		cacheKeyTop,
 		s.store.ListTopGainersCoins,
 		s.FetchAndStoreTopGainersTokens,
 		&s.topGainersMutex,
