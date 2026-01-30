@@ -658,8 +658,8 @@ export const grpcApi: grpcModel.API = {
 					toCoinMintAddress: trade.toCoinId, // toCoinId is the mint address
 					amount: trade.amount,
 					outputAmount: trade.outputAmount, // Output amount for swaps
-					price: trade.price, // Price per token at transaction time
-					totalValue: trade.amount * trade.price, // Calculate total value
+					// price: trade.price, // Price per token at transaction time
+					// totalValue: trade.amount * trade.price, // Calculate total value
 					status,
 					date: trade.createdAt ? new Date(Number(trade.createdAt.seconds) * 1000).toISOString() : "",
 					transactionHash: trade.transactionHash,

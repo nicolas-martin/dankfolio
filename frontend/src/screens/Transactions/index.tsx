@@ -1,4 +1,3 @@
-import React from 'react';
 import { SafeAreaView, View } from 'react-native';
 import { useStyles } from './transactions_styles';
 import TransactionsList from '@/components/Profile/TransactionsList';
