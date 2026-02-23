@@ -5,6 +5,8 @@
 .opencode/
 *.crt
 
+# Firebase config
+**/GoogleService-Info.plist
 
 # app check
 *.p8
